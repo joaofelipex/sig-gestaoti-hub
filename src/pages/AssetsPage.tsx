@@ -14,9 +14,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Monitor, Search, Plus, Cpu, Wrench, DollarSign,
+  Monitor, Search, Plus, Cpu, Wrench, DollarSign, FileText, Download,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import AssetForm from "@/components/forms/AssetForm";
+import { toast } from "sonner";
 
 const statusColor: Record<Asset['status'], string> = {
   'Em uso': 'bg-success/10 text-success border-success/20',
@@ -32,6 +34,57 @@ function depreciacao(purchaseValue: number, purchaseDate: string, vidaUtil = 5):
   return Math.round(valorAtual * 100) / 100;
 }
 
+function depreciacaoPercent(purchaseValue: number, purchaseDate: string, vidaUtil = 5): number {
+  const atual = depreciacao(purchaseValue, purchaseDate, vidaUtil);
+  return Math.round((atual / purchaseValue) * 100);
+}
+
+function gerarTermoPDF(asset: Asset) {
+  const content = `
+TERMO DE RESPONSABILIDADE - EQUIPAMENTO DE TI
+
+Data: ${new Date().toLocaleDateString('pt-BR')}
+
+IDENTIFICAÇÃO DO EQUIPAMENTO
+ID: ${asset.id}
+Tipo: ${asset.type}
+Marca/Modelo: ${asset.brand} ${asset.model}
+Número de Série: ${asset.serialNumber}
+${asset.specs.cpu ? `CPU: ${asset.specs.cpu}` : ''}
+${asset.specs.ram ? `RAM: ${asset.specs.ram}` : ''}
+${asset.specs.storage ? `Storage: ${asset.specs.storage}` : ''}
+
+RESPONSÁVEL
+Nome: ${asset.assignedTo || 'N/A'}
+Departamento: ${asset.department}
+
+VALOR DO EQUIPAMENTO
+Valor de Compra: R$ ${asset.purchaseValue.toLocaleString('pt-BR')}
+Data de Compra: ${new Date(asset.purchaseDate).toLocaleDateString('pt-BR')}
+Valor Atual (Depreciado): R$ ${depreciacao(asset.purchaseValue, asset.purchaseDate).toLocaleString('pt-BR')}
+
+DECLARAÇÃO
+Declaro que recebi o equipamento acima descrito em perfeitas condições de uso, 
+comprometendo-me a utilizá-lo exclusivamente para fins profissionais, zelando pela 
+sua conservação e integridade.
+
+_________________________________
+Assinatura do Responsável
+
+_________________________________
+Assinatura TI - IMTS
+  `.trim();
+
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Termo_Responsabilidade_${asset.id}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.success(`Termo gerado para ${asset.assignedTo || asset.id}`);
+}
+
 export default function AssetsPage() {
   const [assetList, setAssetList] = useState<Asset[]>(initialAssets);
   const [search, setSearch] = useState("");
@@ -45,6 +98,9 @@ export default function AssetsPage() {
     const matchStatus = statusFilter === "all" || a.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const totalDepreciated = assetList.reduce((s, a) => s + depreciacao(a.purchaseValue, a.purchaseDate), 0);
+  const totalPurchase = assetList.reduce((s, a) => s + a.purchaseValue, 0);
 
   const handleSave = (asset: Asset) => {
     setAssetList(prev => {
@@ -71,7 +127,7 @@ export default function AssetsPage() {
           { label: 'Total', value: assetList.length, icon: Monitor, color: 'text-primary' },
           { label: 'Em uso', value: assetList.filter(a => a.status === 'Em uso').length, icon: Cpu, color: 'text-success' },
           { label: 'Manutenção', value: assetList.filter(a => a.status === 'Manutenção').length, icon: Wrench, color: 'text-warning' },
-          { label: 'Valor Depreciado', value: `R$ ${assetList.reduce((s, a) => s + depreciacao(a.purchaseValue, a.purchaseDate), 0).toLocaleString('pt-BR')}`, icon: DollarSign, color: 'text-accent' },
+          { label: 'Valor Depreciado', value: `R$ ${totalDepreciated.toLocaleString('pt-BR')}`, icon: DollarSign, color: 'text-accent' },
         ].map(c => (
           <Card key={c.label}>
             <CardContent className="p-4 flex items-center gap-3">
@@ -84,6 +140,22 @@ export default function AssetsPage() {
           </Card>
         ))}
       </div>
+
+      {/* Depreciation overview bar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-foreground">Depreciação Geral do Patrimônio</span>
+            <span className="text-sm font-mono text-muted-foreground">
+              R$ {totalDepreciated.toLocaleString('pt-BR')} / R$ {totalPurchase.toLocaleString('pt-BR')}
+            </span>
+          </div>
+          <Progress value={Math.round((totalDepreciated / totalPurchase) * 100)} className="h-3" />
+          <p className="text-xs text-muted-foreground mt-1">
+            {Math.round((totalDepreciated / totalPurchase) * 100)}% do valor original mantido (depreciação linear, vida útil 5 anos)
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
@@ -111,31 +183,49 @@ export default function AssetsPage() {
                 <TableHead>Tipo</TableHead>
                 <TableHead>Equipamento</TableHead>
                 <TableHead>Nº Série</TableHead>
+                <TableHead>Data Compra</TableHead>
                 <TableHead>Responsável</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Garantia</TableHead>
+                <TableHead>Depreciação</TableHead>
                 <TableHead className="text-right">Valor Atual</TableHead>
+                <TableHead>Termo</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map(asset => (
-                <TableRow key={asset.id} className="cursor-pointer" onClick={() => setSelectedAsset(asset)}>
-                  <TableCell className="font-mono text-xs">{asset.id}</TableCell>
-                  <TableCell>{asset.type}</TableCell>
-                  <TableCell className="font-medium">{asset.brand} {asset.model}</TableCell>
-                  <TableCell className="font-mono text-xs">{asset.serialNumber}</TableCell>
-                  <TableCell>{asset.assignedTo || '—'}</TableCell>
-                  <TableCell><Badge variant="outline" className={statusColor[asset.status]}>{asset.status}</Badge></TableCell>
-                  <TableCell className="text-xs">
-                    {new Date(asset.warrantyEnd) < new Date() ? (
-                      <span className="text-destructive">Expirada</span>
-                    ) : new Date(asset.warrantyEnd).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">
-                    R$ {depreciacao(asset.purchaseValue, asset.purchaseDate).toLocaleString('pt-BR')}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filtered.map(asset => {
+                const depPct = depreciacaoPercent(asset.purchaseValue, asset.purchaseDate);
+                return (
+                  <TableRow key={asset.id} className="cursor-pointer" onClick={() => setSelectedAsset(asset)}>
+                    <TableCell className="font-mono text-xs">{asset.id}</TableCell>
+                    <TableCell>{asset.type}</TableCell>
+                    <TableCell className="font-medium">{asset.brand} {asset.model}</TableCell>
+                    <TableCell className="font-mono text-xs">{asset.serialNumber}</TableCell>
+                    <TableCell className="text-xs">{new Date(asset.purchaseDate).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{asset.assignedTo || '—'}</TableCell>
+                    <TableCell><Badge variant="outline" className={statusColor[asset.status]}>{asset.status}</Badge></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 min-w-[100px]">
+                        <Progress value={depPct} className="h-1.5 flex-1" />
+                        <span className="text-xs font-mono text-muted-foreground w-8">{depPct}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-sm">
+                      R$ {depreciacao(asset.purchaseValue, asset.purchaseDate).toLocaleString('pt-BR')}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={(e) => { e.stopPropagation(); gerarTermoPDF(asset); }}
+                        title="Gerar Termo de Responsabilidade"
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -168,10 +258,14 @@ export default function AssetsPage() {
                   </div>
                 )}
                 <div>
-                  <p className="font-semibold text-foreground mb-2">Financeiro</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <p className="font-semibold text-foreground mb-2">Financeiro & Depreciação</p>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
                     <div className="p-2 bg-secondary rounded-lg"><span className="text-muted-foreground">Valor Compra</span><br/>R$ {selectedAsset.purchaseValue.toLocaleString('pt-BR')}</div>
                     <div className="p-2 bg-secondary rounded-lg"><span className="text-muted-foreground">Valor Atual</span><br/>R$ {depreciacao(selectedAsset.purchaseValue, selectedAsset.purchaseDate).toLocaleString('pt-BR')}</div>
+                    <div className="p-2 bg-secondary rounded-lg"><span className="text-muted-foreground">Depreciação</span><br/>{depreciacaoPercent(selectedAsset.purchaseValue, selectedAsset.purchaseDate)}% mantido</div>
+                  </div>
+                  <div className="mt-2">
+                    <Progress value={depreciacaoPercent(selectedAsset.purchaseValue, selectedAsset.purchaseDate)} className="h-2" />
                   </div>
                 </div>
                 {selectedAsset.maintenanceLog.length > 0 && (
@@ -189,6 +283,9 @@ export default function AssetsPage() {
                     </div>
                   </div>
                 )}
+                <Button className="w-full gap-2" variant="outline" onClick={() => gerarTermoPDF(selectedAsset)}>
+                  <FileText className="w-4 h-4" /> Gerar Termo de Responsabilidade
+                </Button>
               </div>
             </>
           )}
