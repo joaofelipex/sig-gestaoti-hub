@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { assets, type Asset } from "@/data/mock-data";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { assets as initialAssets, type Asset } from "@/data/mock-data";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Monitor, Search, Plus, Cpu, HardDrive, Wrench, DollarSign,
+  Monitor, Search, Plus, Cpu, Wrench, DollarSign,
 } from "lucide-react";
+import AssetForm from "@/components/forms/AssetForm";
 
 const statusColor: Record<Asset['status'], string> = {
   'Em uso': 'bg-success/10 text-success border-success/20',
@@ -32,16 +33,26 @@ function depreciacao(purchaseValue: number, purchaseDate: string, vidaUtil = 5):
 }
 
 export default function AssetsPage() {
+  const [assetList, setAssetList] = useState<Asset[]>(initialAssets);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
-  const filtered = assets.filter(a => {
+  const filtered = assetList.filter(a => {
     const matchSearch = `${a.brand} ${a.model} ${a.serialNumber} ${a.assignedTo || ''}`
       .toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === "all" || a.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const handleSave = (asset: Asset) => {
+    setAssetList(prev => {
+      const idx = prev.findIndex(a => a.id === asset.id);
+      if (idx >= 0) { const copy = [...prev]; copy[idx] = asset; return copy; }
+      return [...prev, asset];
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -50,18 +61,17 @@ export default function AssetsPage() {
           <h1 className="text-2xl font-bold text-foreground">Gestão de Ativos</h1>
           <p className="text-muted-foreground text-sm mt-1">Ciclo de vida completo do hardware</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setFormOpen(true)}>
           <Plus className="w-4 h-4" /> Novo Ativo
         </Button>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total', value: assets.length, icon: Monitor, color: 'text-primary' },
-          { label: 'Em uso', value: assets.filter(a => a.status === 'Em uso').length, icon: Cpu, color: 'text-success' },
-          { label: 'Manutenção', value: assets.filter(a => a.status === 'Manutenção').length, icon: Wrench, color: 'text-warning' },
-          { label: 'Valor Depreciado', value: `R$ ${assets.reduce((s, a) => s + depreciacao(a.purchaseValue, a.purchaseDate), 0).toLocaleString('pt-BR')}`, icon: DollarSign, color: 'text-accent' },
+          { label: 'Total', value: assetList.length, icon: Monitor, color: 'text-primary' },
+          { label: 'Em uso', value: assetList.filter(a => a.status === 'Em uso').length, icon: Cpu, color: 'text-success' },
+          { label: 'Manutenção', value: assetList.filter(a => a.status === 'Manutenção').length, icon: Wrench, color: 'text-warning' },
+          { label: 'Valor Depreciado', value: `R$ ${assetList.reduce((s, a) => s + depreciacao(a.purchaseValue, a.purchaseDate), 0).toLocaleString('pt-BR')}`, icon: DollarSign, color: 'text-accent' },
         ].map(c => (
           <Card key={c.label}>
             <CardContent className="p-4 flex items-center gap-3">
@@ -75,16 +85,13 @@ export default function AssetsPage() {
         ))}
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Buscar por marca, modelo, serial..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="Em uso">Em uso</SelectItem>
@@ -95,7 +102,6 @@ export default function AssetsPage() {
         </Select>
       </div>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -113,25 +119,17 @@ export default function AssetsPage() {
             </TableHeader>
             <TableBody>
               {filtered.map(asset => (
-                <TableRow
-                  key={asset.id}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedAsset(asset)}
-                >
+                <TableRow key={asset.id} className="cursor-pointer" onClick={() => setSelectedAsset(asset)}>
                   <TableCell className="font-mono text-xs">{asset.id}</TableCell>
                   <TableCell>{asset.type}</TableCell>
                   <TableCell className="font-medium">{asset.brand} {asset.model}</TableCell>
                   <TableCell className="font-mono text-xs">{asset.serialNumber}</TableCell>
                   <TableCell>{asset.assignedTo || '—'}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusColor[asset.status]}>{asset.status}</Badge>
-                  </TableCell>
+                  <TableCell><Badge variant="outline" className={statusColor[asset.status]}>{asset.status}</Badge></TableCell>
                   <TableCell className="text-xs">
                     {new Date(asset.warrantyEnd) < new Date() ? (
                       <span className="text-destructive">Expirada</span>
-                    ) : (
-                      new Date(asset.warrantyEnd).toLocaleDateString('pt-BR')
-                    )}
+                    ) : new Date(asset.warrantyEnd).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     R$ {depreciacao(asset.purchaseValue, asset.purchaseDate).toLocaleString('pt-BR')}
@@ -143,7 +141,6 @@ export default function AssetsPage() {
         </CardContent>
       </Card>
 
-      {/* Detail Dialog */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
         <DialogContent className="max-w-lg">
           {selectedAsset && (
@@ -197,6 +194,8 @@ export default function AssetsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AssetForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} />
     </div>
   );
 }

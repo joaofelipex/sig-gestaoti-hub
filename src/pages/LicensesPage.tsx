@@ -1,11 +1,12 @@
-import { licenses } from "@/data/mock-data";
+import { useState } from "react";
+import { licenses as initialLicenses, type License } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Key, DollarSign, Users, AlertCircle } from "lucide-react";
-import {
-  ResponsiveContainer, PieChart, Pie, Cell, Tooltip,
-} from "recharts";
+import { Key, DollarSign, Users, AlertCircle, Plus } from "lucide-react";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
+import LicenseForm from "@/components/forms/LicenseForm";
 
 const categoryColors: Record<string, string> = {
   Produtividade: 'hsl(217, 91%, 60%)',
@@ -24,24 +25,40 @@ const catBadge: Record<string, string> = {
 };
 
 export default function LicensesPage() {
-  const totalMonthlyCost = licenses.reduce((sum, l) => {
+  const [licenseList, setLicenseList] = useState<License[]>(initialLicenses);
+  const [formOpen, setFormOpen] = useState(false);
+
+  const totalMonthlyCost = licenseList.reduce((sum, l) => {
     const monthly = l.type === 'Anual' ? (l.costPerUnit * l.usedLicenses) / 12 : l.costPerUnit * l.usedLicenses;
     return sum + monthly;
   }, 0);
 
   const costByCategory = Object.entries(
-    licenses.reduce((acc, l) => {
+    licenseList.reduce((acc, l) => {
       const monthly = l.type === 'Anual' ? (l.costPerUnit * l.usedLicenses) / 12 : l.costPerUnit * l.usedLicenses;
       acc[l.category] = (acc[l.category] || 0) + monthly;
       return acc;
     }, {} as Record<string, number>)
   ).map(([name, value]) => ({ name, value: Math.round(value), color: categoryColors[name] }));
 
+  const handleSave = (license: License) => {
+    setLicenseList(prev => {
+      const idx = prev.findIndex(l => l.id === license.id);
+      if (idx >= 0) { const copy = [...prev]; copy[idx] = license; return copy; }
+      return [...prev, license];
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Licenças & Software</h1>
-        <p className="text-muted-foreground text-sm mt-1">Controle de assinaturas SaaS e custo por usuário</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Licenças & Software</h1>
+          <p className="text-muted-foreground text-sm mt-1">Controle de assinaturas SaaS e custo por usuário</p>
+        </div>
+        <Button className="gap-2" onClick={() => setFormOpen(true)}>
+          <Plus className="w-4 h-4" /> Nova Licença
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -59,7 +76,7 @@ export default function LicensesPage() {
             <Key className="w-8 h-8 text-accent" />
             <div>
               <p className="text-xs text-muted-foreground">Total de Licenças</p>
-              <p className="text-2xl font-bold text-foreground">{licenses.reduce((s, l) => s + l.totalLicenses, 0)}</p>
+              <p className="text-2xl font-bold text-foreground">{licenseList.reduce((s, l) => s + l.totalLicenses, 0)}</p>
             </div>
           </CardContent>
         </Card>
@@ -68,14 +85,13 @@ export default function LicensesPage() {
             <AlertCircle className="w-8 h-8 text-warning" />
             <div>
               <p className="text-xs text-muted-foreground">Licenças Ociosas</p>
-              <p className="text-2xl font-bold text-foreground">{licenses.reduce((s, l) => s + (l.totalLicenses - l.usedLicenses), 0)}</p>
+              <p className="text-2xl font-bold text-foreground">{licenseList.reduce((s, l) => s + (l.totalLicenses - l.usedLicenses), 0)}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Distribution chart */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-semibold">Custo por Categoria</CardTitle>
@@ -103,9 +119,8 @@ export default function LicensesPage() {
           </CardContent>
         </Card>
 
-        {/* License list */}
         <div className="lg:col-span-2 space-y-3">
-          {licenses.map(lic => {
+          {licenseList.map(lic => {
             const usage = (lic.usedLicenses / lic.totalLicenses) * 100;
             const monthlyCost = lic.type === 'Anual' ? (lic.costPerUnit * lic.usedLicenses) / 12 : lic.costPerUnit * lic.usedLicenses;
 
@@ -140,6 +155,8 @@ export default function LicensesPage() {
           })}
         </div>
       </div>
+
+      <LicenseForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} />
     </div>
   );
 }

@@ -1,11 +1,14 @@
-import { accessRecords } from "@/data/mock-data";
+import { useState } from "react";
+import { accessRecords as initialRecords, type AccessRecord } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, Key, Server, FileText, Users } from "lucide-react";
+import { ShieldCheck, Key, Server, FileText, Users, Plus } from "lucide-react";
+import AccessForm from "@/components/forms/AccessForm";
 
 const accessBadge: Record<string, string> = {
   Admin: 'bg-destructive/10 text-destructive border-destructive/20',
@@ -22,11 +25,27 @@ const typeBadge: Record<string, string> = {
 };
 
 export default function GovernancePage() {
+  const [recordList, setRecordList] = useState<AccessRecord[]>(initialRecords);
+  const [formOpen, setFormOpen] = useState(false);
+
+  const handleSave = (record: AccessRecord) => {
+    setRecordList(prev => {
+      const idx = prev.findIndex(r => r.id === record.id);
+      if (idx >= 0) { const copy = [...prev]; copy[idx] = record; return copy; }
+      return [...prev, record];
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Governança & Segurança</h1>
-        <p className="text-muted-foreground text-sm mt-1">Controle de acessos, DR e credenciais</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Governança & Segurança</h1>
+          <p className="text-muted-foreground text-sm mt-1">Controle de acessos, DR e credenciais</p>
+        </div>
+        <Button className="gap-2" onClick={() => setFormOpen(true)}>
+          <Plus className="w-4 h-4" /> Novo Acesso
+        </Button>
       </div>
 
       <Tabs defaultValue="acessos">
@@ -51,7 +70,7 @@ export default function GovernancePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {accessRecords.map(rec => (
+                  {recordList.map(rec => (
                     <TableRow key={rec.id}>
                       <TableCell className="font-medium">{rec.user}</TableCell>
                       <TableCell>{rec.resource}</TableCell>
@@ -147,6 +166,8 @@ export default function GovernancePage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <AccessForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} />
     </div>
   );
 }
