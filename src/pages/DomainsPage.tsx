@@ -3,7 +3,9 @@ import { domains as initialDomains, type Domain } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DomainForm from "@/components/forms/DomainForm";
 
@@ -11,18 +13,36 @@ function daysUntil(dateStr: string): number {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
-const statusBadge = (status: string) => {
-  const styles: Record<string, string> = {
-    Ativo: 'bg-success/10 text-success border-success/20',
-    Expirando: 'bg-warning/10 text-warning border-warning/20',
-    Expirado: 'bg-destructive/10 text-destructive border-destructive/20',
-  };
-  return styles[status] || '';
+const getAlertBadge = (days: number) => {
+  if (days < 0) return { label: 'Expirado', className: 'bg-destructive text-destructive-foreground' };
+  if (days <= 15) return { label: `${days}d — URGENTE`, className: 'bg-destructive text-destructive-foreground animate-pulse' };
+  if (days <= 30) return { label: `${days}d — Atenção`, className: 'bg-warning text-warning-foreground' };
+  return { label: `${days}d`, className: 'bg-success/10 text-success border-success/20' };
 };
+
+const sslBadge = (days: number) => {
+  if (days < 0) return 'bg-destructive text-destructive-foreground';
+  if (days <= 15) return 'bg-destructive/10 text-destructive border-destructive/20';
+  if (days <= 30) return 'bg-warning/10 text-warning border-warning/20';
+  return 'bg-success/10 text-success border-success/20';
+};
+
+interface DisasterDoc {
+  domainId: string;
+  backupLocation: string;
+  responsibleTech: string;
+  notes: string;
+}
 
 export default function DomainsPage() {
   const [domainList, setDomainList] = useState<Domain[]>(initialDomains);
   const [formOpen, setFormOpen] = useState(false);
+  const [disasterDocs, setDisasterDocs] = useState<DisasterDoc[]>([
+    { domainId: 'DOM-001', backupLocation: 'S3 bucket: imts-backup-prod', responsibleTech: 'DevOps Lead', notes: 'Failover DNS configurado no Cloudflare' },
+    { domainId: 'DOM-004', backupLocation: 'AWS RDS Multi-AZ (sa-east-1)', responsibleTech: 'DBA', notes: 'Réplica read-only ativa' },
+  ]);
+  const [editingDoc, setEditingDoc] = useState<string | null>(null);
+  const [docForm, setDocForm] = useState<DisasterDoc>({ domainId: '', backupLocation: '', responsibleTech: '', notes: '' });
 
   const sorted = [...domainList].sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
@@ -32,6 +52,16 @@ export default function DomainsPage() {
       if (idx >= 0) { const copy = [...prev]; copy[idx] = domain; return copy; }
       return [...prev, domain];
     });
+  };
+
+  const handleDocSave = (domainId: string) => {
+    setDisasterDocs(prev => {
+      const idx = prev.findIndex(d => d.domainId === domainId);
+      const doc = { ...docForm, domainId };
+      if (idx >= 0) { const copy = [...prev]; copy[idx] = doc; return copy; }
+      return [...prev, doc];
+    });
+    setEditingDoc(null);
   };
 
   return (
@@ -46,7 +76,7 @@ export default function DomainsPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <Globe className="w-8 h-8 text-primary" />
@@ -58,10 +88,19 @@ export default function DomainsPage() {
         </Card>
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
+            <AlertTriangle className="w-8 h-8 text-destructive" />
+            <div>
+              <p className="text-xs text-muted-foreground">Urgente (&lt;15d)</p>
+              <p className="text-2xl font-bold text-destructive">{domainList.filter(d => { const dd = daysUntil(d.expirationDate); return dd > 0 && dd <= 15; }).length}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
             <AlertTriangle className="w-8 h-8 text-warning" />
             <div>
-              <p className="text-xs text-muted-foreground">Atenção Necessária</p>
-              <p className="text-2xl font-bold text-foreground">{domainList.filter(d => d.status !== 'Ativo').length}</p>
+              <p className="text-xs text-muted-foreground">Atenção (&lt;30d)</p>
+              <p className="text-2xl font-bold text-warning">{domainList.filter(d => { const dd = daysUntil(d.expirationDate); return dd > 15 && dd <= 30; }).length}</p>
             </div>
           </CardContent>
         </Card>
@@ -76,6 +115,7 @@ export default function DomainsPage() {
         </Card>
       </div>
 
+      {/* Domain Cards */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-semibold">Linha do Tempo de Vencimentos</CardTitle>
@@ -85,6 +125,8 @@ export default function DomainsPage() {
             const days = daysUntil(domain.expirationDate);
             const sslDays = daysUntil(domain.sslExpiration);
             const progressVal = Math.max(0, Math.min(100, ((365 - Math.max(0, days)) / 365) * 100));
+            const alert = getAlertBadge(days);
+            const doc = disasterDocs.find(d => d.domainId === domain.id);
 
             return (
               <div key={domain.id} className="p-4 rounded-xl border border-border bg-card hover:shadow-md transition-shadow">
@@ -101,21 +143,23 @@ export default function DomainsPage() {
                       </p>
                     </div>
                   </div>
-                  <Badge variant="outline" className={statusBadge(domain.status)}>{domain.status}</Badge>
+                  <Badge className={alert.className}>{alert.label}</Badge>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                   <div className="p-2 bg-secondary rounded-lg">
                     <span className="text-muted-foreground">Expiração</span>
-                    <p className={`font-semibold mt-0.5 ${days < 0 ? 'text-destructive' : days < 30 ? 'text-warning' : 'text-foreground'}`}>
-                      {days < 0 ? `Expirado há ${Math.abs(days)}d` : `${days} dias restantes`}
+                    <p className={`font-semibold mt-0.5 ${days < 0 ? 'text-destructive' : days <= 15 ? 'text-destructive' : days <= 30 ? 'text-warning' : 'text-foreground'}`}>
+                      {new Date(domain.expirationDate).toLocaleDateString('pt-BR')}
                     </p>
                   </div>
                   <div className="p-2 bg-secondary rounded-lg">
                     <span className="text-muted-foreground">SSL</span>
-                    <p className={`font-semibold mt-0.5 flex items-center gap-1 ${sslDays < 0 ? 'text-destructive' : sslDays < 30 ? 'text-warning' : 'text-success'}`}>
-                      <ShieldCheck className="w-3 h-3" />
-                      {sslDays < 0 ? 'Expirado' : `${sslDays}d`}
+                    <p className="mt-0.5">
+                      <Badge variant="outline" className={`text-xs ${sslBadge(sslDays)}`}>
+                        <ShieldCheck className="w-3 h-3 mr-1" />
+                        {sslDays < 0 ? 'Expirado' : `${sslDays}d`}
+                      </Badge>
                     </p>
                   </div>
                   <div className="p-2 bg-secondary rounded-lg">
@@ -132,6 +176,49 @@ export default function DomainsPage() {
 
                 <div className="mt-3">
                   <Progress value={progressVal} className="h-1.5" />
+                </div>
+
+                {/* Disaster Recovery Documentation */}
+                <div className="mt-3 pt-3 border-t border-border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Server className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-xs font-semibold text-foreground">Documentação de Desastre</span>
+                  </div>
+                  {editingDoc === domain.id ? (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input placeholder="Local do backup" value={docForm.backupLocation} onChange={e => setDocForm(p => ({ ...p, backupLocation: e.target.value }))} className="text-xs h-8" />
+                        <Input placeholder="Responsável técnico" value={docForm.responsibleTech} onChange={e => setDocForm(p => ({ ...p, responsibleTech: e.target.value }))} className="text-xs h-8" />
+                      </div>
+                      <Textarea placeholder="Observações (failover, redundância...)" value={docForm.notes} onChange={e => setDocForm(p => ({ ...p, notes: e.target.value }))} className="text-xs min-h-[60px]" />
+                      <div className="flex gap-2">
+                        <Button size="sm" className="h-7 text-xs" onClick={() => handleDocSave(domain.id)}>Salvar</Button>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditingDoc(null)}>Cancelar</Button>
+                      </div>
+                    </div>
+                  ) : doc ? (
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      <div className="p-2 bg-muted rounded-lg">
+                        <Database className="w-3 h-3 text-muted-foreground mb-1" />
+                        <span className="text-muted-foreground">Backup</span>
+                        <p className="font-medium text-foreground">{doc.backupLocation}</p>
+                      </div>
+                      <div className="p-2 bg-muted rounded-lg">
+                        <UserCheck className="w-3 h-3 text-muted-foreground mb-1" />
+                        <span className="text-muted-foreground">Responsável</span>
+                        <p className="font-medium text-foreground">{doc.responsibleTech}</p>
+                      </div>
+                      <div className="p-2 bg-muted rounded-lg">
+                        <span className="text-muted-foreground">Notas</span>
+                        <p className="font-medium text-foreground">{doc.notes}</p>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs col-span-3 w-fit" onClick={() => { setDocForm(doc); setEditingDoc(domain.id); }}>Editar</Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => { setDocForm({ domainId: domain.id, backupLocation: '', responsibleTech: '', notes: '' }); setEditingDoc(domain.id); }}>
+                      <Plus className="w-3 h-3" /> Adicionar documentação
+                    </Button>
+                  )}
                 </div>
               </div>
             );
