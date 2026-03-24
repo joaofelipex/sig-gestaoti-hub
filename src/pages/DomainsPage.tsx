@@ -1,8 +1,11 @@
-import { domains } from "@/data/mock-data";
+import { useState } from "react";
+import { domains as initialDomains, type Domain } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Globe, ShieldCheck, AlertTriangle, Clock, ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import DomainForm from "@/components/forms/DomainForm";
 
 function daysUntil(dateStr: string): number {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -18,23 +21,38 @@ const statusBadge = (status: string) => {
 };
 
 export default function DomainsPage() {
-  const sorted = [...domains].sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
+  const [domainList, setDomainList] = useState<Domain[]>(initialDomains);
+  const [formOpen, setFormOpen] = useState(false);
+
+  const sorted = [...domainList].sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
+
+  const handleSave = (domain: Domain) => {
+    setDomainList(prev => {
+      const idx = prev.findIndex(d => d.id === domain.id);
+      if (idx >= 0) { const copy = [...prev]; copy[idx] = domain; return copy; }
+      return [...prev, domain];
+    });
+  };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Domínios & Infraestrutura</h1>
-        <p className="text-muted-foreground text-sm mt-1">Monitoramento de domínios, DNS e certificados SSL</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Domínios & Infraestrutura</h1>
+          <p className="text-muted-foreground text-sm mt-1">Monitoramento de domínios, DNS e certificados SSL</p>
+        </div>
+        <Button className="gap-2" onClick={() => setFormOpen(true)}>
+          <Plus className="w-4 h-4" /> Novo Domínio
+        </Button>
       </div>
 
-      {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4 flex items-center gap-3">
             <Globe className="w-8 h-8 text-primary" />
             <div>
               <p className="text-xs text-muted-foreground">Total Domínios</p>
-              <p className="text-2xl font-bold text-foreground">{domains.length}</p>
+              <p className="text-2xl font-bold text-foreground">{domainList.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -43,7 +61,7 @@ export default function DomainsPage() {
             <AlertTriangle className="w-8 h-8 text-warning" />
             <div>
               <p className="text-xs text-muted-foreground">Atenção Necessária</p>
-              <p className="text-2xl font-bold text-foreground">{domains.filter(d => d.status !== 'Ativo').length}</p>
+              <p className="text-2xl font-bold text-foreground">{domainList.filter(d => d.status !== 'Ativo').length}</p>
             </div>
           </CardContent>
         </Card>
@@ -52,13 +70,12 @@ export default function DomainsPage() {
             <ShieldCheck className="w-8 h-8 text-success" />
             <div>
               <p className="text-xs text-muted-foreground">SSL Válidos</p>
-              <p className="text-2xl font-bold text-foreground">{domains.filter(d => daysUntil(d.sslExpiration) > 0).length}</p>
+              <p className="text-2xl font-bold text-foreground">{domainList.filter(d => daysUntil(d.sslExpiration) > 0).length}</p>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Timeline of expirations */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-semibold">Linha do Tempo de Vencimentos</CardTitle>
@@ -121,6 +138,8 @@ export default function DomainsPage() {
           })}
         </CardContent>
       </Card>
+
+      <DomainForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} />
     </div>
   );
 }
