@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Monitor, Globe, Key, ShieldCheck, ChevronLeft, ChevronRight,
-  Server, Cpu, TrendingUp,
+  Server, Cpu, TrendingUp, Cloud,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -12,6 +12,7 @@ const navItems = [
   { to: "/dominios", icon: Globe, label: "Domínios & DNS" },
   { to: "/licencas", icon: Key, label: "Licenças (SAM)" },
   { to: "/governanca", icon: ShieldCheck, label: "Governança" },
+  { to: "/servidores", icon: Cloud, label: "Servidores" },
   { to: "/economista", icon: TrendingUp, label: "Visão Economista" },
 ];
 
