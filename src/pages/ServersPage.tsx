@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { servers as initialServers, type Server } from "@/data/servers-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,9 +15,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Server as ServerIcon, Search, Plus, Cloud, DollarSign, Activity,
   AlertTriangle, Shield, HardDrive, Cpu, MemoryStick, Globe, Clock,
-  ExternalLink, ChevronDown, ChevronUp,
+  ExternalLink, ChevronDown, ChevronUp, Pencil, Trash2,
 } from "lucide-react";
 import ServerForm from "@/components/forms/ServerForm";
 import { toast } from "sonner";
@@ -44,6 +48,8 @@ export default function ServersPage() {
   const [filterStatus, setFilterStatus] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingServer, setEditingServer] = useState<Server | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Server | null>(null);
 
   const filtered = useMemo(() => {
     return servers.filter(s => {
@@ -59,8 +65,10 @@ export default function ServersPage() {
   const stats = useMemo(() => {
     const online = servers.filter(s => s.status === 'Online').length;
     const totalCost = servers.reduce((s, sv) => s + sv.monthlyCost, 0);
-    const avgUptime = servers.filter(s => s.status !== 'Manutenção')
-      .reduce((s, sv, _, a) => s + sv.uptime / a.length, 0);
+    const activeServers = servers.filter(s => s.status !== 'Manutenção');
+    const avgUptime = activeServers.length > 0
+      ? activeServers.reduce((s, sv) => s + sv.uptime, 0) / activeServers.length
+      : 0;
     const alerts = servers.filter(s => {
       const contractDays = daysUntil(s.contractEnd);
       const bAge = backupAge(s.lastBackup);
@@ -71,10 +79,37 @@ export default function ServersPage() {
 
   const providers = [...new Set(servers.map(s => s.provider))];
 
-  const handleAdd = (server: Server) => {
-    setServers(prev => [...prev, server]);
+  const handleSave = (server: Server) => {
+    setServers(prev => {
+      const idx = prev.findIndex(s => s.id === server.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = server;
+        toast.success(`Servidor "${server.name}" atualizado!`);
+        return copy;
+      }
+      toast.success(`Servidor "${server.name}" cadastrado!`);
+      return [...prev, server];
+    });
     setDialogOpen(false);
-    toast.success(`Servidor "${server.name}" cadastrado com sucesso!`);
+    setEditingServer(null);
+  };
+
+  const handleDelete = (server: Server) => {
+    setServers(prev => prev.filter(s => s.id !== server.id));
+    setDeleteTarget(null);
+    toast.success(`Servidor "${server.name}" removido.`);
+  };
+
+  const openEdit = (server: Server, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingServer(server);
+    setDialogOpen(true);
+  };
+
+  const openNew = () => {
+    setEditingServer(null);
+    setDialogOpen(true);
   };
 
   return (
@@ -90,7 +125,7 @@ export default function ServersPage() {
             Controle centralizado dos servidores externos da IMTS
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
+        <Button onClick={openNew} className="gap-2">
           <Plus className="w-4 h-4" /> Novo Servidor
         </Button>
       </div>
@@ -199,6 +234,7 @@ export default function ServersPage() {
                 <TableHead>Uptime</TableHead>
                 <TableHead className="text-right">Custo/mês</TableHead>
                 <TableHead>Contrato</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -209,9 +245,8 @@ export default function ServersPage() {
                 const cfg = statusConfig[srv.status];
 
                 return (
-                  <>
+                  <Fragment key={srv.id}>
                     <TableRow
-                      key={srv.id}
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => setExpandedId(isExpanded ? null : srv.id)}
                     >
@@ -263,12 +298,22 @@ export default function ServersPage() {
                           <span className="text-xs text-muted-foreground">{new Date(srv.contractEnd).toLocaleDateString('pt-BR')}</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => openEdit(srv, e)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(srv); }} title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
 
                     {/* Expanded details */}
                     {isExpanded && (
-                      <TableRow key={`${srv.id}-detail`}>
-                        <TableCell colSpan={8} className="bg-muted/30 p-0">
+                      <TableRow>
+                        <TableCell colSpan={9} className="bg-muted/30 p-0">
                           <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-3">
                               <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Infraestrutura</h4>
@@ -330,7 +375,7 @@ export default function ServersPage() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </TableBody>
@@ -338,15 +383,33 @@ export default function ServersPage() {
         </CardContent>
       </Card>
 
-      {/* Add Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Add/Edit Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setEditingServer(null); }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Cadastrar Novo Servidor</DialogTitle>
+            <DialogTitle>{editingServer ? 'Editar Servidor' : 'Cadastrar Novo Servidor'}</DialogTitle>
           </DialogHeader>
-          <ServerForm onSubmit={handleAdd} />
+          <ServerForm onSubmit={handleSave} initialData={editingServer} />
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o servidor <strong>{deleteTarget?.name}</strong> ({deleteTarget?.provider})? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTarget && handleDelete(deleteTarget)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

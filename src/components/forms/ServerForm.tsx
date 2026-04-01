@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,25 +10,33 @@ import type { Server } from "@/data/servers-data";
 
 interface ServerFormProps {
   onSubmit: (server: Server) => void;
-  initialData?: Server;
+  initialData?: Server | null;
 }
 
+const emptyServer: Partial<Server> = {
+  name: '', provider: 'AWS', type: 'Cloud Instance', region: '', ip: '',
+  os: '', cpu: '', ram: '', storage: '', status: 'Online', uptime: 99.9,
+  monthlyCost: 0, purpose: '', responsibleTeam: '', contractEnd: '',
+  lastBackup: '', monitoringUrl: '', sslExpiration: '', notes: '',
+};
+
 export default function ServerForm({ onSubmit, initialData }: ServerFormProps) {
-  const [form, setForm] = useState<Partial<Server>>(
-    initialData ?? {
-      id: `SRV-${String(Date.now()).slice(-4)}`,
-      name: '', provider: 'AWS', type: 'Cloud Instance', region: '', ip: '',
-      os: '', cpu: '', ram: '', storage: '', status: 'Online', uptime: 99.9,
-      monthlyCost: 0, purpose: '', responsibleTeam: '', contractEnd: '',
-      lastBackup: '', monitoringUrl: '', sslExpiration: '', notes: '',
+  const [form, setForm] = useState<Partial<Server>>({ ...emptyServer });
+
+  useEffect(() => {
+    if (initialData) {
+      setForm({ ...initialData });
+    } else {
+      setForm({ ...emptyServer, id: `SRV-${String(Date.now()).slice(-4)}` });
     }
-  );
+  }, [initialData]);
 
   const set = (k: keyof Server, v: string | number) => setForm(p => ({ ...p, [k]: v }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form as Server);
+    const id = form.id || `SRV-${String(Date.now()).slice(-4)}`;
+    onSubmit({ ...form, id } as Server);
   };
 
   return (

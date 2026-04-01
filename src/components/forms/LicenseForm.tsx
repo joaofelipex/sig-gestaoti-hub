@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +13,21 @@ interface LicenseFormProps {
   license?: License | null;
 }
 
+const emptyLicense: Omit<License, 'id'> = {
+  software: '', type: 'Mensal', totalLicenses: 1, usedLicenses: 0,
+  activationKey: '', costPerUnit: 0, renewalDate: '', vendor: '',
+  category: 'Produtividade',
+};
+
 export default function LicenseForm({ open, onOpenChange, onSave, license }: LicenseFormProps) {
   const isEdit = !!license;
-  const [form, setForm] = useState<Omit<License, 'id'>>(license ? { ...license } : {
-    software: '', type: 'Mensal', totalLicenses: 1, usedLicenses: 0,
-    activationKey: '', costPerUnit: 0, renewalDate: '', vendor: '',
-    category: 'Produtividade',
-  });
+  const [form, setForm] = useState<Omit<License, 'id'>>({ ...emptyLicense });
+
+  useEffect(() => {
+    if (open) {
+      setForm(license ? { ...license } : { ...emptyLicense });
+    }
+  }, [open, license]);
 
   const set = (key: string, value: string | number) =>
     setForm(prev => ({ ...prev, [key]: value }));

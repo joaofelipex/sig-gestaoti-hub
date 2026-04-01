@@ -14,7 +14,11 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Monitor, Search, Plus, Cpu, Wrench, DollarSign, FileText, Download,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Monitor, Search, Plus, Cpu, Wrench, DollarSign, FileText, Download, Pencil, Trash2,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import AssetForm from "@/components/forms/AssetForm";
@@ -91,6 +95,8 @@ export default function AssetsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null);
 
   const filtered = assetList.filter(a => {
     const matchSearch = `${a.brand} ${a.model} ${a.serialNumber} ${a.assignedTo || ''}`
@@ -105,9 +111,34 @@ export default function AssetsPage() {
   const handleSave = (asset: Asset) => {
     setAssetList(prev => {
       const idx = prev.findIndex(a => a.id === asset.id);
-      if (idx >= 0) { const copy = [...prev]; copy[idx] = asset; return copy; }
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = asset;
+        toast.success(`Ativo "${asset.brand} ${asset.model}" atualizado!`);
+        return copy;
+      }
+      toast.success(`Ativo "${asset.brand} ${asset.model}" cadastrado!`);
       return [...prev, asset];
     });
+    setEditingAsset(null);
+  };
+
+  const handleDelete = (asset: Asset) => {
+    setAssetList(prev => prev.filter(a => a.id !== asset.id));
+    setDeleteTarget(null);
+    setSelectedAsset(null);
+    toast.success(`Ativo "${asset.brand} ${asset.model}" removido.`);
+  };
+
+  const openEdit = (asset: Asset, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingAsset(asset);
+    setFormOpen(true);
+  };
+
+  const openNew = () => {
+    setEditingAsset(null);
+    setFormOpen(true);
   };
 
   return (
@@ -117,7 +148,7 @@ export default function AssetsPage() {
           <h1 className="text-2xl font-bold text-foreground">Gestão de Ativos</h1>
           <p className="text-muted-foreground text-sm mt-1">Ciclo de vida completo do hardware</p>
         </div>
-        <Button className="gap-2" onClick={() => setFormOpen(true)}>
+        <Button className="gap-2" onClick={openNew}>
           <Plus className="w-4 h-4" /> Novo Ativo
         </Button>
       </div>
@@ -141,7 +172,6 @@ export default function AssetsPage() {
         ))}
       </div>
 
-      {/* Depreciation overview bar */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
@@ -150,9 +180,9 @@ export default function AssetsPage() {
               R$ {totalDepreciated.toLocaleString('pt-BR')} / R$ {totalPurchase.toLocaleString('pt-BR')}
             </span>
           </div>
-          <Progress value={Math.round((totalDepreciated / totalPurchase) * 100)} className="h-3" />
+          <Progress value={totalPurchase > 0 ? Math.round((totalDepreciated / totalPurchase) * 100) : 0} className="h-3" />
           <p className="text-xs text-muted-foreground mt-1">
-            {Math.round((totalDepreciated / totalPurchase) * 100)}% do valor original mantido (depreciação linear, vida útil 5 anos)
+            {totalPurchase > 0 ? Math.round((totalDepreciated / totalPurchase) * 100) : 0}% do valor original mantido (depreciação linear, vida útil 5 anos)
           </p>
         </CardContent>
       </Card>
@@ -188,7 +218,7 @@ export default function AssetsPage() {
                 <TableHead>Status</TableHead>
                 <TableHead>Depreciação</TableHead>
                 <TableHead className="text-right">Valor Atual</TableHead>
-                <TableHead>Termo</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -213,15 +243,17 @@ export default function AssetsPage() {
                       R$ {depreciacao(asset.purchaseValue, asset.purchaseDate).toLocaleString('pt-BR')}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => { e.stopPropagation(); gerarTermoPDF(asset); }}
-                        title="Gerar Termo de Responsabilidade"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => openEdit(asset, e)} title="Editar">
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); gerarTermoPDF(asset); }} title="Termo">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget(asset); }} title="Excluir">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 );
@@ -231,6 +263,7 @@ export default function AssetsPage() {
         </CardContent>
       </Card>
 
+      {/* Detail Dialog */}
       <Dialog open={!!selectedAsset} onOpenChange={() => setSelectedAsset(null)}>
         <DialogContent className="max-w-lg">
           {selectedAsset && (
@@ -283,16 +316,42 @@ export default function AssetsPage() {
                     </div>
                   </div>
                 )}
-                <Button className="w-full gap-2" variant="outline" onClick={() => gerarTermoPDF(selectedAsset)}>
-                  <FileText className="w-4 h-4" /> Gerar Termo de Responsabilidade
-                </Button>
+                <div className="flex gap-2">
+                  <Button className="flex-1 gap-2" variant="outline" onClick={() => gerarTermoPDF(selectedAsset)}>
+                    <FileText className="w-4 h-4" /> Gerar Termo
+                  </Button>
+                  <Button className="flex-1 gap-2" onClick={() => { setSelectedAsset(null); openEdit(selectedAsset); }}>
+                    <Pencil className="w-4 h-4" /> Editar
+                  </Button>
+                  <Button className="gap-2" variant="destructive" onClick={() => { setSelectedAsset(null); setDeleteTarget(selectedAsset); }}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </>
           )}
         </DialogContent>
       </Dialog>
 
-      <AssetForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} />
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o ativo <strong>{deleteTarget?.brand} {deleteTarget?.model}</strong> ({deleteTarget?.id})? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTarget && handleDelete(deleteTarget)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AssetForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} asset={editingAsset} />
     </div>
   );
 }
