@@ -5,9 +5,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DomainForm from "@/components/forms/DomainForm";
+import { toast } from "sonner";
 
 function daysUntil(dateStr: string): number {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -37,6 +42,8 @@ interface DisasterDoc {
 export default function DomainsPage() {
   const [domainList, setDomainList] = useState<Domain[]>(initialDomains);
   const [formOpen, setFormOpen] = useState(false);
+  const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Domain | null>(null);
   const [disasterDocs, setDisasterDocs] = useState<DisasterDoc[]>([
     { domainId: 'DOM-001', backupLocation: 'S3 bucket: imts-backup-prod', responsibleTech: 'DevOps Lead', notes: 'Failover DNS configurado no Cloudflare' },
     { domainId: 'DOM-004', backupLocation: 'AWS RDS Multi-AZ (sa-east-1)', responsibleTech: 'DBA', notes: 'Réplica read-only ativa' },
@@ -49,9 +56,22 @@ export default function DomainsPage() {
   const handleSave = (domain: Domain) => {
     setDomainList(prev => {
       const idx = prev.findIndex(d => d.id === domain.id);
-      if (idx >= 0) { const copy = [...prev]; copy[idx] = domain; return copy; }
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = domain;
+        toast.success(`Domínio "${domain.url}" atualizado!`);
+        return copy;
+      }
+      toast.success(`Domínio "${domain.url}" cadastrado!`);
       return [...prev, domain];
     });
+    setEditingDomain(null);
+  };
+
+  const handleDelete = (domain: Domain) => {
+    setDomainList(prev => prev.filter(d => d.id !== domain.id));
+    setDeleteTarget(null);
+    toast.success(`Domínio "${domain.url}" removido.`);
   };
 
   const handleDocSave = (domainId: string) => {
@@ -62,6 +82,17 @@ export default function DomainsPage() {
       return [...prev, doc];
     });
     setEditingDoc(null);
+    toast.success("Documentação de desastre salva!");
+  };
+
+  const openEdit = (domain: Domain) => {
+    setEditingDomain(domain);
+    setFormOpen(true);
+  };
+
+  const openNew = () => {
+    setEditingDomain(null);
+    setFormOpen(true);
   };
 
   return (
@@ -71,7 +102,7 @@ export default function DomainsPage() {
           <h1 className="text-2xl font-bold text-foreground">Domínios & Infraestrutura</h1>
           <p className="text-muted-foreground text-sm mt-1">Monitoramento de domínios, DNS e certificados SSL</p>
         </div>
-        <Button className="gap-2" onClick={() => setFormOpen(true)}>
+        <Button className="gap-2" onClick={openNew}>
           <Plus className="w-4 h-4" /> Novo Domínio
         </Button>
       </div>
@@ -115,7 +146,6 @@ export default function DomainsPage() {
         </Card>
       </div>
 
-      {/* Domain Cards */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base font-semibold">Linha do Tempo de Vencimentos</CardTitle>
@@ -143,7 +173,15 @@ export default function DomainsPage() {
                       </p>
                     </div>
                   </div>
-                  <Badge className={alert.className}>{alert.label}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge className={alert.className}>{alert.label}</Badge>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(domain)} title="Editar">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(domain)} title="Excluir">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
@@ -178,7 +216,6 @@ export default function DomainsPage() {
                   <Progress value={progressVal} className="h-1.5" />
                 </div>
 
-                {/* Disaster Recovery Documentation */}
                 <div className="mt-3 pt-3 border-t border-border">
                   <div className="flex items-center gap-2 mb-2">
                     <Server className="w-4 h-4 text-muted-foreground" />
@@ -226,7 +263,25 @@ export default function DomainsPage() {
         </CardContent>
       </Card>
 
-      <DomainForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} />
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o domínio <strong>{deleteTarget?.url}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTarget && handleDelete(deleteTarget)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <DomainForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} domain={editingDomain} />
     </div>
   );
 }

@@ -4,9 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Key, DollarSign, Users, AlertCircle, Plus } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Key, DollarSign, Users, AlertCircle, Plus, Pencil, Trash2 } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import LicenseForm from "@/components/forms/LicenseForm";
+import { toast } from "sonner";
 
 const categoryColors: Record<string, string> = {
   Produtividade: 'hsl(217, 91%, 60%)',
@@ -27,6 +32,8 @@ const catBadge: Record<string, string> = {
 export default function LicensesPage() {
   const [licenseList, setLicenseList] = useState<License[]>(initialLicenses);
   const [formOpen, setFormOpen] = useState(false);
+  const [editingLicense, setEditingLicense] = useState<License | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
 
   const totalMonthlyCost = licenseList.reduce((sum, l) => {
     const monthly = l.type === 'Anual' ? (l.costPerUnit * l.usedLicenses) / 12 : l.costPerUnit * l.usedLicenses;
@@ -44,9 +51,32 @@ export default function LicensesPage() {
   const handleSave = (license: License) => {
     setLicenseList(prev => {
       const idx = prev.findIndex(l => l.id === license.id);
-      if (idx >= 0) { const copy = [...prev]; copy[idx] = license; return copy; }
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = license;
+        toast.success(`Licença "${license.software}" atualizada!`);
+        return copy;
+      }
+      toast.success(`Licença "${license.software}" cadastrada!`);
       return [...prev, license];
     });
+    setEditingLicense(null);
+  };
+
+  const handleDelete = (license: License) => {
+    setLicenseList(prev => prev.filter(l => l.id !== license.id));
+    setDeleteTarget(null);
+    toast.success(`Licença "${license.software}" removida.`);
+  };
+
+  const openEdit = (license: License) => {
+    setEditingLicense(license);
+    setFormOpen(true);
+  };
+
+  const openNew = () => {
+    setEditingLicense(null);
+    setFormOpen(true);
   };
 
   return (
@@ -56,7 +86,7 @@ export default function LicensesPage() {
           <h1 className="text-2xl font-bold text-foreground">Licenças & Software</h1>
           <p className="text-muted-foreground text-sm mt-1">Controle de assinaturas SaaS e custo por usuário</p>
         </div>
-        <Button className="gap-2" onClick={() => setFormOpen(true)}>
+        <Button className="gap-2" onClick={openNew}>
           <Plus className="w-4 h-4" /> Nova Licença
         </Button>
       </div>
@@ -132,7 +162,15 @@ export default function LicensesPage() {
                       <p className="font-semibold text-foreground">{lic.software}</p>
                       <p className="text-xs text-muted-foreground">{lic.vendor} · {lic.type}</p>
                     </div>
-                    <Badge variant="outline" className={catBadge[lic.category]}>{lic.category}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={catBadge[lic.category]}>{lic.category}</Badge>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(lic)} title="Editar">
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(lic)} title="Excluir">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex items-center gap-4 text-xs mb-2">
                     <div className="flex items-center gap-1">
@@ -156,7 +194,25 @@ export default function LicensesPage() {
         </div>
       </div>
 
-      <LicenseForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} />
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a licença <strong>{deleteTarget?.software}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTarget && handleDelete(deleteTarget)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <LicenseForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} license={editingLicense} />
     </div>
   );
 }

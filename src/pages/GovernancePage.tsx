@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShieldCheck, Key, Server, FileText, Users, Plus } from "lucide-react";
+import { ShieldCheck, Key, Server, FileText, Users, Plus, Pencil, Trash2 } from "lucide-react";
 import AccessForm from "@/components/forms/AccessForm";
+import { toast } from "sonner";
 
 const accessBadge: Record<string, string> = {
   Admin: 'bg-destructive/10 text-destructive border-destructive/20',
@@ -27,13 +32,38 @@ const typeBadge: Record<string, string> = {
 export default function GovernancePage() {
   const [recordList, setRecordList] = useState<AccessRecord[]>(initialRecords);
   const [formOpen, setFormOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<AccessRecord | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AccessRecord | null>(null);
 
   const handleSave = (record: AccessRecord) => {
     setRecordList(prev => {
       const idx = prev.findIndex(r => r.id === record.id);
-      if (idx >= 0) { const copy = [...prev]; copy[idx] = record; return copy; }
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = record;
+        toast.success(`Acesso de "${record.user}" atualizado!`);
+        return copy;
+      }
+      toast.success(`Acesso de "${record.user}" cadastrado!`);
       return [...prev, record];
     });
+    setEditingRecord(null);
+  };
+
+  const handleDelete = (record: AccessRecord) => {
+    setRecordList(prev => prev.filter(r => r.id !== record.id));
+    setDeleteTarget(null);
+    toast.success(`Acesso de "${record.user}" ao "${record.resource}" removido.`);
+  };
+
+  const openEdit = (record: AccessRecord) => {
+    setEditingRecord(record);
+    setFormOpen(true);
+  };
+
+  const openNew = () => {
+    setEditingRecord(null);
+    setFormOpen(true);
   };
 
   return (
@@ -43,7 +73,7 @@ export default function GovernancePage() {
           <h1 className="text-2xl font-bold text-foreground">Governança & Segurança</h1>
           <p className="text-muted-foreground text-sm mt-1">Controle de acessos, DR e credenciais</p>
         </div>
-        <Button className="gap-2" onClick={() => setFormOpen(true)}>
+        <Button className="gap-2" onClick={openNew}>
           <Plus className="w-4 h-4" /> Novo Acesso
         </Button>
       </div>
@@ -67,6 +97,7 @@ export default function GovernancePage() {
                     <TableHead>Nível</TableHead>
                     <TableHead>Concedido em</TableHead>
                     <TableHead>Último Acesso</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -82,6 +113,16 @@ export default function GovernancePage() {
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">{new Date(rec.grantedDate).toLocaleDateString('pt-BR')}</TableCell>
                       <TableCell className="text-xs text-muted-foreground">{new Date(rec.lastAccess).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(rec)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteTarget(rec)} title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -167,7 +208,25 @@ export default function GovernancePage() {
         </TabsContent>
       </Tabs>
 
-      <AccessForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} />
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja revogar o acesso de <strong>{deleteTarget?.user}</strong> ao recurso <strong>{deleteTarget?.resource}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => deleteTarget && handleDelete(deleteTarget)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Revogar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AccessForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} record={editingRecord} />
     </div>
   );
 }
