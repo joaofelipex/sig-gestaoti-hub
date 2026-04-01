@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,12 +13,20 @@ interface AccessFormProps {
   record?: AccessRecord | null;
 }
 
+const emptyRecord: Omit<AccessRecord, 'id'> = {
+  user: '', resource: '', resourceType: 'Aplicação',
+  accessLevel: 'Leitura', grantedDate: '', lastAccess: '',
+};
+
 export default function AccessForm({ open, onOpenChange, onSave, record }: AccessFormProps) {
   const isEdit = !!record;
-  const [form, setForm] = useState<Omit<AccessRecord, 'id'>>(record ? { ...record } : {
-    user: '', resource: '', resourceType: 'Aplicação',
-    accessLevel: 'Leitura', grantedDate: '', lastAccess: '',
-  });
+  const [form, setForm] = useState<Omit<AccessRecord, 'id'>>({ ...emptyRecord });
+
+  useEffect(() => {
+    if (open) {
+      setForm(record ? { ...record } : { ...emptyRecord });
+    }
+  }, [open, record]);
 
   const set = (key: string, value: string) =>
     setForm(prev => ({ ...prev, [key]: value }));

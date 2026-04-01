@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,13 +14,21 @@ interface DomainFormProps {
   domain?: Domain | null;
 }
 
+const emptyDomain: Omit<Domain, 'id'> = {
+  url: '', registrar: '', expirationDate: '', renewalCost: 0,
+  autoRenew: true, dnsProvider: '', hostingProvider: '',
+  sslExpiration: '', status: 'Ativo',
+};
+
 export default function DomainForm({ open, onOpenChange, onSave, domain }: DomainFormProps) {
   const isEdit = !!domain;
-  const [form, setForm] = useState<Omit<Domain, 'id'>>(domain ? { ...domain } : {
-    url: '', registrar: '', expirationDate: '', renewalCost: 0,
-    autoRenew: true, dnsProvider: '', hostingProvider: '',
-    sslExpiration: '', status: 'Ativo',
-  });
+  const [form, setForm] = useState<Omit<Domain, 'id'>>({ ...emptyDomain });
+
+  useEffect(() => {
+    if (open) {
+      setForm(domain ? { ...domain } : { ...emptyDomain });
+    }
+  }, [open, domain]);
 
   const set = (key: string, value: string | number | boolean) =>
     setForm(prev => ({ ...prev, [key]: value }));

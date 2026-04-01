@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,13 @@ const emptyAsset: Omit<Asset, 'id'> = {
 
 export default function AssetForm({ open, onOpenChange, onSave, asset }: AssetFormProps) {
   const isEdit = !!asset;
-  const [form, setForm] = useState<Omit<Asset, 'id'>>(asset ? { ...asset } : { ...emptyAsset });
+  const [form, setForm] = useState<Omit<Asset, 'id'>>({ ...emptyAsset });
+
+  useEffect(() => {
+    if (open) {
+      setForm(asset ? { ...asset, specs: { ...asset.specs }, maintenanceLog: [...asset.maintenanceLog] } : { ...emptyAsset, specs: { cpu: '', ram: '', storage: '' }, maintenanceLog: [] });
+    }
+  }, [open, asset]);
 
   const set = (key: string, value: string | number | null) =>
     setForm(prev => ({ ...prev, [key]: value }));
