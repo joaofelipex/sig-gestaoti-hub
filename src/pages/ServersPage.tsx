@@ -30,7 +30,7 @@ const statusConfig: Record<Server['status'], { class: string; dot: string }> = {
   'Online': { class: 'bg-success/10 text-success border-success/20', dot: 'bg-success' },
   'Offline': { class: 'bg-destructive/10 text-destructive border-destructive/20', dot: 'bg-destructive' },
   'Manutenção': { class: 'bg-warning/10 text-warning border-warning/20', dot: 'bg-warning' },
-  'Degradado': { class: 'bg-orange-100 text-orange-700 border-orange-200', dot: 'bg-orange-500' },
+  'Degradado': { class: 'bg-warning/10 text-warning border-warning/20', dot: 'bg-warning' },
 };
 
 function daysUntil(date: string) {
