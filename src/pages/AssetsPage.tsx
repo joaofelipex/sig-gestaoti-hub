@@ -18,11 +18,12 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Monitor, Search, Plus, Cpu, Wrench, DollarSign, FileText, Download, Pencil, Trash2,
+  Monitor, Search, Plus, Cpu, Wrench, DollarSign, FileText, Download, Pencil, Trash2, FileDown,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import AssetForm from "@/components/forms/AssetForm";
 import { toast } from "sonner";
+import { exportToCSV } from "@/lib/export-csv";
 
 const statusColor: Record<Asset['status'], string> = {
   'Em uso': 'bg-success/10 text-success border-success/20',
@@ -148,9 +149,18 @@ export default function AssetsPage() {
           <h1 className="text-2xl font-bold text-foreground">Gestão de Ativos</h1>
           <p className="text-muted-foreground text-sm mt-1">Ciclo de vida completo do hardware</p>
         </div>
-        <Button className="gap-2" onClick={openNew}>
-          <Plus className="w-4 h-4" /> Novo Ativo
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => {
+            exportToCSV('ativos_IMTS', ['ID','Tipo','Marca','Modelo','Serial','Status','Responsável','Valor Compra','Valor Atual'], 
+              assetList.map(a => [a.id, a.type, a.brand, a.model, a.serialNumber, a.status, a.assignedTo || '', a.purchaseValue, depreciacao(a.purchaseValue, a.purchaseDate)]));
+            toast.success('CSV exportado!');
+          }}>
+            <FileDown className="w-4 h-4" /> Exportar CSV
+          </Button>
+          <Button className="gap-2" onClick={openNew}>
+            <Plus className="w-4 h-4" /> Novo Ativo
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
