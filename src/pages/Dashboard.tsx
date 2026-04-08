@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { assets, domains, licenses, dashboardStats } from "@/data/mock-data";
+import { servers } from "@/data/servers-data";
 import {
   Monitor, Globe, Key, ShieldAlert, AlertTriangle, CheckCircle,
   TrendingUp, DollarSign, HardDrive, Wrench, Archive, Activity,
@@ -35,9 +36,11 @@ const healthColor = healthScore >= 80 ? 'text-success' : healthScore >= 50 ? 'te
 const healthBg = healthScore >= 80 ? 'bg-success/10' : healthScore >= 50 ? 'bg-warning/10' : 'bg-destructive/10';
 
 // --- OPEX vs CAPEX ---
+const serverMonthly = servers.reduce((sum, s) => sum + s.monthlyCost, 0);
+
 const opexTotal = licenses.reduce((sum, l) => {
   return sum + (l.type === 'Mensal' ? l.costPerUnit * l.usedLicenses * 12 : l.costPerUnit * l.usedLicenses);
-}, 0) + domains.reduce((sum, d) => sum + d.renewalCost, 0);
+}, 0) + domains.reduce((sum, d) => sum + d.renewalCost, 0) + (serverMonthly * 12);
 
 const capexTotal = assets.reduce((sum, a) => sum + a.purchaseValue, 0);
 
@@ -126,7 +129,7 @@ export default function Dashboard() {
       </div>
 
       {/* Health Score + KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         {/* Health Score - larger */}
         <Card className={`md:col-span-2 lg:col-span-1 ${healthBg} border-0`}>
           <CardContent className="p-5 flex flex-col items-center justify-center text-center">
@@ -166,6 +169,13 @@ export default function Dashboard() {
           subtitle="próximos 30 dias"
           icon={ShieldAlert}
           color="bg-destructive/10 text-destructive"
+        />
+        <KpiCard
+          title="Custo Infra/mês"
+          value={`R$ ${serverMonthly.toLocaleString('pt-BR')}`}
+          subtitle={`${servers.filter(s => s.status === 'Online').length}/${servers.length} online`}
+          icon={HardDrive}
+          color="bg-info/10 text-info"
         />
       </div>
 

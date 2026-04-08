@@ -8,10 +8,11 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Key, DollarSign, Users, AlertCircle, Plus, Pencil, Trash2 } from "lucide-react";
+import { Key, DollarSign, Users, AlertCircle, Plus, Pencil, Trash2, FileDown } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import LicenseForm from "@/components/forms/LicenseForm";
 import { toast } from "sonner";
+import { exportToCSV } from "@/lib/export-csv";
 
 const categoryColors: Record<string, string> = {
   Produtividade: 'hsl(217, 91%, 60%)',
@@ -86,9 +87,18 @@ export default function LicensesPage() {
           <h1 className="text-2xl font-bold text-foreground">Licenças & Software</h1>
           <p className="text-muted-foreground text-sm mt-1">Controle de assinaturas SaaS e custo por usuário</p>
         </div>
-        <Button className="gap-2" onClick={openNew}>
-          <Plus className="w-4 h-4" /> Nova Licença
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => {
+            exportToCSV('licencas_IMTS', ['Software','Vendor','Tipo','Categoria','Licenças Usadas','Licenças Total','Custo Unitário','Renovação'],
+              licenseList.map(l => [l.software, l.vendor, l.type, l.category, l.usedLicenses, l.totalLicenses, l.costPerUnit, l.renewalDate]));
+            toast.success('CSV exportado!');
+          }}>
+            <FileDown className="w-4 h-4" /> Exportar CSV
+          </Button>
+          <Button className="gap-2" onClick={openNew}>
+            <Plus className="w-4 h-4" /> Nova Licença
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

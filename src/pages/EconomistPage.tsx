@@ -7,6 +7,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { assets, licenses, domains } from "@/data/mock-data";
+import { servers } from "@/data/servers-data";
 import {
   DollarSign, Building2, AlertTriangle, ArrowRightLeft, TrendingDown, TrendingUp,
   CheckCircle, BarChart3, PieChart as PieChartIcon, Target, Wallet, ShieldAlert,
@@ -95,8 +96,10 @@ export default function EconomistPage() {
 
   const totalMaintenanceCost = assets.reduce((s, a) => s + a.maintenanceLog.reduce((ms, m) => ms + m.cost, 0), 0);
 
+  const serverMonthlyCost = servers.reduce((s, sv) => s + sv.monthlyCost, 0);
+
   // ROI: value delivered vs total investment
-  const tco = totalAssetValue + totalMaintenanceCost + (totalMonthlyLicCost * 12);
+  const tco = totalAssetValue + totalMaintenanceCost + (totalMonthlyLicCost * 12) + (serverMonthlyCost * 12);
 
   // Cost by category (pie)
   const costByCategory = useMemo(() => {
@@ -111,7 +114,7 @@ export default function EconomistPage() {
   }, []);
 
   // OPEX vs CAPEX
-  const opex = Math.round(totalMonthlyLicCost * 12 + domains.reduce((s, d) => s + d.renewalCost, 0));
+  const opex = Math.round(totalMonthlyLicCost * 12 + domains.reduce((s, d) => s + d.renewalCost, 0) + (serverMonthlyCost * 12));
   const capex = totalAssetValue;
 
   // 12-month projection
