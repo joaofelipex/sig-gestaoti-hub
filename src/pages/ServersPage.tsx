@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import ServerForm from "@/components/forms/ServerForm";
 import { toast } from "sonner";
+import { exportToCSV } from "@/lib/export-csv";
 
 const statusConfig: Record<Server['status'], { class: string; dot: string }> = {
   'Online': { class: 'bg-success/10 text-success border-success/20', dot: 'bg-success' },
@@ -125,9 +126,18 @@ export default function ServersPage() {
             Controle centralizado dos servidores externos da IMTS
           </p>
         </div>
-        <Button onClick={openNew} className="gap-2">
-          <Plus className="w-4 h-4" /> Novo Servidor
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => {
+            exportToCSV('servidores_IMTS', ['Nome','Provedor','Tipo','IP','Status','Uptime','Custo Mensal','Contrato Até'],
+              servers.map(s => [s.name, s.provider, s.type, s.ip, s.status, `${s.uptime}%`, s.monthlyCost, s.contractEnd]));
+            toast.success('CSV exportado!');
+          }}>
+            <FileDown className="w-4 h-4" /> Exportar CSV
+          </Button>
+          <Button onClick={openNew} className="gap-2">
+            <Plus className="w-4 h-4" /> Novo Servidor
+          </Button>
+        </div>
       </div>
 
       {/* KPI Cards */}
