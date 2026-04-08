@@ -129,7 +129,7 @@ export default function Dashboard() {
       </div>
 
       {/* Health Score + KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         {/* Health Score - larger */}
         <Card className={`md:col-span-2 lg:col-span-1 ${healthBg} border-0`}>
           <CardContent className="p-5 flex flex-col items-center justify-center text-center">
@@ -169,6 +169,13 @@ export default function Dashboard() {
           subtitle="próximos 30 dias"
           icon={ShieldAlert}
           color="bg-destructive/10 text-destructive"
+        />
+        <KpiCard
+          title="Custo Infra/mês"
+          value={`R$ ${serverMonthly.toLocaleString('pt-BR')}`}
+          subtitle={`${servers.filter(s => s.status === 'Online').length}/${servers.length} online`}
+          icon={HardDrive}
+          color="bg-info/10 text-info"
         />
       </div>
 
