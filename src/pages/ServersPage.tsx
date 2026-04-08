@@ -21,7 +21,7 @@ import {
 import {
   Server as ServerIcon, Search, Plus, Cloud, DollarSign, Activity,
   AlertTriangle, Shield, HardDrive, Cpu, MemoryStick, Globe, Clock,
-  ExternalLink, ChevronDown, ChevronUp, Pencil, Trash2,
+  ExternalLink, ChevronDown, ChevronUp, Pencil, Trash2, FileDown,
 } from "lucide-react";
 import ServerForm from "@/components/forms/ServerForm";
 import { toast } from "sonner";
