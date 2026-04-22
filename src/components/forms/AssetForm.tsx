@@ -51,7 +51,7 @@ export default function AssetForm({ open, onOpenChange, onSave, asset }: AssetFo
           <DialogTitle>{isEdit ? 'Editar Ativo' : 'Novo Ativo'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={form.type} onValueChange={v => set('type', v)}>
@@ -110,7 +110,7 @@ export default function AssetForm({ open, onOpenChange, onSave, asset }: AssetFo
 
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Especificações Técnicas</Label>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">CPU</Label>
                 <Input value={form.specs.cpu || ''} onChange={e => setSpec('cpu', e.target.value)} placeholder="Ex: Intel i7-1365U" />
