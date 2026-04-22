@@ -91,19 +91,28 @@ export default function GovernancePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Governança & Segurança</h1>
-          <p className="text-muted-foreground text-sm mt-1">Controle de acessos, DR e credenciais</p>
+          <h1 className="text-[22px] font-semibold text-foreground">Governança & Segurança</h1>
+          <p className="text-muted-foreground text-[13px] mt-1">Controle de acessos, contratos, riscos, auditoria e permissões SIG</p>
         </div>
-        <Button className="gap-2" onClick={openNew}>
-          <Plus className="w-4 h-4" /> Novo Acesso
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="outline" className="gap-2" onClick={() => { setEditingContract(null); setContractFormOpen(true); }}>
+            <Plus className="w-4 h-4" /> Novo Contrato
+          </Button>
+          <Button className="gap-2" onClick={openNew}>
+            <Plus className="w-4 h-4" /> Novo Acesso
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="acessos">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="acessos" className="gap-2"><Users className="w-4 h-4" />Matriz de Acessos</TabsTrigger>
+          <TabsTrigger value="sig" className="gap-2"><ShieldCheck className="w-4 h-4" />SIG</TabsTrigger>
+          <TabsTrigger value="contratos" className="gap-2"><FileText className="w-4 h-4" />Contratos</TabsTrigger>
+          <TabsTrigger value="riscos" className="gap-2"><ShieldCheck className="w-4 h-4" />Riscos</TabsTrigger>
+          <TabsTrigger value="auditoria" className="gap-2"><FileText className="w-4 h-4" />Auditoria</TabsTrigger>
           <TabsTrigger value="dr" className="gap-2"><Server className="w-4 h-4" />Disaster Recovery</TabsTrigger>
           <TabsTrigger value="credenciais" className="gap-2"><Key className="w-4 h-4" />Credenciais</TabsTrigger>
         </TabsList>
