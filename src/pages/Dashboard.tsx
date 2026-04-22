@@ -103,18 +103,25 @@ const licenseCostData = licenses.map(l => ({
 const OverviewMetric = ({ title, value, subtitle, icon: Icon, color }: {
   title: string; value: string | number; subtitle: string; icon: LucideIcon; color: string;
 }) => (
-  <div className="flex items-center gap-3 rounded-lg border bg-background/60 p-4">
-    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${color}`}>
-      <Icon className="h-5 w-5" />
+  <div className="flex min-h-20 items-center gap-3 rounded-lg border bg-background/60 p-3">
+    <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${color}`}>
+      <Icon className="h-4 w-4" />
     </div>
     <div className="min-w-0">
       <p className="text-xs font-medium uppercase text-muted-foreground">{title}</p>
       <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className="text-xl font-bold text-foreground">{value}</p>
         <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
     </div>
   </div>
+);
+
+const OverviewGroup = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <section className="rounded-lg border bg-secondary/30 p-3">
+    <h2 className="mb-3 text-xs font-semibold uppercase text-muted-foreground">{title}</h2>
+    <div className="grid gap-3">{children}</div>
+  </section>
 );
 
 export default function Dashboard() {
