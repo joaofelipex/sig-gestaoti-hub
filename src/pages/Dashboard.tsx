@@ -12,6 +12,7 @@ import {
   PieChart, Pie, Cell, CartesianGrid, Legend,
   AreaChart, Area,
 } from "recharts";
+import { contracts, getOperationalAlerts, moduleReadiness, suppliers } from "@/lib/it-governance-data";
 
 // --- Health Score Calculation ---
 const domainsExpiring30 = domains.filter(d => {
@@ -85,6 +86,8 @@ const generateCashFlow = () => {
 };
 
 const cashFlowData = generateCashFlow();
+const operationalAlerts = getOperationalAlerts();
+const contractMonthlyCost = contracts.reduce((sum, contract) => sum + contract.monthlyCost, 0);
 
 // --- Assets by Status ---
 const assetsByStatus = [
@@ -127,9 +130,9 @@ const OverviewGroup = ({ title, children }: { title: string; children: React.Rea
 export default function Dashboard() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">Governança e Saúde Financeira da TI</p>
+      <div className="rounded-md border border-border bg-card px-4 py-4 shadow-sm sm:px-5">
+        <h1 className="text-[22px] font-semibold text-foreground">Dashboard</h1>
+        <p className="text-muted-foreground text-[13px] mt-1">Governança, saúde financeira, alertas e prontidão do módulo SIG</p>
       </div>
 
       {/* Executive overview */}
@@ -163,11 +166,48 @@ export default function Dashboard() {
               <OverviewGroup title="Financeiro">
                 <OverviewMetric title="Licenças" value={dashboardStats.unusedLicenses} subtitle="ociosas" icon={Key} color="bg-accent/10 text-accent" />
                 <OverviewMetric title="OPEX anual" value={`R$ ${opexTotal.toLocaleString('pt-BR')}`} subtitle="recorrente" icon={DollarSign} color="bg-success/10 text-success" />
+                <OverviewMetric title="Contratos" value={`R$ ${contractMonthlyCost.toLocaleString('pt-BR')}`} subtitle="mês" icon={FileWarning} color="bg-warning/10 text-warning" />
               </OverviewGroup>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_360px]">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Status de implantação no SIG</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {moduleReadiness.map(item => (
+              <div key={item.label} className="rounded-md border border-border bg-secondary/40 p-3">
+                <Badge variant="outline" className={item.done ? "bg-success/10 text-success border-success/20" : "bg-warning/10 text-warning border-warning/20"}>
+                  {item.done ? "Pronto" : "Pendente"}
+                </Badge>
+                <p className="mt-3 text-sm font-semibold text-foreground">{item.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{item.status}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Fornecedores críticos</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {suppliers.map(supplier => (
+              <div key={supplier.name} className="flex items-center justify-between rounded-md bg-secondary/40 p-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{supplier.name}</p>
+                  <p className="text-xs text-muted-foreground">{supplier.category} · {supplier.contracts} contrato(s)</p>
+                </div>
+                <p className="font-mono text-xs text-foreground">R$ {supplier.annualCost.toLocaleString('pt-BR')}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Health Score Breakdown */}
       <Card>
