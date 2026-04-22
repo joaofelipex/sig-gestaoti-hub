@@ -146,8 +146,8 @@ export default function AssetsPage() {
     <div className="space-y-5">
       <div className="flex items-center justify-between rounded-md border border-border bg-card px-5 py-4 shadow-sm">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Gestão de Ativos</h1>
-          <p className="text-muted-foreground text-sm mt-1">Ciclo de vida completo do hardware</p>
+          <h1 className="text-[22px] font-semibold text-foreground">Gestão de Ativos</h1>
+          <p className="text-muted-foreground text-[13px] mt-1">Ciclo de vida completo do hardware</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2" onClick={() => {
@@ -176,8 +176,8 @@ export default function AssetsPage() {
                 <c.icon className={`w-5 h-5 ${c.color}`} />
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">{c.label}</p>
-                <p className="text-lg font-bold text-foreground">{c.value}</p>
+                <p className="text-[12px] font-medium text-muted-foreground">{c.label}</p>
+                <p className="text-[18px] font-semibold text-foreground">{c.value}</p>
               </div>
             </CardContent>
           </Card>
@@ -187,8 +187,8 @@ export default function AssetsPage() {
       <Card className="shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">Depreciação Geral do Patrimônio</span>
-            <span className="text-sm font-mono text-muted-foreground">
+            <span className="text-[13px] font-semibold text-foreground">Depreciação Geral do Patrimônio</span>
+            <span className="text-[13px] font-mono text-muted-foreground">
               R$ {totalDepreciated.toLocaleString('pt-BR')} / R$ {totalPurchase.toLocaleString('pt-BR')}
             </span>
           </div>
