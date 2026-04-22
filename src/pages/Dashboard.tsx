@@ -1,16 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { assets, domains, licenses, dashboardStats } from "@/data/mock-data";
 import { servers } from "@/data/servers-data";
 import {
-  Monitor, Globe, Key, ShieldAlert, AlertTriangle, CheckCircle,
-  TrendingUp, DollarSign, HardDrive, Wrench, Archive, Activity,
-  HeartPulse, FileWarning, Database,
+  Monitor, Globe, Key, ShieldAlert, AlertTriangle,
+  TrendingUp, DollarSign, HardDrive, Wrench, Activity,
+  HeartPulse, FileWarning, Database, type LucideIcon,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, CartesianGrid, LineChart, Line, Legend,
+  PieChart, Pie, Cell, CartesianGrid, Legend,
   AreaChart, Area,
 } from "recharts";
 
@@ -101,23 +100,21 @@ const licenseCostData = licenses.map(l => ({
   custo: l.costPerUnit * l.usedLicenses,
 }));
 
-const KpiCard = ({ title, value, subtitle, icon: Icon, color }: {
-  title: string; value: string | number; subtitle: string; icon: any; color: string;
+const OverviewMetric = ({ title, value, subtitle, icon: Icon, color }: {
+  title: string; value: string | number; subtitle: string; icon: LucideIcon; color: string;
 }) => (
-  <Card className="relative overflow-hidden">
-    <CardContent className="p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold mt-1 text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-        </div>
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color}`}>
-          <Icon className="w-5 h-5" />
-        </div>
+  <div className="flex items-center gap-3 rounded-lg border bg-background/60 p-4">
+    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${color}`}>
+      <Icon className="h-5 w-5" />
+    </div>
+    <div className="min-w-0">
+      <p className="text-xs font-medium uppercase text-muted-foreground">{title}</p>
+      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
-    </CardContent>
-  </Card>
+    </div>
+  </div>
 );
 
 export default function Dashboard() {
@@ -128,56 +125,35 @@ export default function Dashboard() {
         <p className="text-muted-foreground text-sm mt-1">Governança e Saúde Financeira da TI</p>
       </div>
 
-      {/* Health Score + KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        {/* Health Score - larger */}
-        <Card className={`md:col-span-2 lg:col-span-1 ${healthBg} border-0`}>
-          <CardContent className="p-5 flex flex-col items-center justify-center text-center">
-            <HeartPulse className={`w-8 h-8 ${healthColor} mb-2`} />
-            <p className="text-sm font-medium text-muted-foreground">Health Score TI</p>
-            <p className={`text-5xl font-bold mt-1 ${healthColor}`}>{healthScore}</p>
-            <p className="text-xs text-muted-foreground mt-2">
-              {healthScore >= 80 ? 'Excelente' : healthScore >= 50 ? 'Atenção necessária' : 'Crítico'}
-            </p>
-          </CardContent>
-        </Card>
+      {/* Executive overview */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-5">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[260px_1fr]">
+            <div className={`rounded-lg ${healthBg} p-5`}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background/70">
+                  <HeartPulse className={`h-6 w-6 ${healthColor}`} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Health Score TI</p>
+                  <p className={`text-4xl font-bold ${healthColor}`}>{healthScore}</p>
+                </div>
+              </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                {healthScore >= 80 ? 'Ambiente saudável e sob controle.' : healthScore >= 50 ? 'Existem pontos que exigem atenção.' : 'Ação imediata recomendada.'}
+              </p>
+            </div>
 
-        <KpiCard
-          title="Total de Ativos"
-          value={dashboardStats.totalAssets}
-          subtitle={`${dashboardStats.assetsInUse} em uso`}
-          icon={Monitor}
-          color="bg-primary/10 text-primary"
-        />
-        <KpiCard
-          title="Domínios Expirando"
-          value={domainsExpiring30}
-          subtitle={`${dashboardStats.expiredDomains} expirado(s)`}
-          icon={Globe}
-          color="bg-warning/10 text-warning"
-        />
-        <KpiCard
-          title="Licenças Ociosas"
-          value={dashboardStats.unusedLicenses}
-          subtitle="podem ser reutilizadas"
-          icon={Key}
-          color="bg-accent/10 text-accent"
-        />
-        <KpiCard
-          title="SSL Expirando"
-          value={dashboardStats.sslExpiringCount}
-          subtitle="próximos 30 dias"
-          icon={ShieldAlert}
-          color="bg-destructive/10 text-destructive"
-        />
-        <KpiCard
-          title="Custo Infra/mês"
-          value={`R$ ${serverMonthly.toLocaleString('pt-BR')}`}
-          subtitle={`${servers.filter(s => s.status === 'Online').length}/${servers.length} online`}
-          icon={HardDrive}
-          color="bg-info/10 text-info"
-        />
-      </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              <OverviewMetric title="Ativos" value={dashboardStats.totalAssets} subtitle={`${dashboardStats.assetsInUse} em uso`} icon={Monitor} color="bg-primary/10 text-primary" />
+              <OverviewMetric title="Domínios" value={domainsExpiring30} subtitle={`${dashboardStats.expiredDomains} expirado(s)`} icon={Globe} color="bg-warning/10 text-warning" />
+              <OverviewMetric title="Licenças" value={dashboardStats.unusedLicenses} subtitle="ociosas" icon={Key} color="bg-accent/10 text-accent" />
+              <OverviewMetric title="SSL" value={dashboardStats.sslExpiringCount} subtitle="expirando" icon={ShieldAlert} color="bg-destructive/10 text-destructive" />
+              <OverviewMetric title="Infra/mês" value={`R$ ${serverMonthly.toLocaleString('pt-BR')}`} subtitle={`${servers.filter(s => s.status === 'Online').length}/${servers.length} online`} icon={HardDrive} color="bg-info/10 text-info" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Health Score Breakdown */}
       <Card>
