@@ -374,7 +374,25 @@ export default function GovernancePage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={!!contractDeleteTarget} onOpenChange={() => setContractDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o contrato <strong>{contractDeleteTarget?.object}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => contractDeleteTarget && handleContractDelete(contractDeleteTarget)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AccessForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} record={editingRecord} />
+      <ContractForm open={contractFormOpen} onOpenChange={setContractFormOpen} onSave={handleContractSave} contract={editingContract} />
     </div>
   );
 }
