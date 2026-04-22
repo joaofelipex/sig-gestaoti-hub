@@ -163,6 +163,122 @@ export default function GovernancePage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="sig" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base font-semibold">Usuários, setores e centros de custo herdados do SIG</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Setor</TableHead>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead>Centro de custo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sigUsers.map(user => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.department}</TableCell>
+                      <TableCell>{user.role}</TableCell>
+                      <TableCell><Badge variant="outline">{user.costCenter}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="contratos" className="mt-4">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fornecedor</TableHead>
+                    <TableHead>Objeto</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Centro de custo</TableHead>
+                    <TableHead>Custo/mês</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contractList.map(contract => (
+                    <TableRow key={contract.id}>
+                      <TableCell className="font-medium">{contract.supplier}</TableCell>
+                      <TableCell>{contract.object}</TableCell>
+                      <TableCell><Badge variant="outline">{contract.type}</Badge></TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{contract.costCenter}</TableCell>
+                      <TableCell className="font-mono text-xs">R$ {contract.monthlyCost.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-xs">{new Date(contract.endDate).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingContract(contract); setContractFormOpen(true); }} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setContractDeleteTarget(contract)} title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="riscos" className="mt-4 grid gap-3 md:grid-cols-3">
+          {risks.map(risk => (
+            <Card key={risk.id}>
+              <CardContent className="p-4">
+                <Badge variant="outline" className={risk.severity === "Alta" ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-warning/10 text-warning border-warning/20"}>{risk.severity}</Badge>
+                <p className="mt-3 font-semibold text-foreground">{risk.title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Responsável: {risk.owner}</p>
+                <p className="mt-3 text-sm text-foreground">{risk.mitigation}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="auditoria" className="mt-4">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ação</TableHead>
+                    <TableHead>Entidade</TableHead>
+                    <TableHead>Registro</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Data/hora</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditLog.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Nenhuma ação registrada nesta sessão.</TableCell></TableRow>
+                  ) : auditLog.map(entry => (
+                    <TableRow key={entry.id}>
+                      <TableCell><Badge variant="outline">{entry.action}</Badge></TableCell>
+                      <TableCell>{entry.entity}</TableCell>
+                      <TableCell className="font-medium">{entry.recordLabel}</TableCell>
+                      <TableCell>{entry.actor}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{new Date(entry.at).toLocaleString('pt-BR')}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="dr" className="mt-4 space-y-4">
           <Card>
             <CardHeader>
