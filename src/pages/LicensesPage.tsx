@@ -13,6 +13,7 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import LicenseForm from "@/components/forms/LicenseForm";
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/export-csv";
+import { usePersistentCollection } from "@/hooks/use-persistent-collection";
 
 const categoryColors: Record<string, string> = {
   Produtividade: 'hsl(217, 91%, 60%)',
@@ -31,7 +32,12 @@ const catBadge: Record<string, string> = {
 };
 
 export default function LicensesPage() {
-  const [licenseList, setLicenseList] = useState<License[]>(initialLicenses);
+  const { items: licenseList, save: saveLicense, remove: removeLicense } = usePersistentCollection(
+    "imts.licenses",
+    initialLicenses,
+    "Licenças",
+    license => license.software,
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<License | null>(null);
@@ -50,22 +56,14 @@ export default function LicensesPage() {
   ).map(([name, value]) => ({ name, value: Math.round(value), color: categoryColors[name] }));
 
   const handleSave = (license: License) => {
-    setLicenseList(prev => {
-      const idx = prev.findIndex(l => l.id === license.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = license;
-        toast.success(`Licença "${license.software}" atualizada!`);
-        return copy;
-      }
-      toast.success(`Licença "${license.software}" cadastrada!`);
-      return [...prev, license];
-    });
+    const exists = licenseList.some(l => l.id === license.id);
+    saveLicense(license);
+    toast.success(`Licença "${license.software}" ${exists ? 'atualizada' : 'cadastrada'}!`);
     setEditingLicense(null);
   };
 
   const handleDelete = (license: License) => {
-    setLicenseList(prev => prev.filter(l => l.id !== license.id));
+    removeLicense(license);
     setDeleteTarget(null);
     toast.success(`Licença "${license.software}" removida.`);
   };
@@ -82,12 +80,12 @@ export default function LicensesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Licenças & Software</h1>
-          <p className="text-muted-foreground text-sm mt-1">Controle de assinaturas SaaS e custo por usuário</p>
+          <h1 className="text-[22px] font-semibold text-foreground">Licenças & Software</h1>
+          <p className="text-muted-foreground text-[13px] mt-1">Controle de assinaturas SaaS e custo por usuário</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button variant="outline" className="gap-2" onClick={() => {
             exportToCSV('licencas_IMTS', ['Software','Vendor','Tipo','Categoria','Licenças Usadas','Licenças Total','Custo Unitário','Renovação'],
               licenseList.map(l => [l.software, l.vendor, l.type, l.category, l.usedLicenses, l.totalLicenses, l.costPerUnit, l.renewalDate]));
@@ -167,7 +165,7 @@ export default function LicensesPage() {
             return (
               <Card key={lic.id} className="hover:shadow-md transition-shadow">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
                     <div>
                       <p className="font-semibold text-foreground">{lic.software}</p>
                       <p className="text-xs text-muted-foreground">{lic.vendor} · {lic.type}</p>
