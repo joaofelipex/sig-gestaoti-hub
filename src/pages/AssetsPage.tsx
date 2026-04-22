@@ -24,6 +24,7 @@ import { Progress } from "@/components/ui/progress";
 import AssetForm from "@/components/forms/AssetForm";
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/export-csv";
+import { usePersistentCollection } from "@/hooks/use-persistent-collection";
 
 const statusColor: Record<Asset['status'], string> = {
   'Em uso': 'bg-success/10 text-success border-success/20',
@@ -91,7 +92,12 @@ Assinatura TI - IMTS
 }
 
 export default function AssetsPage() {
-  const [assetList, setAssetList] = useState<Asset[]>(initialAssets);
+  const { items: assetList, save: saveAsset, remove: removeAsset } = usePersistentCollection(
+    "imts.assets",
+    initialAssets,
+    "Ativos",
+    asset => `${asset.brand} ${asset.model}`,
+  );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
@@ -110,22 +116,14 @@ export default function AssetsPage() {
   const totalPurchase = assetList.reduce((s, a) => s + a.purchaseValue, 0);
 
   const handleSave = (asset: Asset) => {
-    setAssetList(prev => {
-      const idx = prev.findIndex(a => a.id === asset.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = asset;
-        toast.success(`Ativo "${asset.brand} ${asset.model}" atualizado!`);
-        return copy;
-      }
-      toast.success(`Ativo "${asset.brand} ${asset.model}" cadastrado!`);
-      return [...prev, asset];
-    });
+    const exists = assetList.some(a => a.id === asset.id);
+    saveAsset(asset);
+    toast.success(`Ativo "${asset.brand} ${asset.model}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setEditingAsset(null);
   };
 
   const handleDelete = (asset: Asset) => {
-    setAssetList(prev => prev.filter(a => a.id !== asset.id));
+    removeAsset(asset);
     setDeleteTarget(null);
     setSelectedAsset(null);
     toast.success(`Ativo "${asset.brand} ${asset.model}" removido.`);
@@ -144,12 +142,12 @@ export default function AssetsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between rounded-md border border-border bg-card px-5 py-4 shadow-sm">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
           <h1 className="text-[22px] font-semibold text-foreground">Gestão de Ativos</h1>
           <p className="text-muted-foreground text-[13px] mt-1">Ciclo de vida completo do hardware</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button variant="outline" className="gap-2" onClick={() => {
             exportToCSV('ativos_IMTS', ['ID','Tipo','Marca','Modelo','Serial','Status','Responsável','Valor Compra','Valor Atual'], 
               assetList.map(a => [a.id, a.type, a.brand, a.model, a.serialNumber, a.status, a.assignedTo || '', a.purchaseValue, depreciacao(a.purchaseValue, a.purchaseDate)]));
@@ -199,13 +197,13 @@ export default function AssetsPage() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-3 rounded-md border border-border bg-card p-4 shadow-sm">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-card p-4 shadow-sm sm:flex-row">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Buscar por marca, modelo, serial..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-44"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
             <SelectItem value="Em uso">Em uso</SelectItem>

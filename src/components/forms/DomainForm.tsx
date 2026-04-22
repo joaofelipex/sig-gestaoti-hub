@@ -47,7 +47,7 @@ export default function DomainForm({ open, onOpenChange, onSave, domain }: Domai
           <DialogTitle>{isEdit ? 'Editar Domínio' : 'Novo Domínio'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>URL do Domínio</Label>
               <Input value={form.url} onChange={e => set('url', e.target.value)} placeholder="Ex: imts.com.br" required />

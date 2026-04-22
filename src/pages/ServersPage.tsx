@@ -26,6 +26,7 @@ import {
 import ServerForm from "@/components/forms/ServerForm";
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/export-csv";
+import { usePersistentCollection } from "@/hooks/use-persistent-collection";
 
 const statusConfig: Record<Server['status'], { class: string; dot: string }> = {
   'Online': { class: 'bg-success/10 text-success border-success/20', dot: 'bg-success' },
@@ -43,7 +44,12 @@ function backupAge(date: string) {
 }
 
 export default function ServersPage() {
-  const [servers, setServers] = useState<Server[]>(initialServers);
+  const { items: servers, save: saveServer, remove: removeServer } = usePersistentCollection(
+    "imts.servers",
+    initialServers,
+    "Servidores",
+    server => server.name,
+  );
   const [search, setSearch] = useState("");
   const [filterProvider, setFilterProvider] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -81,23 +87,15 @@ export default function ServersPage() {
   const providers = [...new Set(servers.map(s => s.provider))];
 
   const handleSave = (server: Server) => {
-    setServers(prev => {
-      const idx = prev.findIndex(s => s.id === server.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = server;
-        toast.success(`Servidor "${server.name}" atualizado!`);
-        return copy;
-      }
-      toast.success(`Servidor "${server.name}" cadastrado!`);
-      return [...prev, server];
-    });
+    const exists = servers.some(s => s.id === server.id);
+    saveServer(server);
+    toast.success(`Servidor "${server.name}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setDialogOpen(false);
     setEditingServer(null);
   };
 
   const handleDelete = (server: Server) => {
-    setServers(prev => prev.filter(s => s.id !== server.id));
+    removeServer(server);
     setDeleteTarget(null);
     toast.success(`Servidor "${server.name}" removido.`);
   };
@@ -116,17 +114,17 @@ export default function ServersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <ServerIcon className="w-7 h-7 text-primary" />
+          <h1 className="text-[22px] font-semibold text-foreground flex items-center gap-2">
+            <ServerIcon className="w-6 h-6 text-primary" />
             Servidores & Infraestrutura
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Controle centralizado dos servidores externos da IMTS
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Button variant="outline" className="gap-2" onClick={() => {
             exportToCSV('servidores_IMTS', ['Nome','Provedor','Tipo','IP','Status','Uptime','Custo Mensal','Contrato Até'],
               servers.map(s => [s.name, s.provider, s.type, s.ip, s.status, `${s.uptime}%`, s.monthlyCost, s.contractEnd]));
@@ -212,7 +210,7 @@ export default function ServersPage() {
             />
           </div>
           <Select value={filterProvider} onValueChange={setFilterProvider}>
-            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Provedor" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Provedor" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os Provedores</SelectItem>
               {providers.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}

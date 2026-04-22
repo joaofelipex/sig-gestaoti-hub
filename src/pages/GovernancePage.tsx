@@ -14,6 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, Key, Server, FileText, Users, Plus, Pencil, Trash2 } from "lucide-react";
 import AccessForm from "@/components/forms/AccessForm";
 import { toast } from "sonner";
+import { contracts as initialContracts, risks, sigUsers, type FinancialContract } from "@/lib/it-governance-data";
+import { useAuditLog, usePersistentCollection } from "@/hooks/use-persistent-collection";
+import ContractForm from "@/components/forms/ContractForm";
 
 const accessBadge: Record<string, string> = {
   Admin: 'bg-destructive/10 text-destructive border-destructive/20',
@@ -30,30 +33,50 @@ const typeBadge: Record<string, string> = {
 };
 
 export default function GovernancePage() {
-  const [recordList, setRecordList] = useState<AccessRecord[]>(initialRecords);
+  const { items: recordList, save: saveRecord, remove: removeRecord } = usePersistentCollection(
+    "imts.access-records",
+    initialRecords,
+    "Acessos",
+    record => `${record.user} → ${record.resource}`,
+  );
+  const { items: contractList, save: saveContract, remove: removeContract } = usePersistentCollection(
+    "imts.contracts",
+    initialContracts,
+    "Contratos",
+    contract => `${contract.supplier} - ${contract.object}`,
+  );
+  const auditLog = useAuditLog();
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<AccessRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AccessRecord | null>(null);
+  const [contractFormOpen, setContractFormOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState<FinancialContract | null>(null);
+  const [contractDeleteTarget, setContractDeleteTarget] = useState<FinancialContract | null>(null);
 
   const handleSave = (record: AccessRecord) => {
-    setRecordList(prev => {
-      const idx = prev.findIndex(r => r.id === record.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = record;
-        toast.success(`Acesso de "${record.user}" atualizado!`);
-        return copy;
-      }
-      toast.success(`Acesso de "${record.user}" cadastrado!`);
-      return [...prev, record];
-    });
+    const exists = recordList.some(r => r.id === record.id);
+    saveRecord(record);
+    toast.success(`Acesso de "${record.user}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setEditingRecord(null);
   };
 
   const handleDelete = (record: AccessRecord) => {
-    setRecordList(prev => prev.filter(r => r.id !== record.id));
+    removeRecord(record);
     setDeleteTarget(null);
     toast.success(`Acesso de "${record.user}" ao "${record.resource}" removido.`);
+  };
+
+  const handleContractSave = (contract: FinancialContract) => {
+    const exists = contractList.some(c => c.id === contract.id);
+    saveContract(contract);
+    toast.success(`Contrato "${contract.object}" ${exists ? 'atualizado' : 'cadastrado'}!`);
+    setEditingContract(null);
+  };
+
+  const handleContractDelete = (contract: FinancialContract) => {
+    removeContract(contract);
+    setContractDeleteTarget(null);
+    toast.success(`Contrato "${contract.object}" excluído.`);
   };
 
   const openEdit = (record: AccessRecord) => {
@@ -68,19 +91,28 @@ export default function GovernancePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Governança & Segurança</h1>
-          <p className="text-muted-foreground text-sm mt-1">Controle de acessos, DR e credenciais</p>
+          <h1 className="text-[22px] font-semibold text-foreground">Governança & Segurança</h1>
+          <p className="text-muted-foreground text-[13px] mt-1">Controle de acessos, contratos, riscos, auditoria e permissões SIG</p>
         </div>
-        <Button className="gap-2" onClick={openNew}>
-          <Plus className="w-4 h-4" /> Novo Acesso
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button variant="outline" className="gap-2" onClick={() => { setEditingContract(null); setContractFormOpen(true); }}>
+            <Plus className="w-4 h-4" /> Novo Contrato
+          </Button>
+          <Button className="gap-2" onClick={openNew}>
+            <Plus className="w-4 h-4" /> Novo Acesso
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="acessos">
-        <TabsList>
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="acessos" className="gap-2"><Users className="w-4 h-4" />Matriz de Acessos</TabsTrigger>
+          <TabsTrigger value="sig" className="gap-2"><ShieldCheck className="w-4 h-4" />SIG</TabsTrigger>
+          <TabsTrigger value="contratos" className="gap-2"><FileText className="w-4 h-4" />Contratos</TabsTrigger>
+          <TabsTrigger value="riscos" className="gap-2"><ShieldCheck className="w-4 h-4" />Riscos</TabsTrigger>
+          <TabsTrigger value="auditoria" className="gap-2"><FileText className="w-4 h-4" />Auditoria</TabsTrigger>
           <TabsTrigger value="dr" className="gap-2"><Server className="w-4 h-4" />Disaster Recovery</TabsTrigger>
           <TabsTrigger value="credenciais" className="gap-2"><Key className="w-4 h-4" />Credenciais</TabsTrigger>
         </TabsList>
@@ -123,6 +155,122 @@ export default function GovernancePage() {
                           </Button>
                         </div>
                       </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sig" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base font-semibold">Usuários, setores e centros de custo herdados do SIG</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Setor</TableHead>
+                    <TableHead>Cargo</TableHead>
+                    <TableHead>Centro de custo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sigUsers.map(user => (
+                    <TableRow key={user.id}>
+                      <TableCell className="font-medium">{user.name}</TableCell>
+                      <TableCell>{user.department}</TableCell>
+                      <TableCell>{user.role}</TableCell>
+                      <TableCell><Badge variant="outline">{user.costCenter}</Badge></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="contratos" className="mt-4">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fornecedor</TableHead>
+                    <TableHead>Objeto</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Centro de custo</TableHead>
+                    <TableHead>Custo/mês</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {contractList.map(contract => (
+                    <TableRow key={contract.id}>
+                      <TableCell className="font-medium">{contract.supplier}</TableCell>
+                      <TableCell>{contract.object}</TableCell>
+                      <TableCell><Badge variant="outline">{contract.type}</Badge></TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{contract.costCenter}</TableCell>
+                      <TableCell className="font-mono text-xs">R$ {contract.monthlyCost.toLocaleString('pt-BR')}</TableCell>
+                      <TableCell className="text-xs">{new Date(contract.endDate).toLocaleDateString('pt-BR')}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditingContract(contract); setContractFormOpen(true); }} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setContractDeleteTarget(contract)} title="Excluir">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="riscos" className="mt-4 grid gap-3 md:grid-cols-3">
+          {risks.map(risk => (
+            <Card key={risk.id}>
+              <CardContent className="p-4">
+                <Badge variant="outline" className={risk.severity === "Alta" ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-warning/10 text-warning border-warning/20"}>{risk.severity}</Badge>
+                <p className="mt-3 font-semibold text-foreground">{risk.title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Responsável: {risk.owner}</p>
+                <p className="mt-3 text-sm text-foreground">{risk.mitigation}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </TabsContent>
+
+        <TabsContent value="auditoria" className="mt-4">
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Ação</TableHead>
+                    <TableHead>Entidade</TableHead>
+                    <TableHead>Registro</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Data/hora</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditLog.length === 0 ? (
+                    <TableRow><TableCell colSpan={5} className="py-8 text-center text-muted-foreground">Nenhuma ação registrada nesta sessão.</TableCell></TableRow>
+                  ) : auditLog.map(entry => (
+                    <TableRow key={entry.id}>
+                      <TableCell><Badge variant="outline">{entry.action}</Badge></TableCell>
+                      <TableCell>{entry.entity}</TableCell>
+                      <TableCell className="font-medium">{entry.recordLabel}</TableCell>
+                      <TableCell>{entry.actor}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{new Date(entry.at).toLocaleString('pt-BR')}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -226,7 +374,25 @@ export default function GovernancePage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={!!contractDeleteTarget} onOpenChange={() => setContractDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir o contrato <strong>{contractDeleteTarget?.object}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => contractDeleteTarget && handleContractDelete(contractDeleteTarget)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AccessForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} record={editingRecord} />
+      <ContractForm open={contractFormOpen} onOpenChange={setContractFormOpen} onSave={handleContractSave} contract={editingContract} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, Moon, Search, Sun, User } from "lucide-react";
+import { Bell, Menu, Moon, Search, Sun, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const alerts = useMemo(() => {
     const items: { label: string; type: string; route: string }[] = [];
@@ -72,8 +73,14 @@ export function AppLayout() {
     <div className="flex min-h-screen bg-background">
       <AppSidebar />
       <div className="flex-1 flex flex-col">
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-secondary/80 backdrop-blur sticky top-0 z-10 shadow-sm">
-          <div className="relative w-72 lg:w-80">
+        <header className="min-h-16 border-b border-border flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-6 bg-secondary/80 backdrop-blur sticky top-0 z-10 shadow-sm">
+          <div className="flex items-center gap-2 md:hidden">
+            <Button variant="ghost" size="icon" className="h-10 w-10 bg-card border border-border shadow-sm" onClick={() => setMobileNavOpen(open => !open)}>
+              <Menu className="w-4 h-4" />
+            </Button>
+            <span className="text-[15px] font-bold text-primary">IMTS</span>
+          </div>
+          <div className="relative order-3 w-full sm:order-none sm:w-72 lg:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Buscar... (Ctrl+K)"
@@ -158,7 +165,22 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main className="flex-1 px-6 py-5">
+        {mobileNavOpen && (
+          <div className="border-b border-border bg-card px-3 py-2 md:hidden">
+            <div className="grid grid-cols-2 gap-2 text-[13px]">
+              {[
+                ["Dashboard", "/"], ["Ativos", "/ativos"], ["Domínios", "/dominios"], ["Licenças", "/licencas"],
+                ["Governança", "/governanca"], ["Servidores", "/servidores"], ["Economista", "/economista"],
+              ].map(([label, route]) => (
+                <button key={route} className="rounded-md border border-border bg-secondary px-3 py-2 text-left font-medium text-foreground" onClick={() => { navigate(route); setMobileNavOpen(false); }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-5">
           <Outlet />
         </main>
       </div>

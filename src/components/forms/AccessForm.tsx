@@ -45,7 +45,7 @@ export default function AccessForm({ open, onOpenChange, onSave, record }: Acces
           <DialogTitle>{isEdit ? 'Editar Acesso' : 'Novo Registro de Acesso'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Usuário</Label>
               <Input value={form.user} onChange={e => set('user', e.target.value)} placeholder="Nome do usuário" required />

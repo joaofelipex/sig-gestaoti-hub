@@ -46,7 +46,7 @@ export default function LicenseForm({ open, onOpenChange, onSave, license }: Lic
           <DialogTitle>{isEdit ? 'Editar Licença' : 'Nova Licença'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label>Software</Label>
               <Input value={form.software} onChange={e => set('software', e.target.value)} placeholder="Ex: Microsoft 365" required />
@@ -93,7 +93,7 @@ export default function LicenseForm({ open, onOpenChange, onSave, license }: Lic
               <Label>Data de Renovação</Label>
               <Input type="date" value={form.renewalDate} onChange={e => set('renewalDate', e.target.value)} required />
             </div>
-            <div className="col-span-2 space-y-2">
+            <div className="space-y-2 sm:col-span-2">
               <Label>Chave de Ativação</Label>
               <Input value={form.activationKey} onChange={e => set('activationKey', e.target.value)} placeholder="Chave de licença" />
             </div>
