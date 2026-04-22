@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @layer base {
   :root {
@@ -112,6 +112,29 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  h1 {
+    @apply text-[22px] font-semibold leading-tight tracking-normal;
+  }
+
+  h2 {
+    @apply text-[18px] font-semibold leading-snug tracking-normal;
+  }
+
+  h3 {
+    @apply text-[16px] font-semibold leading-snug tracking-normal;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    @apply text-[13px] tracking-normal;
   }
 
   .font-mono {

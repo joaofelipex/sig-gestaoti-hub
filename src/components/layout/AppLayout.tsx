@@ -77,7 +77,7 @@ export function AppLayout() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Buscar... (Ctrl+K)"
-              className="pl-10 bg-card border-border h-10 shadow-sm"
+              className="pl-10 bg-card border-border h-10 shadow-sm text-[13px] font-normal"
               value={searchValue}
               onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
               onFocus={() => setSearchOpen(true)}
@@ -92,8 +92,8 @@ export function AppLayout() {
                     onMouseDown={() => { navigate(r.route); setSearchValue(""); setSearchOpen(false); }}
                   >
                     <div>
-                      <p className="text-sm font-medium text-foreground">{r.label}</p>
-                      <p className="text-xs text-muted-foreground">{r.sub}</p>
+                       <p className="text-[13px] font-medium text-foreground leading-tight">{r.label}</p>
+                       <p className="text-[11px] text-muted-foreground leading-tight">{r.sub}</p>
                     </div>
                     <Badge variant="outline" className="text-[10px]">{r.route.replace('/', '')}</Badge>
                   </button>
@@ -131,7 +131,7 @@ export function AppLayout() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-auto">
                 <div className="px-3 py-2 border-b border-border">
-                  <p className="text-sm font-semibold text-foreground">Alertas ({alerts.length})</p>
+                  <p className="text-[13px] font-semibold text-foreground">Alertas ({alerts.length})</p>
                 </div>
                 {alerts.length === 0 ? (
                   <div className="px-3 py-4 text-center text-sm text-muted-foreground">Nenhum alerta</div>
@@ -151,7 +151,7 @@ export function AppLayout() {
                 <User className="w-4 h-4 text-primary" />
               </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-foreground leading-tight">Felipe Miranda</p>
+                <p className="text-[13px] font-semibold text-foreground leading-tight">Felipe Miranda</p>
                 <p className="text-[11px] text-muted-foreground leading-tight">Administrador do Sistema</p>
               </div>
             </div>

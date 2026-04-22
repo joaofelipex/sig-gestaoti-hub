@@ -34,8 +34,8 @@ export function AppSidebar() {
         </div>
         {!collapsed && (
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-primary tracking-wide">IMTS</span>
-            <span className="text-[10px] text-muted-foreground tracking-widest uppercase">Gestão TI</span>
+            <span className="text-[15px] font-bold text-primary tracking-normal leading-none">IMTS</span>
+            <span className="text-[10px] font-medium text-muted-foreground tracking-normal uppercase">Gestão TI</span>
           </div>
         )}
       </div>
@@ -49,7 +49,7 @@ export function AppSidebar() {
               key={item.to}
               to={item.to}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-all",
+                "flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium leading-none tracking-normal transition-all",
                 isActive
                   ? "bg-card text-primary shadow-sm border border-border"
                   : "text-muted-foreground hover:bg-card hover:text-foreground"
