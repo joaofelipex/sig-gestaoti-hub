@@ -13,6 +13,7 @@ import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database
 import { Progress } from "@/components/ui/progress";
 import DomainForm from "@/components/forms/DomainForm";
 import { toast } from "sonner";
+import { usePersistentCollection } from "@/hooks/use-persistent-collection";
 
 function daysUntil(dateStr: string): number {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
@@ -40,7 +41,12 @@ interface DisasterDoc {
 }
 
 export default function DomainsPage() {
-  const [domainList, setDomainList] = useState<Domain[]>(initialDomains);
+  const { items: domainList, save: saveDomain, remove: removeDomain } = usePersistentCollection(
+    "imts.domains",
+    initialDomains,
+    "Domínios",
+    domain => domain.url,
+  );
   const [formOpen, setFormOpen] = useState(false);
   const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Domain | null>(null);
@@ -54,22 +60,14 @@ export default function DomainsPage() {
   const sorted = [...domainList].sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
   const handleSave = (domain: Domain) => {
-    setDomainList(prev => {
-      const idx = prev.findIndex(d => d.id === domain.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = domain;
-        toast.success(`Domínio "${domain.url}" atualizado!`);
-        return copy;
-      }
-      toast.success(`Domínio "${domain.url}" cadastrado!`);
-      return [...prev, domain];
-    });
+    const exists = domainList.some(d => d.id === domain.id);
+    saveDomain(domain);
+    toast.success(`Domínio "${domain.url}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setEditingDomain(null);
   };
 
   const handleDelete = (domain: Domain) => {
-    setDomainList(prev => prev.filter(d => d.id !== domain.id));
+    removeDomain(domain);
     setDeleteTarget(null);
     toast.success(`Domínio "${domain.url}" removido.`);
   };
@@ -97,10 +95,10 @@ export default function DomainsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 rounded-md border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Domínios & Infraestrutura</h1>
-          <p className="text-muted-foreground text-sm mt-1">Monitoramento de domínios, DNS e certificados SSL</p>
+          <h1 className="text-[22px] font-semibold text-foreground">Domínios & Infraestrutura</h1>
+          <p className="text-muted-foreground text-[13px] mt-1">Monitoramento de domínios, DNS e certificados SSL</p>
         </div>
         <Button className="gap-2" onClick={openNew}>
           <Plus className="w-4 h-4" /> Novo Domínio
@@ -159,8 +157,8 @@ export default function DomainsPage() {
             const doc = disasterDocs.find(d => d.domainId === domain.id);
 
             return (
-              <div key={domain.id} className="p-4 rounded-xl border border-border bg-card hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
+              <div key={domain.id} className="p-4 rounded-md border border-border bg-card hover:shadow-md transition-shadow">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
                   <div className="flex items-center gap-3">
                     <Globe className="w-5 h-5 text-primary" />
                     <div>
