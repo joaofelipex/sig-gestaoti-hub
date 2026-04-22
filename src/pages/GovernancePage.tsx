@@ -14,6 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, Key, Server, FileText, Users, Plus, Pencil, Trash2 } from "lucide-react";
 import AccessForm from "@/components/forms/AccessForm";
 import { toast } from "sonner";
+import { contracts as initialContracts, risks, sigUsers, type FinancialContract } from "@/lib/it-governance-data";
+import { useAuditLog, usePersistentCollection } from "@/hooks/use-persistent-collection";
+import ContractForm from "@/components/forms/ContractForm";
 
 const accessBadge: Record<string, string> = {
   Admin: 'bg-destructive/10 text-destructive border-destructive/20',
@@ -30,30 +33,50 @@ const typeBadge: Record<string, string> = {
 };
 
 export default function GovernancePage() {
-  const [recordList, setRecordList] = useState<AccessRecord[]>(initialRecords);
+  const { items: recordList, save: saveRecord, remove: removeRecord } = usePersistentCollection(
+    "imts.access-records",
+    initialRecords,
+    "Acessos",
+    record => `${record.user} → ${record.resource}`,
+  );
+  const { items: contractList, save: saveContract, remove: removeContract } = usePersistentCollection(
+    "imts.contracts",
+    initialContracts,
+    "Contratos",
+    contract => `${contract.supplier} - ${contract.object}`,
+  );
+  const auditLog = useAuditLog();
   const [formOpen, setFormOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<AccessRecord | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AccessRecord | null>(null);
+  const [contractFormOpen, setContractFormOpen] = useState(false);
+  const [editingContract, setEditingContract] = useState<FinancialContract | null>(null);
+  const [contractDeleteTarget, setContractDeleteTarget] = useState<FinancialContract | null>(null);
 
   const handleSave = (record: AccessRecord) => {
-    setRecordList(prev => {
-      const idx = prev.findIndex(r => r.id === record.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = record;
-        toast.success(`Acesso de "${record.user}" atualizado!`);
-        return copy;
-      }
-      toast.success(`Acesso de "${record.user}" cadastrado!`);
-      return [...prev, record];
-    });
+    const exists = recordList.some(r => r.id === record.id);
+    saveRecord(record);
+    toast.success(`Acesso de "${record.user}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setEditingRecord(null);
   };
 
   const handleDelete = (record: AccessRecord) => {
-    setRecordList(prev => prev.filter(r => r.id !== record.id));
+    removeRecord(record);
     setDeleteTarget(null);
     toast.success(`Acesso de "${record.user}" ao "${record.resource}" removido.`);
+  };
+
+  const handleContractSave = (contract: FinancialContract) => {
+    const exists = contractList.some(c => c.id === contract.id);
+    saveContract(contract);
+    toast.success(`Contrato "${contract.object}" ${exists ? 'atualizado' : 'cadastrado'}!`);
+    setEditingContract(null);
+  };
+
+  const handleContractDelete = (contract: FinancialContract) => {
+    removeContract(contract);
+    setContractDeleteTarget(null);
+    toast.success(`Contrato "${contract.object}" excluído.`);
   };
 
   const openEdit = (record: AccessRecord) => {
