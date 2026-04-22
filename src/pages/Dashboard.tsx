@@ -1,16 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { assets, domains, licenses, dashboardStats } from "@/data/mock-data";
 import { servers } from "@/data/servers-data";
 import {
-  Monitor, Globe, Key, ShieldAlert, AlertTriangle, CheckCircle,
-  TrendingUp, DollarSign, HardDrive, Wrench, Archive, Activity,
-  HeartPulse, FileWarning, Database,
+  Monitor, Globe, Key, ShieldAlert, AlertTriangle,
+  TrendingUp, DollarSign, HardDrive, Wrench, Activity,
+  HeartPulse, FileWarning, Database, type LucideIcon,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, CartesianGrid, LineChart, Line, Legend,
+  PieChart, Pie, Cell, CartesianGrid, Legend,
   AreaChart, Area,
 } from "recharts";
 
@@ -101,23 +100,21 @@ const licenseCostData = licenses.map(l => ({
   custo: l.costPerUnit * l.usedLicenses,
 }));
 
-const KpiCard = ({ title, value, subtitle, icon: Icon, color }: {
-  title: string; value: string | number; subtitle: string; icon: any; color: string;
+const OverviewMetric = ({ title, value, subtitle, icon: Icon, color }: {
+  title: string; value: string | number; subtitle: string; icon: LucideIcon; color: string;
 }) => (
-  <Card className="relative overflow-hidden">
-    <CardContent className="p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold mt-1 text-foreground">{value}</p>
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-        </div>
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color}`}>
-          <Icon className="w-5 h-5" />
-        </div>
+  <div className="flex items-center gap-3 rounded-lg border bg-background/60 p-4">
+    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${color}`}>
+      <Icon className="h-5 w-5" />
+    </div>
+    <div className="min-w-0">
+      <p className="text-xs font-medium uppercase text-muted-foreground">{title}</p>
+      <div className="mt-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <p className="text-2xl font-bold text-foreground">{value}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
-    </CardContent>
-  </Card>
+    </div>
+  </div>
 );
 
 export default function Dashboard() {
