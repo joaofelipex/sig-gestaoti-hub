@@ -143,8 +143,8 @@ export default function AssetsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between rounded-md border border-border bg-card px-5 py-4 shadow-sm">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Gestão de Ativos</h1>
           <p className="text-muted-foreground text-sm mt-1">Ciclo de vida completo do hardware</p>
@@ -163,16 +163,18 @@ export default function AssetsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           { label: 'Total', value: assetList.length, icon: Monitor, color: 'text-primary' },
           { label: 'Em uso', value: assetList.filter(a => a.status === 'Em uso').length, icon: Cpu, color: 'text-success' },
           { label: 'Manutenção', value: assetList.filter(a => a.status === 'Manutenção').length, icon: Wrench, color: 'text-warning' },
           { label: 'Valor Depreciado', value: `R$ ${totalDepreciated.toLocaleString('pt-BR')}`, icon: DollarSign, color: 'text-accent' },
         ].map(c => (
-          <Card key={c.label}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <c.icon className={`w-8 h-8 ${c.color}`} />
+          <Card key={c.label} className="shadow-sm">
+            <CardContent className="p-3.5 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                <c.icon className={`w-5 h-5 ${c.color}`} />
+              </div>
               <div>
                 <p className="text-xs text-muted-foreground">{c.label}</p>
                 <p className="text-lg font-bold text-foreground">{c.value}</p>
@@ -182,7 +184,7 @@ export default function AssetsPage() {
         ))}
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">Depreciação Geral do Patrimônio</span>
@@ -197,7 +199,7 @@ export default function AssetsPage() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 rounded-md border border-border bg-card p-4 shadow-sm">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Buscar por marca, modelo, serial..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
@@ -214,7 +216,7 @@ export default function AssetsPage() {
         </Select>
       </div>
 
-      <Card>
+      <Card className="shadow-sm">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

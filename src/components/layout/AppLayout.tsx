@@ -72,12 +72,12 @@ export function AppLayout() {
     <div className="flex min-h-screen bg-background">
       <AppSidebar />
       <div className="flex-1 flex flex-col">
-        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-card sticky top-0 z-10">
-          <div className="relative w-80">
+        <header className="h-16 border-b border-border flex items-center justify-between px-6 bg-secondary/80 backdrop-blur sticky top-0 z-10 shadow-sm">
+          <div className="relative w-72 lg:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar ativos, domínios, licenças..."
-              className="pl-10 bg-secondary border-0"
+              placeholder="Buscar... (Ctrl+K)"
+              className="pl-10 bg-card border-border h-10 shadow-sm"
               value={searchValue}
               onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
               onFocus={() => setSearchOpen(true)}
@@ -108,7 +108,7 @@ export function AppLayout() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9"
+                  className="h-10 w-10 bg-card border border-border shadow-sm hover:bg-muted"
                   onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 >
                   {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -120,7 +120,7 @@ export function AppLayout() {
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="relative p-2 rounded-lg hover:bg-secondary transition-colors">
+                <button className="relative h-10 w-10 rounded-md bg-card border border-border shadow-sm hover:bg-muted transition-colors flex items-center justify-center">
                   <Bell className="w-5 h-5 text-muted-foreground" />
                   {alerts.length > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
@@ -146,19 +146,19 @@ export function AppLayout() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <div className="flex items-center gap-3 pl-4 border-l border-border">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="flex items-center gap-3 pl-3 pr-3 py-1.5 rounded-md bg-card border border-border shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
                 <User className="w-4 h-4 text-primary" />
               </div>
               <div className="hidden md:block">
-                <p className="text-sm font-medium text-foreground">Admin TI</p>
-                <p className="text-xs text-muted-foreground">admin@imts.com.br</p>
+                <p className="text-sm font-semibold text-foreground leading-tight">Felipe Miranda</p>
+                <p className="text-[11px] text-muted-foreground leading-tight">Administrador do Sistema</p>
               </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 px-6 py-5">
           <Outlet />
         </main>
       </div>
