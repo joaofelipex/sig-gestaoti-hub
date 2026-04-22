@@ -135,28 +135,35 @@ export default function Dashboard() {
       {/* Executive overview */}
       <Card className="overflow-hidden">
         <CardContent className="p-5">
-          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[260px_1fr]">
-            <div className={`rounded-lg ${healthBg} p-5`}>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[230px_1fr]">
+            <div className={`rounded-lg ${healthBg} p-4`}>
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-background/70">
-                  <HeartPulse className={`h-6 w-6 ${healthColor}`} />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-background/70">
+                  <HeartPulse className={`h-5 w-5 ${healthColor}`} />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Health Score TI</p>
-                  <p className={`text-4xl font-bold ${healthColor}`}>{healthScore}</p>
+                  <p className={`text-3xl font-bold ${healthColor}`}>{healthScore}</p>
                 </div>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
+              <p className="mt-3 text-sm text-muted-foreground">
                 {healthScore >= 80 ? 'Ambiente saudável e sob controle.' : healthScore >= 50 ? 'Existem pontos que exigem atenção.' : 'Ação imediata recomendada.'}
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
-              <OverviewMetric title="Ativos" value={dashboardStats.totalAssets} subtitle={`${dashboardStats.assetsInUse} em uso`} icon={Monitor} color="bg-primary/10 text-primary" />
-              <OverviewMetric title="Domínios" value={domainsExpiring30} subtitle={`${dashboardStats.expiredDomains} expirado(s)`} icon={Globe} color="bg-warning/10 text-warning" />
-              <OverviewMetric title="Licenças" value={dashboardStats.unusedLicenses} subtitle="ociosas" icon={Key} color="bg-accent/10 text-accent" />
-              <OverviewMetric title="SSL" value={dashboardStats.sslExpiringCount} subtitle="expirando" icon={ShieldAlert} color="bg-destructive/10 text-destructive" />
-              <OverviewMetric title="Infra/mês" value={`R$ ${serverMonthly.toLocaleString('pt-BR')}`} subtitle={`${servers.filter(s => s.status === 'Online').length}/${servers.length} online`} icon={HardDrive} color="bg-info/10 text-info" />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <OverviewGroup title="Operação">
+                <OverviewMetric title="Ativos" value={dashboardStats.totalAssets} subtitle={`${dashboardStats.assetsInUse} em uso`} icon={Monitor} color="bg-primary/10 text-primary" />
+                <OverviewMetric title="Infra/mês" value={`R$ ${serverMonthly.toLocaleString('pt-BR')}`} subtitle={`${servers.filter(s => s.status === 'Online').length}/${servers.length} online`} icon={HardDrive} color="bg-info/10 text-info" />
+              </OverviewGroup>
+              <OverviewGroup title="Riscos">
+                <OverviewMetric title="Domínios" value={domainsExpiring30} subtitle={`${dashboardStats.expiredDomains} expirado(s)`} icon={Globe} color="bg-warning/10 text-warning" />
+                <OverviewMetric title="SSL" value={dashboardStats.sslExpiringCount} subtitle="expirando" icon={ShieldAlert} color="bg-destructive/10 text-destructive" />
+              </OverviewGroup>
+              <OverviewGroup title="Financeiro">
+                <OverviewMetric title="Licenças" value={dashboardStats.unusedLicenses} subtitle="ociosas" icon={Key} color="bg-accent/10 text-accent" />
+                <OverviewMetric title="OPEX anual" value={`R$ ${opexTotal.toLocaleString('pt-BR')}`} subtitle="recorrente" icon={DollarSign} color="bg-success/10 text-success" />
+              </OverviewGroup>
             </div>
           </div>
         </CardContent>
