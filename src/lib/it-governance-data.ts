@@ -15,7 +15,18 @@ export const suppliers = [
   { name: "Cloudflare", category: "Infraestrutura", annualCost: 6400, contracts: 1 },
 ];
 
-export const contracts = [
+export interface FinancialContract {
+  id: string;
+  supplier: string;
+  object: string;
+  type: "OPEX" | "CAPEX";
+  costCenter: string;
+  monthlyCost: number;
+  endDate: string;
+  status: "Ativo" | "Planejado" | "Encerrado";
+}
+
+export const contracts: FinancialContract[] = [
   { id: "CTR-001", supplier: "Microsoft", object: "Microsoft 365 Business", type: "OPEX", costCenter: "CC-120 TI Corporativo", monthlyCost: 3150, endDate: "2026-04-01", status: "Ativo" },
   { id: "CTR-002", supplier: "AWS", object: "Servidores produção", type: "OPEX", costCenter: "CC-210 Engenharia", monthlyCost: 2130, endDate: "2026-01-15", status: "Ativo" },
   { id: "CTR-003", supplier: "Dell", object: "Renovação parque notebooks", type: "CAPEX", costCenter: "CC-120 TI Corporativo", monthlyCost: 0, endDate: "2026-12-31", status: "Planejado" },
