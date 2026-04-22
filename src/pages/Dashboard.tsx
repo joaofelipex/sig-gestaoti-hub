@@ -366,32 +366,18 @@ export default function Dashboard() {
           <CardTitle className="text-base font-semibold">Alertas Recentes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {domains.filter(d => d.status !== 'Ativo').map(d => (
-            <div key={d.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
-              {d.status === 'Expirado' ? (
-                <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
-              ) : (
-                <AlertTriangle className="w-5 h-5 text-warning shrink-0" />
-              )}
+          {operationalAlerts.map(alert => (
+            <div key={alert.id} className="flex items-center gap-3 p-3 rounded-md bg-secondary/50">
+              <AlertTriangle className={`w-5 h-5 shrink-0 ${alert.type === 'critical' ? 'text-destructive' : 'text-warning'}`} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{d.url}</p>
+                <p className="text-sm font-medium text-foreground">{alert.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  {d.status === 'Expirado' ? 'Domínio expirado em' : 'Expira em'} {new Date(d.expirationDate).toLocaleDateString('pt-BR')}
+                  {alert.source} · {alert.message} · {new Date(alert.dueDate).toLocaleDateString('pt-BR')}
                 </p>
               </div>
-              <Badge variant={d.status === 'Expirado' ? 'destructive' : 'secondary'} className={d.status === 'Expirando' ? 'bg-warning/10 text-warning border-warning/20' : ''}>
-                {d.status}
+              <Badge variant="outline" className={alert.type === 'critical' ? 'bg-destructive/10 text-destructive border-destructive/20' : 'bg-warning/10 text-warning border-warning/20'}>
+                {alert.source}
               </Badge>
-            </div>
-          ))}
-          {assets.filter(a => a.status === 'Manutenção').map(a => (
-            <div key={a.id} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50">
-              <Wrench className="w-5 h-5 text-warning shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">{a.brand} {a.model}</p>
-                <p className="text-xs text-muted-foreground">Ativo em manutenção — {a.id}</p>
-              </div>
-              <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20">Manutenção</Badge>
             </div>
           ))}
         </CardContent>
