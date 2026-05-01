@@ -13,6 +13,8 @@ import GovernancePage from "@/pages/GovernancePage";
 import EconomistPage from "@/pages/EconomistPage";
 import ServersPage from "@/pages/ServersPage";
 import MaintenancePage from "@/pages/MaintenancePage";
+import MovementsPage from "@/pages/MovementsPage";
+import InventoryPage from "@/pages/InventoryPage";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -34,6 +36,8 @@ const App = () => (
               <Route path="/economista" element={<EconomistPage />} />
               <Route path="/servidores" element={<ServersPage />} />
               <Route path="/manutencao" element={<MaintenancePage />} />
+              <Route path="/movimentacoes" element={<MovementsPage />} />
+              <Route path="/estoque" element={<InventoryPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
