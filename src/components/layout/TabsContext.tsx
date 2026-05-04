@@ -1,5 +1,9 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import {
+  Home, Laptop, Globe, KeyRound, ShieldCheck, Server,
+  Wrench, ArrowLeftRight, Boxes, LineChart, LucideIcon,
+} from "lucide-react";
 
 export interface TabDescriptor {
   /** Rota base (sem hash). Usada como id e para navegação. */
@@ -10,6 +14,8 @@ export interface TabDescriptor {
   sublabel?: string;
   /** Aba "Início" não pode ser fechada. */
   pinned?: boolean;
+  /** Ícone do módulo (lucide). */
+  icon?: LucideIcon;
 }
 
 interface TabsContextValue {
@@ -27,20 +33,21 @@ const HOME_TAB: TabDescriptor = {
   label: "Início",
   sublabel: "Seja Bem Vindo(a)",
   pinned: true,
+  icon: Home,
 };
 
 /** Mapeia uma rota → descriptor padrão. Garante que abertura por URL direta funcione. */
 const ROUTE_DEFAULTS: Record<string, TabDescriptor> = {
   "/": HOME_TAB,
-  "/ativos":         { path: "/ativos",         label: "Ativos",        sublabel: "ITAM" },
-  "/dominios":       { path: "/dominios",       label: "Domínios",      sublabel: "DNS & SSL" },
-  "/licencas":       { path: "/licencas",       label: "Licenças",      sublabel: "SAM" },
-  "/governanca":     { path: "/governanca",     label: "Governança",    sublabel: "Acessos & DR" },
-  "/servidores":     { path: "/servidores",     label: "Servidores",    sublabel: "Infra & Cloud" },
-  "/manutencao":     { path: "/manutencao",     label: "Manutenção",    sublabel: "Garantia & 60%" },
-  "/movimentacoes":  { path: "/movimentacoes",  label: "Movimentações", sublabel: "Termos & Histórico" },
-  "/estoque":        { path: "/estoque",        label: "Estoque",       sublabel: "Almoxarifado TI" },
-  "/economista":     { path: "/economista",     label: "Visão Economista", sublabel: "Financeiro" },
+  "/ativos":         { path: "/ativos",         label: "Ativos",           sublabel: "ITAM",                icon: Laptop },
+  "/dominios":       { path: "/dominios",       label: "Domínios",         sublabel: "DNS & SSL",           icon: Globe },
+  "/licencas":       { path: "/licencas",       label: "Licenças",         sublabel: "SAM",                 icon: KeyRound },
+  "/governanca":     { path: "/governanca",     label: "Governança",       sublabel: "Acessos & DR",        icon: ShieldCheck },
+  "/servidores":     { path: "/servidores",     label: "Servidores",       sublabel: "Infra & Cloud",       icon: Server },
+  "/manutencao":     { path: "/manutencao",     label: "Manutenção",       sublabel: "Garantia & 60%",      icon: Wrench },
+  "/movimentacoes":  { path: "/movimentacoes",  label: "Movimentações",    sublabel: "Termos & Histórico",  icon: ArrowLeftRight },
+  "/estoque":        { path: "/estoque",        label: "Estoque",          sublabel: "Almoxarifado TI",     icon: Boxes },
+  "/economista":     { path: "/economista",     label: "Visão Economista", sublabel: "Financeiro",          icon: LineChart },
 };
 
 export function TabsProvider({ children }: { children: ReactNode }) {

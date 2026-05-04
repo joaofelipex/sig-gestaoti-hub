@@ -23,31 +23,54 @@ function daysUntil(d: string) {
 
 function TabBar() {
   const { tabs, activePath, closeTab, setActive, openTab } = useAppTabs();
-  // Módulos disponíveis para abrir via "+"
   const allModules = Object.values(APP_TAB_DEFAULTS).filter((t) => !t.pinned);
   const openPaths = new Set(tabs.map((t) => t.path));
 
   return (
-    <div className="flex items-stretch gap-1 overflow-x-auto scrollbar-thin">
+    <div className="relative flex items-end gap-0.5 overflow-x-auto overflow-y-hidden scrollbar-none px-1 -mb-px">
       {tabs.map((tab) => {
         const active = tab.path === activePath;
+        const Icon = tab.icon;
         return (
           <div
             key={tab.path}
             onClick={() => setActive(tab.path)}
             className={cn(
-              "group relative flex items-center gap-3 pl-4 pr-3 py-2 min-w-[150px] max-w-[220px] cursor-pointer",
-              "rounded-md border transition-all select-none",
+              "group relative flex items-center gap-2.5 pl-3.5 pr-2 h-11 min-w-[160px] max-w-[230px] cursor-pointer select-none",
+              "rounded-t-xl transition-all duration-200",
               active
-                ? "bg-[hsl(var(--tab-active))] border-[hsl(var(--tab-active-border))] shadow-sm"
-                : "bg-transparent border-transparent hover:bg-[hsl(var(--tab-hover))]",
+                ? "bg-card text-foreground shadow-[0_-1px_0_0_hsl(var(--border))_inset,1px_-1px_0_0_hsl(var(--border))_inset,-1px_-1px_0_0_hsl(var(--border))_inset] z-10"
+                : "bg-transparent text-muted-foreground hover:bg-card/60 hover:text-foreground",
             )}
           >
+            {/* Indicador superior animado */}
+            <span
+              className={cn(
+                "absolute top-0 left-3 right-3 h-[2px] rounded-full transition-all duration-300",
+                active ? "bg-primary opacity-100 scale-x-100" : "bg-transparent opacity-0 scale-x-0",
+              )}
+            />
+
+            {/* Ícone */}
+            {Icon && (
+              <div
+                className={cn(
+                  "shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                  active
+                    ? "bg-primary/10 text-primary"
+                    : "bg-muted/60 text-muted-foreground group-hover:bg-primary/5 group-hover:text-primary",
+                )}
+              >
+                <Icon className="w-3.5 h-3.5" strokeWidth={2.25} />
+              </div>
+            )}
+
+            {/* Labels */}
             <div className="flex flex-col leading-tight min-w-0 flex-1">
               <span
                 className={cn(
-                  "text-[13px] font-semibold truncate",
-                  active ? "text-primary" : "text-foreground",
+                  "text-[12.5px] font-semibold truncate tracking-tight",
+                  active ? "text-foreground" : "",
                 )}
               >
                 {tab.label}
@@ -58,7 +81,9 @@ function TabBar() {
                 </span>
               )}
             </div>
-            {!tab.pinned && (
+
+            {/* Botão fechar */}
+            {!tab.pinned ? (
               <button
                 aria-label={`Fechar ${tab.label}`}
                 onClick={(e) => {
@@ -66,13 +91,15 @@ function TabBar() {
                   closeTab(tab.path);
                 }}
                 className={cn(
-                  "shrink-0 w-5 h-5 rounded-sm flex items-center justify-center transition-opacity",
-                  "text-muted-foreground hover:bg-background hover:text-foreground",
+                  "shrink-0 w-6 h-6 rounded-md flex items-center justify-center transition-all",
+                  "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
                   active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
                 )}
               >
-                <X className="w-3 h-3" />
+                <X className="w-3.5 h-3.5" strokeWidth={2.5} />
               </button>
+            ) : (
+              <div className="w-2" />
             )}
           </div>
         );
@@ -83,31 +110,43 @@ function TabBar() {
         <DropdownMenuTrigger asChild>
           <button
             aria-label="Abrir módulo"
-            className="shrink-0 w-9 h-9 my-auto ml-1 rounded-md text-muted-foreground hover:bg-[hsl(var(--tab-hover))] hover:text-primary flex items-center justify-center transition-colors"
+            className="shrink-0 w-9 h-9 mb-1 ml-1.5 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary flex items-center justify-center transition-all hover:scale-105"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" strokeWidth={2.5} />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-60">
-          {allModules.map((m) => (
-            <DropdownMenuItem
-              key={m.path}
-              onClick={() => openTab(m)}
-              className="cursor-pointer flex items-center justify-between"
-            >
-              <div className="flex flex-col leading-tight">
-                <span className="text-[13px] font-semibold">{m.label}</span>
-                {m.sublabel && (
-                  <span className="text-[10px] text-muted-foreground">{m.sublabel}</span>
+        <DropdownMenuContent align="start" className="w-72 p-1.5">
+          <div className="px-2 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Módulos disponíveis
+          </div>
+          {allModules.map((m) => {
+            const Icon = m.icon;
+            const isOpen = openPaths.has(m.path);
+            return (
+              <DropdownMenuItem
+                key={m.path}
+                onClick={() => openTab(m)}
+                className="cursor-pointer flex items-center gap-3 py-2 rounded-md"
+              >
+                {Icon && (
+                  <div className="shrink-0 w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                    <Icon className="w-4 h-4" strokeWidth={2.25} />
+                  </div>
                 )}
-              </div>
-              {openPaths.has(m.path) && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-success/10 text-success border-success/30">
-                  aberto
-                </Badge>
-              )}
-            </DropdownMenuItem>
-          ))}
+                <div className="flex flex-col leading-tight flex-1 min-w-0">
+                  <span className="text-[13px] font-semibold truncate">{m.label}</span>
+                  {m.sublabel && (
+                    <span className="text-[10px] text-muted-foreground truncate">{m.sublabel}</span>
+                  )}
+                </div>
+                {isOpen && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-success/10 text-success border-success/30 shrink-0">
+                    aberto
+                  </Badge>
+                )}
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
