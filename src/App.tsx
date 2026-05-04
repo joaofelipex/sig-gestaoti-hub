@@ -4,7 +4,10 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
+import AuthPage from "@/pages/AuthPage";
 import Dashboard from "@/pages/Dashboard";
 import AssetsPage from "@/pages/AssetsPage";
 import DomainsPage from "@/pages/DomainsPage";
@@ -26,21 +29,26 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/ativos" element={<AssetsPage />} />
-              <Route path="/dominios" element={<DomainsPage />} />
-              <Route path="/licencas" element={<LicensesPage />} />
-              <Route path="/governanca" element={<GovernancePage />} />
-              <Route path="/economista" element={<EconomistPage />} />
-              <Route path="/servidores" element={<ServersPage />} />
-              <Route path="/manutencao" element={<MaintenancePage />} />
-              <Route path="/movimentacoes" element={<MovementsPage />} />
-              <Route path="/estoque" element={<InventoryPage />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route element={<ProtectedRoute />}>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/ativos" element={<AssetsPage />} />
+                  <Route path="/dominios" element={<DomainsPage />} />
+                  <Route path="/licencas" element={<LicensesPage />} />
+                  <Route path="/governanca" element={<GovernancePage />} />
+                  <Route path="/economista" element={<EconomistPage />} />
+                  <Route path="/servidores" element={<ServersPage />} />
+                  <Route path="/manutencao" element={<MaintenancePage />} />
+                  <Route path="/movimentacoes" element={<MovementsPage />} />
+                  <Route path="/estoque" element={<InventoryPage />} />
+                </Route>
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
