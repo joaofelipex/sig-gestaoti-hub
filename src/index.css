@@ -152,4 +152,25 @@
   .font-mono {
     font-family: 'JetBrains Mono', monospace;
   }
+
+  /* Scrollbar customizada para a barra de abas */
+  .tab-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.35) transparent;
+    scroll-behavior: smooth;
+  }
+  .tab-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+  .tab-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .tab-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.35);
+    border-radius: 9999px;
+    transition: background 0.2s ease;
+  }
+  .tab-scroll:hover::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary) / 0.6);
+  }
 }
