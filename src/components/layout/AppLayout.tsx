@@ -1,5 +1,6 @@
+import * as React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Bell, Cpu, LogOut, Moon, Plus, Search, Sun, User, X } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, Cpu, LogOut, Moon, Plus, Search, Sun, User, X } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
