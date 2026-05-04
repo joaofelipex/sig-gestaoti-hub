@@ -14,16 +14,669 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alertas: {
+        Row: {
+          created_at: string
+          id: string
+          lida: boolean
+          link: string | null
+          mensagem: string | null
+          org_id: string
+          severidade: Database["public"]["Enums"]["alerta_severidade"]
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lida?: boolean
+          link?: string | null
+          mensagem?: string | null
+          org_id: string
+          severidade?: Database["public"]["Enums"]["alerta_severidade"]
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lida?: boolean
+          link?: string | null
+          mensagem?: string | null
+          org_id?: string
+          severidade?: Database["public"]["Enums"]["alerta_severidade"]
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ativos: {
+        Row: {
+          created_at: string
+          data_aquisicao: string | null
+          departamento_id: string | null
+          id: string
+          marca: string | null
+          modelo: string | null
+          numero_serie: string | null
+          observacoes: string | null
+          org_id: string
+          patrimonio: string | null
+          responsavel_id: string | null
+          status: Database["public"]["Enums"]["ativo_status"]
+          tipo: string
+          updated_at: string
+          valor_aquisicao: number | null
+          vida_util_meses: number | null
+        }
+        Insert: {
+          created_at?: string
+          data_aquisicao?: string | null
+          departamento_id?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          numero_serie?: string | null
+          observacoes?: string | null
+          org_id: string
+          patrimonio?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["ativo_status"]
+          tipo: string
+          updated_at?: string
+          valor_aquisicao?: number | null
+          vida_util_meses?: number | null
+        }
+        Update: {
+          created_at?: string
+          data_aquisicao?: string | null
+          departamento_id?: string | null
+          id?: string
+          marca?: string | null
+          modelo?: string | null
+          numero_serie?: string | null
+          observacoes?: string | null
+          org_id?: string
+          patrimonio?: string | null
+          responsavel_id?: string | null
+          status?: Database["public"]["Enums"]["ativo_status"]
+          tipo?: string
+          updated_at?: string
+          valor_aquisicao?: number | null
+          vida_util_meses?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ativos_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ativos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ativos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departamentos: {
+        Row: {
+          centro_custo: string | null
+          created_at: string
+          id: string
+          nome: string
+          org_id: string
+          responsavel: string | null
+          updated_at: string
+        }
+        Insert: {
+          centro_custo?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          org_id: string
+          responsavel?: string | null
+          updated_at?: string
+        }
+        Update: {
+          centro_custo?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          org_id?: string
+          responsavel?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departamentos_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dominios: {
+        Row: {
+          created_at: string
+          custo_anual: number | null
+          data_vencimento: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          org_id: string
+          registrar: string | null
+          ssl_vencimento: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custo_anual?: number | null
+          data_vencimento?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          org_id: string
+          registrar?: string | null
+          ssl_vencimento?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custo_anual?: number | null
+          data_vencimento?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          org_id?: string
+          registrar?: string | null
+          ssl_vencimento?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dominios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      licencas: {
+        Row: {
+          created_at: string
+          custo_mensal: number | null
+          data_renovacao: string | null
+          fornecedor: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          org_id: string
+          qtd_usuarios: number | null
+          responsavel_id: string | null
+          tipo: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custo_mensal?: number | null
+          data_renovacao?: string | null
+          fornecedor?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          org_id: string
+          qtd_usuarios?: number | null
+          responsavel_id?: string | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custo_mensal?: number | null
+          data_renovacao?: string | null
+          fornecedor?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          org_id?: string
+          qtd_usuarios?: number | null
+          responsavel_id?: string | null
+          tipo?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licencas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "licencas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manutencoes: {
+        Row: {
+          ativo_id: string
+          created_at: string
+          custo: number | null
+          data_abertura: string
+          data_conclusao: string | null
+          descricao: string | null
+          fornecedor: string | null
+          id: string
+          org_id: string
+          status: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo_id: string
+          created_at?: string
+          custo?: number | null
+          data_abertura?: string
+          data_conclusao?: string | null
+          descricao?: string | null
+          fornecedor?: string | null
+          id?: string
+          org_id: string
+          status?: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          ativo_id?: string
+          created_at?: string
+          custo?: number | null
+          data_abertura?: string
+          data_conclusao?: string | null
+          descricao?: string | null
+          fornecedor?: string | null
+          id?: string
+          org_id?: string
+          status?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manutencoes_ativo_id_fkey"
+            columns: ["ativo_id"]
+            isOneToOne: false
+            referencedRelation: "ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "manutencoes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          cnpj: string | null
+          created_at: string
+          id: string
+          nome: string
+          plano: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          plano?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          plano?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          org_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          nome: string
+          org_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          org_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registros_acesso: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_concessao: string
+          data_revogacao: string | null
+          id: string
+          nivel_acesso: string | null
+          org_id: string
+          sistema: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_concessao?: string
+          data_revogacao?: string | null
+          id?: string
+          nivel_acesso?: string | null
+          org_id: string
+          sistema: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_concessao?: string
+          data_revogacao?: string | null
+          id?: string
+          nivel_acesso?: string | null
+          org_id?: string
+          sistema?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registros_acesso_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registros_acesso_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      servidores: {
+        Row: {
+          ambiente: string | null
+          created_at: string
+          custo_mensal: number | null
+          id: string
+          ip_publico: string | null
+          nome: string
+          observacoes: string | null
+          org_id: string
+          provedor: string | null
+          updated_at: string
+          uptime_pct: number | null
+        }
+        Insert: {
+          ambiente?: string | null
+          created_at?: string
+          custo_mensal?: number | null
+          id?: string
+          ip_publico?: string | null
+          nome: string
+          observacoes?: string | null
+          org_id: string
+          provedor?: string | null
+          updated_at?: string
+          uptime_pct?: number | null
+        }
+        Update: {
+          ambiente?: string | null
+          created_at?: string
+          custo_mensal?: number | null
+          id?: string
+          ip_publico?: string | null
+          nome?: string
+          observacoes?: string | null
+          org_id?: string
+          provedor?: string | null
+          updated_at?: string
+          uptime_pct?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servidores_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      termos_responsabilidade: {
+        Row: {
+          ativo_id: string
+          created_at: string
+          data_assinatura: string
+          data_devolucao: string | null
+          id: string
+          observacoes: string | null
+          org_id: string
+          pdf_url: string | null
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          ativo_id: string
+          created_at?: string
+          data_assinatura?: string
+          data_devolucao?: string | null
+          id?: string
+          observacoes?: string | null
+          org_id: string
+          pdf_url?: string | null
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          ativo_id?: string
+          created_at?: string
+          data_assinatura?: string
+          data_devolucao?: string | null
+          id?: string
+          observacoes?: string | null
+          org_id?: string
+          pdf_url?: string | null
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termos_responsabilidade_ativo_id_fkey"
+            columns: ["ativo_id"]
+            isOneToOne: false
+            referencedRelation: "ativos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termos_responsabilidade_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termos_responsabilidade_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      usuarios: {
+        Row: {
+          ativo: boolean
+          cargo: string | null
+          created_at: string
+          departamento_id: string | null
+          email: string | null
+          id: string
+          nome: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          departamento_id?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cargo?: string | null
+          created_at?: string
+          departamento_id?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_departamento_id_fkey"
+            columns: ["departamento_id"]
+            isOneToOne: false
+            referencedRelation: "departamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuarios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_org_id: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _org_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      alerta_severidade: "info" | "aviso" | "critico"
+      app_role: "admin" | "gestor" | "usuario"
+      ativo_status: "ativo" | "manutencao" | "estoque" | "descartado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +803,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      alerta_severidade: ["info", "aviso", "critico"],
+      app_role: ["admin", "gestor", "usuario"],
+      ativo_status: ["ativo", "manutencao", "estoque", "descartado"],
+    },
   },
 } as const
