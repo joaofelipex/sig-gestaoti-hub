@@ -1,6 +1,5 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { AppSidebar } from "./AppSidebar";
-import { Bell, Menu, Moon, Search, Sun, User } from "lucide-react";
+import { Bell, Cpu, Moon, Plus, Search, Sun, User, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,34 +13,129 @@ import {
 import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { APP_TAB_DEFAULTS, TabsProvider, useAppTabs } from "./TabsContext";
 
 function daysUntil(d: string) {
   return Math.ceil((new Date(d).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
-export function AppLayout() {
+function TabBar() {
+  const { tabs, activePath, closeTab, setActive, openTab } = useAppTabs();
+  // Módulos disponíveis para abrir via "+"
+  const allModules = Object.values(APP_TAB_DEFAULTS).filter((t) => !t.pinned);
+  const openPaths = new Set(tabs.map((t) => t.path));
+
+  return (
+    <div className="flex items-stretch gap-1 overflow-x-auto scrollbar-thin">
+      {tabs.map((tab) => {
+        const active = tab.path === activePath;
+        return (
+          <div
+            key={tab.path}
+            onClick={() => setActive(tab.path)}
+            className={cn(
+              "group relative flex items-center gap-3 pl-4 pr-3 py-2 min-w-[150px] max-w-[220px] cursor-pointer",
+              "rounded-md border transition-all select-none",
+              active
+                ? "bg-[hsl(var(--tab-active))] border-[hsl(var(--tab-active-border))] shadow-sm"
+                : "bg-transparent border-transparent hover:bg-[hsl(var(--tab-hover))]",
+            )}
+          >
+            <div className="flex flex-col leading-tight min-w-0 flex-1">
+              <span
+                className={cn(
+                  "text-[13px] font-semibold truncate",
+                  active ? "text-primary" : "text-foreground",
+                )}
+              >
+                {tab.label}
+              </span>
+              {tab.sublabel && (
+                <span className="text-[10px] text-muted-foreground truncate font-medium">
+                  {tab.sublabel}
+                </span>
+              )}
+            </div>
+            {!tab.pinned && (
+              <button
+                aria-label={`Fechar ${tab.label}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  closeTab(tab.path);
+                }}
+                className={cn(
+                  "shrink-0 w-5 h-5 rounded-sm flex items-center justify-center transition-opacity",
+                  "text-muted-foreground hover:bg-background hover:text-foreground",
+                  active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                )}
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Botão "+" para abrir nova aba/módulo */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            aria-label="Abrir módulo"
+            className="shrink-0 w-9 h-9 my-auto ml-1 rounded-md text-muted-foreground hover:bg-[hsl(var(--tab-hover))] hover:text-primary flex items-center justify-center transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-60">
+          {allModules.map((m) => (
+            <DropdownMenuItem
+              key={m.path}
+              onClick={() => openTab(m)}
+              className="cursor-pointer flex items-center justify-between"
+            >
+              <div className="flex flex-col leading-tight">
+                <span className="text-[13px] font-semibold">{m.label}</span>
+                {m.sublabel && (
+                  <span className="text-[10px] text-muted-foreground">{m.sublabel}</span>
+                )}
+              </div>
+              {openPaths.has(m.path) && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-success/10 text-success border-success/30">
+                  aberto
+                </Badge>
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+function LayoutChrome() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const { openTab } = useAppTabs();
 
   const alerts = useMemo(() => {
     const items: { label: string; type: string; route: string }[] = [];
-    domains.forEach(d => {
+    domains.forEach((d) => {
       const days = daysUntil(d.expirationDate);
-      if (days <= 30 && days > 0) items.push({ label: `${d.url} expira em ${days}d`, type: 'warning', route: '/dominios' });
-      if (days <= 0) items.push({ label: `${d.url} expirado!`, type: 'critical', route: '/dominios' });
+      if (days <= 30 && days > 0) items.push({ label: `${d.url} expira em ${days}d`, type: "warning", route: "/dominios" });
+      if (days <= 0) items.push({ label: `${d.url} expirado!`, type: "critical", route: "/dominios" });
       const sslDays = daysUntil(d.sslExpiration);
-      if (sslDays <= 30 && sslDays > 0) items.push({ label: `SSL ${d.url} expira em ${sslDays}d`, type: 'warning', route: '/dominios' });
+      if (sslDays <= 30 && sslDays > 0) items.push({ label: `SSL ${d.url} expira em ${sslDays}d`, type: "warning", route: "/dominios" });
     });
-    servers.forEach(s => {
-      if (s.status === 'Offline' || s.status === 'Degradado') items.push({ label: `${s.name} está ${s.status}`, type: 'critical', route: '/servidores' });
+    servers.forEach((s) => {
+      if (s.status === "Offline" || s.status === "Degradado") items.push({ label: `${s.name} está ${s.status}`, type: "critical", route: "/servidores" });
       const cd = daysUntil(s.contractEnd);
-      if (cd <= 30 && cd > 0) items.push({ label: `Contrato ${s.name} vence em ${cd}d`, type: 'warning', route: '/servidores' });
+      if (cd <= 30 && cd > 0) items.push({ label: `Contrato ${s.name} vence em ${cd}d`, type: "warning", route: "/servidores" });
     });
-    assets.forEach(a => {
-      if (a.status === 'Manutenção') items.push({ label: `${a.brand} ${a.model} em manutenção`, type: 'warning', route: '/ativos' });
+    assets.forEach((a) => {
+      if (a.status === "Manutenção") items.push({ label: `${a.brand} ${a.model} em manutenção`, type: "warning", route: "/ativos" });
     });
     return items;
   }, []);
@@ -50,87 +144,105 @@ export function AppLayout() {
     if (searchValue.length < 2) return [];
     const q = searchValue.toLowerCase();
     const results: { label: string; sub: string; route: string }[] = [];
-    assets.forEach(a => {
+    assets.forEach((a) => {
       if (`${a.brand} ${a.model} ${a.serialNumber}`.toLowerCase().includes(q))
-        results.push({ label: `${a.brand} ${a.model}`, sub: a.id, route: '/ativos' });
+        results.push({ label: `${a.brand} ${a.model}`, sub: a.id, route: "/ativos" });
     });
-    domains.forEach(d => {
-      if (d.url.toLowerCase().includes(q))
-        results.push({ label: d.url, sub: d.registrar, route: '/dominios' });
+    domains.forEach((d) => {
+      if (d.url.toLowerCase().includes(q)) results.push({ label: d.url, sub: d.registrar, route: "/dominios" });
     });
-    licenses.forEach(l => {
-      if (l.software.toLowerCase().includes(q))
-        results.push({ label: l.software, sub: l.vendor, route: '/licencas' });
+    licenses.forEach((l) => {
+      if (l.software.toLowerCase().includes(q)) results.push({ label: l.software, sub: l.vendor, route: "/licencas" });
     });
-    servers.forEach(s => {
+    servers.forEach((s) => {
       if (`${s.name} ${s.purpose} ${s.provider}`.toLowerCase().includes(q))
-        results.push({ label: s.name, sub: s.provider, route: '/servidores' });
+        results.push({ label: s.name, sub: s.provider, route: "/servidores" });
     });
     return results.slice(0, 8);
   }, [searchValue]);
 
+  const navigateAndOpen = (route: string) => {
+    const def = APP_TAB_DEFAULTS[route];
+    if (def) openTab(def);
+    else navigate(route);
+  };
+
   return (
-    <div className="flex min-h-screen bg-background">
-      <AppSidebar />
-      <div className="flex-1 flex flex-col">
-        <header className="min-h-16 border-b border-border flex flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-6 bg-secondary/80 backdrop-blur sticky top-0 z-10 shadow-sm">
-          <div className="flex items-center gap-2 md:hidden">
-            <Button variant="ghost" size="icon" className="h-10 w-10 bg-card border border-border shadow-sm" onClick={() => setMobileNavOpen(open => !open)}>
-              <Menu className="w-4 h-4" />
-            </Button>
-            <span className="text-[15px] font-bold text-primary">IMTS</span>
+    <div className="min-h-screen flex flex-col bg-background">
+      {/* Header horizontal estilo navegador */}
+      <header className="bg-[hsl(var(--tab-bar))] border-b border-border sticky top-0 z-30 shadow-sm">
+        <div className="flex items-stretch gap-3 px-3 sm:px-4 h-16">
+          {/* Logo */}
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 pr-3 border-r border-border shrink-0"
+            aria-label="Início IMTS"
+          >
+            <div className="flex items-center justify-center w-9 h-9 rounded-md bg-primary">
+              <Cpu className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="hidden sm:block text-[16px] font-extrabold tracking-tight text-foreground">
+              IMTS
+            </span>
+          </button>
+
+          {/* Tab bar */}
+          <div className="flex-1 min-w-0 flex items-center">
+            <TabBar />
           </div>
-          <div className="relative order-3 w-full sm:order-none sm:w-72 lg:w-80">
+
+          {/* Busca */}
+          <div className="hidden md:block relative w-72 my-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Buscar... (Ctrl+K)"
-              className="pl-10 bg-card border-border h-10 shadow-sm text-[13px] font-normal"
+              className="pl-10 bg-background border-border h-10 rounded-full shadow-sm text-[13px]"
               value={searchValue}
-              onChange={e => { setSearchValue(e.target.value); setSearchOpen(true); }}
+              onChange={(e) => { setSearchValue(e.target.value); setSearchOpen(true); }}
               onFocus={() => setSearchOpen(true)}
               onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
             />
             {searchOpen && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+              <div className="absolute top-full left-0 right-0 mt-2 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
                 {searchResults.map((r, i) => (
                   <button
                     key={i}
                     className="w-full px-4 py-2.5 text-left hover:bg-muted transition-colors flex items-center justify-between"
-                    onMouseDown={() => { navigate(r.route); setSearchValue(""); setSearchOpen(false); }}
+                    onMouseDown={() => { navigateAndOpen(r.route); setSearchValue(""); setSearchOpen(false); }}
                   >
                     <div>
-                       <p className="text-[13px] font-medium text-foreground leading-tight">{r.label}</p>
-                       <p className="text-[11px] text-muted-foreground leading-tight">{r.sub}</p>
+                      <p className="text-[13px] font-medium text-foreground leading-tight">{r.label}</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">{r.sub}</p>
                     </div>
-                    <Badge variant="outline" className="text-[10px]">{r.route.replace('/', '')}</Badge>
+                    <Badge variant="outline" className="text-[10px]">{r.route.replace("/", "")}</Badge>
                   </button>
                 ))}
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {/* Dark mode toggle */}
+
+          {/* Ações + perfil */}
+          <div className="flex items-center gap-2 my-auto">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-10 w-10 bg-card border border-border shadow-sm hover:bg-muted"
-                  onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                  className="h-10 w-10 rounded-full hover:bg-muted"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 >
-                  {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>{theme === 'dark' ? 'Modo claro' : 'Modo escuro'}</TooltipContent>
+              <TooltipContent>{theme === "dark" ? "Modo claro" : "Modo escuro"}</TooltipContent>
             </Tooltip>
 
-            {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="relative h-10 w-10 rounded-md bg-card border border-border shadow-sm hover:bg-muted transition-colors flex items-center justify-center">
+                <button className="relative h-10 w-10 rounded-full hover:bg-muted transition-colors flex items-center justify-center">
                   <Bell className="w-5 h-5 text-muted-foreground" />
                   {alerts.length > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                    <span className="absolute top-1 right-1 min-w-[16px] h-[16px] rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center px-1">
                       {alerts.length}
                     </span>
                   )}
@@ -144,8 +256,8 @@ export function AppLayout() {
                   <div className="px-3 py-4 text-center text-sm text-muted-foreground">Nenhum alerta</div>
                 ) : (
                   alerts.map((a, i) => (
-                    <DropdownMenuItem key={i} onClick={() => navigate(a.route)} className="cursor-pointer">
-                      <div className={`w-2 h-2 rounded-full shrink-0 mr-2 ${a.type === 'critical' ? 'bg-destructive' : 'bg-warning'}`} />
+                    <DropdownMenuItem key={i} onClick={() => navigateAndOpen(a.route)} className="cursor-pointer">
+                      <div className={`w-2 h-2 rounded-full shrink-0 mr-2 ${a.type === "critical" ? "bg-destructive" : "bg-warning"}`} />
                       <span className="text-xs">{a.label}</span>
                     </DropdownMenuItem>
                   ))
@@ -153,37 +265,44 @@ export function AppLayout() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <div className="flex items-center gap-3 pl-3 pr-3 py-1.5 rounded-md bg-card border border-border shadow-sm">
-              <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+            <div className="flex items-center gap-3 pl-3 pr-3 py-1.5 rounded-full bg-background border border-border shadow-sm ml-1">
+              <div className="hidden md:block text-right leading-tight">
+                <p className="text-[13px] font-semibold text-foreground">Felipe Miranda</p>
+                <p className="text-[10px] text-muted-foreground">Administrador do Sistema</p>
+                <p className="text-[10px] text-muted-foreground">IMTS Group</p>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
                 <User className="w-4 h-4 text-primary" />
               </div>
-              <div className="hidden md:block">
-                <p className="text-[13px] font-semibold text-foreground leading-tight">Felipe Miranda</p>
-                <p className="text-[11px] text-muted-foreground leading-tight">Administrador do Sistema</p>
-              </div>
             </div>
           </div>
-        </header>
+        </div>
+      </header>
 
-        {mobileNavOpen && (
-          <div className="border-b border-border bg-card px-3 py-2 md:hidden">
-            <div className="grid grid-cols-2 gap-2 text-[13px]">
-              {[
-                ["Dashboard", "/"], ["Ativos", "/ativos"], ["Domínios", "/dominios"], ["Licenças", "/licencas"],
-                ["Governança", "/governanca"], ["Servidores", "/servidores"], ["Economista", "/economista"],
-              ].map(([label, route]) => (
-                <button key={route} className="rounded-md border border-border bg-secondary px-3 py-2 text-left font-medium text-foreground" onClick={() => { navigate(route); setMobileNavOpen(false); }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-5">
-          <Outlet />
-        </main>
+      {/* Busca mobile */}
+      <div className="md:hidden px-3 py-2 border-b border-border bg-[hsl(var(--tab-bar))]">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar..."
+            className="pl-10 h-10 rounded-full text-[13px]"
+            value={searchValue}
+            onChange={(e) => { setSearchValue(e.target.value); setSearchOpen(true); }}
+          />
+        </div>
       </div>
+
+      <main className="flex-1 px-3 py-5 sm:px-6 sm:py-6">
+        <Outlet />
+      </main>
     </div>
+  );
+}
+
+export function AppLayout() {
+  return (
+    <TabsProvider>
+      <LayoutChrome />
+    </TabsProvider>
   );
 }
