@@ -291,6 +291,47 @@ function LayoutChrome() {
   );
 }
 
+function UserPill() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const meta = (user?.user_metadata ?? {}) as { nome?: string; full_name?: string; organizacao?: string };
+  const displayName = meta.nome || meta.full_name || user?.email?.split("@")[0] || "Usuário";
+  const org = meta.organizacao || "Minha organização";
+  const initials = displayName.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-3 pl-3 pr-3 py-1.5 rounded-full bg-background border border-border shadow-sm ml-1 hover:bg-muted transition-colors">
+          <div className="hidden md:block text-right leading-tight">
+            <p className="text-[13px] font-semibold text-foreground">{displayName}</p>
+            <p className="text-[10px] text-muted-foreground">{user?.email}</p>
+            <p className="text-[10px] text-muted-foreground">{org}</p>
+          </div>
+          <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
+            <span className="text-xs font-semibold text-primary">{initials || <User className="w-4 h-4" />}</span>
+          </div>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <div className="px-3 py-2 border-b border-border">
+          <p className="text-[13px] font-semibold text-foreground truncate">{displayName}</p>
+          <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+        </div>
+        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+          <LogOut className="w-4 h-4 mr-2" />
+          Sair
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function AppLayout() {
   return (
     <TabsProvider>
