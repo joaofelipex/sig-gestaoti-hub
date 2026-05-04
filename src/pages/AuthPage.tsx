@@ -116,18 +116,20 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary to-background px-4 py-10">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/30 mb-3">
-            <svg viewBox="0 0 48 48" className="w-9 h-9 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-label="IMTS logo">
-              {/* Chip / shield hybrid representing IT governance */}
-              <path d="M24 4 L40 11 V25 C40 34 33 41 24 44 C15 41 8 34 8 25 V11 Z" />
-              <rect x="17" y="18" width="14" height="14" rx="2" />
-              <path d="M21 22 L21 28 M24 22 L24 28 M27 22 L27 28" />
-              <path d="M17 21 H14 M17 25 H14 M17 29 H14 M31 21 H34 M31 25 H34 M31 29 H34" />
-            </svg>
+          <div className="relative w-20 h-20 mb-4">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/60 shadow-xl shadow-primary/40 rotate-6" />
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-primary/90 to-primary/50 flex items-center justify-center -rotate-3">
+              <svg viewBox="0 0 64 64" className="w-11 h-11 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-label="IMTS">
+                <path d="M10 20 L32 10 L54 20 L54 44 L32 54 L10 44 Z" />
+                <path d="M10 20 L32 30 L54 20" />
+                <path d="M32 30 L32 54" />
+                <circle cx="32" cy="30" r="3.5" fill="currentColor" stroke="none" />
+              </svg>
+            </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">IMTS</h1>
-          <p className="text-xs font-medium text-primary uppercase tracking-[0.2em]">Gestão de TI</p>
-          <p className="text-sm text-muted-foreground mt-1">Acesse sua organização</p>
+          <h1 className="text-3xl font-black text-foreground tracking-tight">IMTS</h1>
+          <p className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mt-1">IT Management Suite</p>
+          <p className="text-sm text-muted-foreground mt-2">Acesse sua organização</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm p-6">
