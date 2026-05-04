@@ -1,5 +1,6 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { Bell, Cpu, Moon, Plus, Search, Sun, User, X } from "lucide-react";
+import { Bell, Cpu, LogOut, Moon, Plus, Search, Sun, User, X } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -265,16 +266,7 @@ function LayoutChrome() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <div className="flex items-center gap-3 pl-3 pr-3 py-1.5 rounded-full bg-background border border-border shadow-sm ml-1">
-              <div className="hidden md:block text-right leading-tight">
-                <p className="text-[13px] font-semibold text-foreground">Felipe Miranda</p>
-                <p className="text-[10px] text-muted-foreground">Administrador do Sistema</p>
-                <p className="text-[10px] text-muted-foreground">IMTS Group</p>
-              </div>
-              <div className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center">
-                <User className="w-4 h-4 text-primary" />
-              </div>
-            </div>
+            <UserPill />
           </div>
         </div>
       </header>
