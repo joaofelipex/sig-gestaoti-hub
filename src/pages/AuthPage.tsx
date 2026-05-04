@@ -117,19 +117,14 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary to-background px-4 py-10">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="relative w-20 h-20 mb-4">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/60 shadow-xl shadow-primary/40 rotate-6" />
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-primary/90 to-primary/50 flex items-center justify-center -rotate-3">
-              <svg viewBox="0 0 64 64" className="w-11 h-11 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-label="IMTS">
-                <path d="M10 20 L32 10 L54 20 L54 44 L32 54 L10 44 Z" />
-                <path d="M10 20 L32 30 L54 20" />
-                <path d="M32 30 L32 54" />
-                <circle cx="32" cy="30" r="3.5" fill="currentColor" stroke="none" />
-              </svg>
-            </div>
-          </div>
-          <h1 className="text-3xl font-black text-foreground tracking-tight">IMTS</h1>
-          <p className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mt-1">IT Management Suite</p>
+          <img
+            src={imtsLogo}
+            alt="IMTS - IT Management System"
+            width={160}
+            height={160}
+            className="w-32 h-32 object-contain drop-shadow-lg"
+          />
+          <p className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mt-1">IT Management System</p>
           <p className="text-sm text-muted-foreground mt-2">Acesse sua organização</p>
         </div>
 
