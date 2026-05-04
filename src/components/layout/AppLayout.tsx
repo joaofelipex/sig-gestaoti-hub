@@ -1,5 +1,6 @@
+import * as React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Bell, Cpu, LogOut, Moon, Plus, Search, Sun, User, X } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight, Cpu, LogOut, Moon, Plus, Search, Sun, User, X } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,67 +24,106 @@ function daysUntil(d: string) {
 
 function TabBar() {
   const { tabs, activePath, closeTab, setActive, openTab } = useAppTabs();
-  // Módulos disponíveis para abrir via "+"
   const allModules = Object.values(APP_TAB_DEFAULTS).filter((t) => !t.pinned);
   const openPaths = new Set(tabs.map((t) => t.path));
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  const scrollBy = (dir: number) => {
+    scrollRef.current?.scrollBy({ left: dir * 240, behavior: "smooth" });
+  };
 
   return (
-    <div className="flex items-stretch gap-1 overflow-x-auto scrollbar-thin">
-      {tabs.map((tab) => {
-        const active = tab.path === activePath;
-        return (
-          <div
-            key={tab.path}
-            onClick={() => setActive(tab.path)}
-            className={cn(
-              "group relative flex items-center gap-3 pl-4 pr-3 py-2 min-w-[150px] max-w-[220px] cursor-pointer",
-              "rounded-md border transition-all select-none",
-              active
-                ? "bg-[hsl(var(--tab-active))] border-[hsl(var(--tab-active-border))] shadow-sm"
-                : "bg-transparent border-transparent hover:bg-[hsl(var(--tab-hover))]",
-            )}
-          >
-            <div className="flex flex-col leading-tight min-w-0 flex-1">
-              <span
+    <div className="relative flex items-center w-full min-w-0">
+      {/* Botão scroll esquerda */}
+      <button
+        type="button"
+        aria-label="Rolar abas para a esquerda"
+        onClick={() => scrollBy(-1)}
+        className="shrink-0 h-9 w-7 rounded-md text-muted-foreground hover:bg-[hsl(var(--tab-hover))] hover:text-primary flex items-center justify-center transition-colors"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+
+      {/* Container scrollable com fade nas bordas */}
+      <div className="relative flex-1 min-w-0">
+        <div
+          ref={scrollRef}
+          className="flex items-stretch gap-1.5 overflow-x-auto tab-scroll px-1 py-1.5"
+        >
+          {tabs.map((tab) => {
+            const active = tab.path === activePath;
+            return (
+              <div
+                key={tab.path}
+                onClick={() => setActive(tab.path)}
                 className={cn(
-                  "text-[13px] font-semibold truncate",
-                  active ? "text-primary" : "text-foreground",
+                  "group relative flex items-center gap-2 pl-3.5 pr-2 py-1.5 min-w-[140px] max-w-[220px] cursor-pointer shrink-0",
+                  "rounded-lg border transition-all duration-200 select-none",
+                  active
+                    ? "bg-[hsl(var(--tab-active))] border-[hsl(var(--tab-active-border))] shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.25)]"
+                    : "bg-background/40 border-border/60 hover:bg-[hsl(var(--tab-hover))] hover:border-border",
                 )}
               >
-                {tab.label}
-              </span>
-              {tab.sublabel && (
-                <span className="text-[10px] text-muted-foreground truncate font-medium">
-                  {tab.sublabel}
-                </span>
-              )}
-            </div>
-            {!tab.pinned && (
-              <button
-                aria-label={`Fechar ${tab.label}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeTab(tab.path);
-                }}
-                className={cn(
-                  "shrink-0 w-5 h-5 rounded-sm flex items-center justify-center transition-opacity",
-                  "text-muted-foreground hover:bg-background hover:text-foreground",
-                  active ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+                {/* Indicador lateral colorido na aba ativa */}
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-primary" />
                 )}
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        );
-      })}
+                <div className="flex flex-col leading-tight min-w-0 flex-1">
+                  <span
+                    className={cn(
+                      "text-[12.5px] font-semibold truncate transition-colors",
+                      active ? "text-primary" : "text-foreground/80 group-hover:text-foreground",
+                    )}
+                  >
+                    {tab.label}
+                  </span>
+                  {tab.sublabel && (
+                    <span className="text-[10px] text-muted-foreground truncate font-medium">
+                      {tab.sublabel}
+                    </span>
+                  )}
+                </div>
+                {!tab.pinned && (
+                  <button
+                    aria-label={`Fechar ${tab.label}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(tab.path);
+                    }}
+                    className={cn(
+                      "shrink-0 w-5 h-5 rounded-md flex items-center justify-center transition-all",
+                      "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
+                      active ? "opacity-80" : "opacity-0 group-hover:opacity-80",
+                    )}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {/* Fades laterais para indicar overflow */}
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-[hsl(var(--tab-bar))] to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-[hsl(var(--tab-bar))] to-transparent" />
+      </div>
+
+      {/* Botão scroll direita */}
+      <button
+        type="button"
+        aria-label="Rolar abas para a direita"
+        onClick={() => scrollBy(1)}
+        className="shrink-0 h-9 w-7 rounded-md text-muted-foreground hover:bg-[hsl(var(--tab-hover))] hover:text-primary flex items-center justify-center transition-colors"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
 
       {/* Botão "+" para abrir nova aba/módulo */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             aria-label="Abrir módulo"
-            className="shrink-0 w-9 h-9 my-auto ml-1 rounded-md text-muted-foreground hover:bg-[hsl(var(--tab-hover))] hover:text-primary flex items-center justify-center transition-colors"
+            className="shrink-0 h-9 w-9 ml-1 rounded-md text-muted-foreground hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-all border border-dashed border-border hover:border-primary"
           >
             <Plus className="w-4 h-4" />
           </button>
