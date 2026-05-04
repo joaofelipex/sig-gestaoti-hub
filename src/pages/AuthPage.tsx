@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
-import { Cpu, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import imtsLogo from "@/assets/imts-logo.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
