@@ -116,11 +116,18 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary to-background px-4 py-10">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center shadow-lg mb-3">
-            <Cpu className="w-7 h-7 text-primary-foreground" />
+          <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/30 mb-3">
+            <svg viewBox="0 0 48 48" className="w-9 h-9 text-primary-foreground" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-label="IMTS logo">
+              {/* Chip / shield hybrid representing IT governance */}
+              <path d="M24 4 L40 11 V25 C40 34 33 41 24 44 C15 41 8 34 8 25 V11 Z" />
+              <rect x="17" y="18" width="14" height="14" rx="2" />
+              <path d="M21 22 L21 28 M24 22 L24 28 M27 22 L27 28" />
+              <path d="M17 21 H14 M17 25 H14 M17 29 H14 M31 21 H34 M31 25 H34 M31 29 H34" />
+            </svg>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Gestão de TI</h1>
-          <p className="text-sm text-muted-foreground">Acesse sua organização</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">IMTS</h1>
+          <p className="text-xs font-medium text-primary uppercase tracking-[0.2em]">Gestão de TI</p>
+          <p className="text-sm text-muted-foreground mt-1">Acesse sua organização</p>
         </div>
 
         <div className="bg-card border border-border rounded-2xl shadow-sm p-6">
