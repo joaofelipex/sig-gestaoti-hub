@@ -10,7 +10,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { type AssetMovement, type MovementType } from "@/lib/movement-data";
-import { assets as initialAssets, type Asset } from "@/data/mock-data";
+import { type Asset } from "@/data/mock-data";
 
 interface Props {
   open: boolean;
@@ -18,6 +18,7 @@ interface Props {
   onSave: (movement: AssetMovement) => void;
   movement?: AssetMovement | null;
   presetAssetId?: string;
+  assets: Asset[];
 }
 
 const TYPES: MovementType[] = [
@@ -31,18 +32,9 @@ const TYPES: MovementType[] = [
   "Doação",
 ];
 
-function readAssets(): Asset[] {
-  try {
-    const raw = localStorage.getItem("imts.assets");
-    return raw ? JSON.parse(raw) : initialAssets;
-  } catch {
-    return initialAssets;
-  }
-}
-
-export default function MovementForm({ open, onOpenChange, onSave, movement, presetAssetId }: Props) {
+export default function MovementForm({ open, onOpenChange, onSave, movement, presetAssetId, assets }: Props) {
   const isEdit = !!movement;
-  const [assetList, setAssetList] = useState<Asset[]>([]);
+  const assetList = assets;
   const [form, setForm] = useState<AssetMovement>({
     id: "",
     assetId: "",
@@ -50,20 +42,17 @@ export default function MovementForm({ open, onOpenChange, onSave, movement, pre
     type: "Transferência",
     date: new Date().toISOString().slice(0, 10),
     reason: "",
-    responsible: "Felipe Miranda",
+    responsible: "",
   });
 
   useEffect(() => {
-    if (open) setAssetList(readAssets());
-  }, [open]);
-
-  useEffect(() => {
+    if (!open) return;
     if (movement) {
       setForm(movement);
     } else {
-      const asset = presetAssetId ? readAssets().find(a => a.id === presetAssetId) : null;
+      const asset = presetAssetId ? assets.find(a => a.id === presetAssetId) : null;
       setForm({
-        id: `MOV-${Date.now().toString().slice(-6)}`,
+        id: crypto.randomUUID(),
         assetId: asset?.id || "",
         assetLabel: asset ? `${asset.brand} ${asset.model}` : "",
         type: "Transferência",
@@ -71,10 +60,10 @@ export default function MovementForm({ open, onOpenChange, onSave, movement, pre
         fromUser: asset?.assignedTo || "",
         fromDepartment: asset?.department || "",
         reason: "",
-        responsible: "Felipe Miranda",
+        responsible: "",
       });
     }
-  }, [movement, open, presetAssetId]);
+  }, [movement, open, presetAssetId, assets]);
 
   const handleAssetChange = (id: string) => {
     const asset = assetList.find(a => a.id === id);
