@@ -70,7 +70,7 @@ export function useSupabaseCollection<UI extends { id: string }, DB extends { id
         .select()
         .single();
       if (error) return toast.error(`Erro ao salvar: ${error.message}`);
-      setItems(prev => [mapFromDb(data as unknown as DB), ...prev]);
+      setItems(prev => [mapFromDbRef.current(data as unknown as DB), ...prev]);
     }
   };
 
