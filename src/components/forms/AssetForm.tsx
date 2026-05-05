@@ -39,7 +39,7 @@ export default function AssetForm({ open, onOpenChange, onSave, asset }: AssetFo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = asset?.id || `AST-${String(Date.now()).slice(-4)}`;
+    const id = asset?.id || crypto.randomUUID();
     onSave({ ...form, id } as Asset);
     onOpenChange(false);
   };
