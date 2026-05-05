@@ -81,11 +81,8 @@ interface DisasterDoc {
 }
 
 export default function DomainsPage() {
-  const { items: domainList, save: saveDomain, remove: removeDomain } = usePersistentCollection(
-    "imts.domains",
-    initialDomains,
-    "Domínios",
-    domain => domain.url,
+  const { items: domainList, save: saveDomain, remove: removeDomain, loading } = useSupabaseCollection<Domain, DomainRow>(
+    "dominios", fromDb, toDb, "Domínios",
   );
   const [formOpen, setFormOpen] = useState(false);
   const [editingDomain, setEditingDomain] = useState<Domain | null>(null);
