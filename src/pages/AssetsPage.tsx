@@ -178,9 +178,9 @@ export default function AssetsPage() {
   const totalDepreciated = assetList.reduce((s, a) => s + depreciacao(a.purchaseValue, a.purchaseDate), 0);
   const totalPurchase = assetList.reduce((s, a) => s + a.purchaseValue, 0);
 
-  const handleSave = (asset: Asset) => {
+  const handleSave = async (asset: Asset) => {
     const exists = assetList.some(a => a.id === asset.id);
-    saveAsset(asset);
+    await saveAsset(asset);
     toast.success(`Ativo "${asset.brand} ${asset.model}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setEditingAsset(null);
   };
