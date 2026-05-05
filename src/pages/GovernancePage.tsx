@@ -88,6 +88,34 @@ export default function GovernancePage() {
   const [editingContract, setEditingContract] = useState<FinancialContract | null>(null);
   const [contractDeleteTarget, setContractDeleteTarget] = useState<FinancialContract | null>(null);
 
+  // Riscos via Supabase
+  const { items: risks, save: saveRisk, remove: removeRisk } = useSupabaseCollection<RiskItem, RiskRow>(
+    "riscos", riskFromDb, riskToDb, "Riscos",
+  );
+  const [riskDialog, setRiskDialog] = useState<{ open: boolean; editing?: RiskItem }>({ open: false });
+  const [riskDeleteTarget, setRiskDeleteTarget] = useState<RiskItem | null>(null);
+
+  // Usuários SIG via tabela usuarios + departamentos
+  const [sigUsers, setSigUsers] = useState<SigUser[]>([]);
+  useEffect(() => {
+    (async () => {
+      const { data: users } = await supabase
+        .from("usuarios")
+        .select("id, nome, cargo, departamento_id")
+        .eq("ativo", true);
+      const { data: deps } = await supabase
+        .from("departamentos").select("id, nome, centro_custo");
+      const depMap = new Map((deps ?? []).map((d) => [d.id, d]));
+      setSigUsers((users ?? []).map((u) => {
+        const d = u.departamento_id ? depMap.get(u.departamento_id) : null;
+        return {
+          id: u.id, name: u.nome, role: u.cargo ?? "—",
+          department: d?.nome ?? "—", costCenter: d?.centro_custo ?? "—",
+        };
+      }));
+    })();
+  }, []);
+
   const handleSave = (record: AccessRecord) => {
     const exists = recordList.some(r => r.id === record.id);
     saveRecord(record);
