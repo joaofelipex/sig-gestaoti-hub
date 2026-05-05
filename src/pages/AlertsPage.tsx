@@ -71,7 +71,7 @@ export default function AlertsPage() {
         if (dd <= 30) candidates.push({
           org_id: orgId, tipo: "dominio", titulo: d.url,
           mensagem: dd <= 0 ? "Domínio expirado" : `Domínio vence em ${dd} dias`,
-          severidade: dd <= 0 ? "critical" : dd <= 15 ? "warning" : "info",
+          severidade: dd <= 0 ? "critico" : dd <= 15 ? "aviso" : "info",
           link: "/dominios",
         });
       }
@@ -80,7 +80,7 @@ export default function AlertsPage() {
         if (sd <= 30) candidates.push({
           org_id: orgId, tipo: "ssl", titulo: d.url,
           mensagem: sd <= 0 ? "Certificado SSL expirado" : `SSL vence em ${sd} dias`,
-          severidade: sd <= 0 ? "critical" : "warning",
+          severidade: sd <= 0 ? "critico" : "aviso",
           link: "/dominios",
         });
       }
@@ -92,13 +92,13 @@ export default function AlertsPage() {
         if (cd <= 30) candidates.push({
           org_id: orgId, tipo: "contrato_servidor", titulo: s.name,
           mensagem: cd <= 0 ? "Contrato vencido" : `Contrato vence em ${cd} dias`,
-          severidade: cd <= 0 ? "critical" : "warning",
+          severidade: cd <= 0 ? "critico" : "aviso",
           link: "/servidores",
         });
       }
       if (s.status === "Offline" || s.status === "Degradado") candidates.push({
         org_id: orgId, tipo: "servidor", titulo: s.name,
-        mensagem: `Servidor ${s.status}`, severidade: "critical", link: "/servidores",
+        mensagem: `Servidor ${s.status}`, severidade: "critico", link: "/servidores",
       });
     });
 
@@ -108,7 +108,7 @@ export default function AlertsPage() {
         if (rd <= 30 && rd >= 0) candidates.push({
           org_id: orgId, tipo: "licenca", titulo: l.software,
           mensagem: `Licença renova em ${rd} dias`,
-          severidade: rd <= 7 ? "warning" : "info", link: "/licencas",
+          severidade: rd <= 7 ? "aviso" : "info", link: "/licencas",
         });
       }
     });
@@ -116,7 +116,7 @@ export default function AlertsPage() {
     dash.assets.forEach(a => {
       if (a.status === "Manutenção") candidates.push({
         org_id: orgId, tipo: "manutencao", titulo: `${a.brand} ${a.model}`,
-        mensagem: "Ativo em manutenção", severidade: "warning", link: "/manutencao",
+        mensagem: "Ativo em manutenção", severidade: "aviso", link: "/manutencao",
       });
     });
 
@@ -176,8 +176,8 @@ export default function AlertsPage() {
   const counts = useMemo(() => ({
     total: alertas.length,
     unread: alertas.filter(a => !a.lida).length,
-    critical: alertas.filter(a => a.severidade === "critical").length,
-    warning: alertas.filter(a => a.severidade === "warning").length,
+    critical: alertas.filter(a => a.severidade === "critico").length,
+    warning: alertas.filter(a => a.severidade === "aviso").length,
   }), [alertas]);
 
   return (
@@ -215,8 +215,8 @@ export default function AlertsPage() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="info">Info</SelectItem>
-                        <SelectItem value="warning">Atenção</SelectItem>
-                        <SelectItem value="critical">Crítico</SelectItem>
+                        <SelectItem value="aviso">Atenção</SelectItem>
+                        <SelectItem value="critico">Crítico</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -248,8 +248,8 @@ export default function AlertsPage() {
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="unread">Não lidos</SelectItem>
-              <SelectItem value="critical">Críticos</SelectItem>
-              <SelectItem value="warning">Atenção</SelectItem>
+              <SelectItem value="critico">Críticos</SelectItem>
+              <SelectItem value="aviso">Atenção</SelectItem>
               <SelectItem value="info">Informativos</SelectItem>
             </SelectContent>
           </Select>
@@ -261,7 +261,7 @@ export default function AlertsPage() {
             const Icon = sevIcons[a.severidade];
             return (
               <div key={a.id} className={`flex items-center gap-3 p-3 rounded-md border ${a.lida ? "bg-secondary/30 opacity-70" : "bg-card"}`}>
-                <Icon className={`w-5 h-5 shrink-0 ${a.severidade === "critical" ? "text-destructive" : a.severidade === "warning" ? "text-warning" : "text-info"}`} />
+                <Icon className={`w-5 h-5 shrink-0 ${a.severidade === "critico" ? "text-destructive" : a.severidade === "aviso" ? "text-warning" : "text-info"}`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="text-sm font-semibold text-foreground">{a.titulo}</p>
