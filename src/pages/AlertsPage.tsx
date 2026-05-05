@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { exportToCSV } from "@/lib/export-csv";
 
-type Severidade = "info" | "warning" | "critical";
+type Severidade = "info" | "aviso" | "critico";
 interface Alerta {
   id: string;
   tipo: string;
