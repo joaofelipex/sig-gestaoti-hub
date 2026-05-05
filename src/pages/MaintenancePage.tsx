@@ -130,17 +130,15 @@ function warrantyState(warrantyEnd: string) {
 }
 
 export default function MaintenancePage() {
-  const { items: assets } = usePersistentCollection<Asset>(
-    "imts.assets",
-    initialAssets,
-    "Ativos",
-    a => `${a.brand} ${a.model}`,
+  const { items: assets } = useSupabaseCollection<Asset, AtivoRow>(
+    "ativos", assetFromDb, assetToDb as never, "Ativos",
   );
-  const { items: records, save, remove } = usePersistentCollection<MaintenanceRecord>(
-    "imts.maintenance",
-    initialMaintenance,
+  const assetsById = useMemo(() => new Map(assets.map(a => [a.id, a])), [assets]);
+  const { items: records, save, remove } = useSupabaseCollection<MaintenanceRecord, ManutRow>(
+    "manutencoes",
+    (r) => maintFromDb(r, assetsById),
+    maintToDb,
     "Manutenções",
-    r => `${r.type} - ${r.assetLabel}`,
   );
 
   const [formOpen, setFormOpen] = useState(false);
