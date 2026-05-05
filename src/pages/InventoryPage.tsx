@@ -22,12 +22,48 @@ import {
 import InventoryItemForm from "@/components/forms/InventoryItemForm";
 import StockMovementForm from "@/components/forms/StockMovementForm";
 import {
-  initialInventory, initialStockMovements,
   type InventoryItem, type StockMovement, type StockMovementType,
 } from "@/lib/inventory-data";
-import { usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import { exportToCSV } from "@/lib/export-csv";
 import { toast } from "sonner";
+
+interface InvRow {
+  id: string; nome: string; categoria: string; sku: string | null;
+  unit: string; quantity: number; min_quantity: number; unit_cost: number;
+  location: string | null; supplier: string | null; notes: string | null;
+}
+const invFromDb = (r: InvRow): InventoryItem => ({
+  id: r.id, name: r.nome, category: r.categoria as InventoryItem['category'],
+  sku: r.sku ?? undefined, unit: r.unit, quantity: r.quantity,
+  minQuantity: r.min_quantity, unitCost: Number(r.unit_cost),
+  location: r.location ?? '', supplier: r.supplier ?? undefined, notes: r.notes ?? undefined,
+});
+const invToDb = (i: InventoryItem, orgId: string) => ({
+  id: i.id, org_id: orgId, nome: i.name, categoria: i.category, sku: i.sku ?? null,
+  unit: i.unit, quantity: i.quantity, min_quantity: i.minQuantity, unit_cost: i.unitCost,
+  location: i.location, supplier: i.supplier ?? null, notes: i.notes ?? null,
+});
+
+interface InvMovRow {
+  id: string; item_id: string; item_name: string | null; tipo: string;
+  quantity: number; data: string; responsible: string | null;
+  destination: string | null; reason: string | null; invoice: string | null;
+  unit_cost: number | null;
+}
+const movFromDb = (r: InvMovRow): StockMovement => ({
+  id: r.id, itemId: r.item_id, itemName: r.item_name ?? '',
+  type: r.tipo as StockMovementType, quantity: r.quantity, date: r.data,
+  responsible: r.responsible ?? '', destination: r.destination ?? undefined,
+  reason: r.reason ?? '', invoice: r.invoice ?? undefined,
+  unitCost: r.unit_cost ?? undefined,
+});
+const movToDb = (m: StockMovement, orgId: string) => ({
+  id: m.id, org_id: orgId, item_id: m.itemId, item_name: m.itemName,
+  tipo: m.type, quantity: m.quantity, data: m.date,
+  responsible: m.responsible, destination: m.destination ?? null,
+  reason: m.reason, invoice: m.invoice ?? null, unit_cost: m.unitCost ?? null,
+});
 
 function statusOf(item: InventoryItem) {
   if (item.quantity === 0) return { label: "Sem estoque", cls: "bg-destructive/10 text-destructive border-destructive/20" };
@@ -36,11 +72,11 @@ function statusOf(item: InventoryItem) {
 }
 
 export default function InventoryPage() {
-  const { items, save, remove, setItems } = usePersistentCollection<InventoryItem>(
-    "imts.inventory", initialInventory, "Estoque TI", i => i.name,
+  const { items, save, remove } = useSupabaseCollection<InventoryItem, InvRow>(
+    "inventario", invFromDb, invToDb, "Estoque TI",
   );
-  const { items: stockMoves, save: saveMov } = usePersistentCollection<StockMovement>(
-    "imts.stock-movements", initialStockMovements, "Estoque – Movimentações", m => `${m.type} ${m.itemName}`,
+  const { items: stockMoves, save: saveMov } = useSupabaseCollection<StockMovement, InvMovRow>(
+    "inventario_movimentacoes", movFromDb, movToDb, "Estoque – Movimentações",
   );
 
   const [search, setSearch] = useState("");
@@ -85,17 +121,16 @@ export default function InventoryPage() {
     toast.success("Item removido");
   };
 
-  const handleSaveMov = (m: StockMovement) => {
-    // Update stock quantity
-    setItems(prev => prev.map(i => {
-      if (i.id !== m.itemId) return i;
-      let q = i.quantity;
+  const handleSaveMov = async (m: StockMovement) => {
+    const target = items.find(i => i.id === m.itemId);
+    if (target) {
+      let q = target.quantity;
       if (m.type === "Entrada") q += m.quantity;
       else if (m.type === "Saída") q = Math.max(0, q - m.quantity);
       else if (m.type === "Ajuste") q = m.quantity;
-      return { ...i, quantity: q };
-    }));
-    saveMov(m);
+      await save({ ...target, quantity: q });
+    }
+    await saveMov(m);
     toast.success(`${m.type} registrada — ${m.itemName}`);
   };
 

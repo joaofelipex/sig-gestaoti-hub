@@ -152,6 +152,48 @@ export type Database = {
           },
         ]
       }
+      contratos: {
+        Row: {
+          cost_center: string | null
+          created_at: string
+          end_date: string | null
+          id: string
+          monthly_cost: number
+          object: string
+          org_id: string
+          status: string
+          supplier: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          cost_center?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          monthly_cost?: number
+          object: string
+          org_id: string
+          status?: string
+          supplier: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          cost_center?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          monthly_cost?: number
+          object?: string
+          org_id?: string
+          status?: string
+          supplier?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       departamentos: {
         Row: {
           centro_custo: string | null
@@ -251,6 +293,105 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inventario: {
+        Row: {
+          categoria: string
+          created_at: string
+          id: string
+          location: string | null
+          min_quantity: number
+          nome: string
+          notes: string | null
+          org_id: string
+          quantity: number
+          sku: string | null
+          supplier: string | null
+          unit: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          min_quantity?: number
+          nome: string
+          notes?: string | null
+          org_id: string
+          quantity?: number
+          sku?: string | null
+          supplier?: string | null
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string
+          created_at?: string
+          id?: string
+          location?: string | null
+          min_quantity?: number
+          nome?: string
+          notes?: string | null
+          org_id?: string
+          quantity?: number
+          sku?: string | null
+          supplier?: string | null
+          unit?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventario_movimentacoes: {
+        Row: {
+          created_at: string
+          data: string
+          destination: string | null
+          id: string
+          invoice: string | null
+          item_id: string
+          item_name: string | null
+          org_id: string
+          quantity: number
+          reason: string | null
+          responsible: string | null
+          tipo: string
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          destination?: string | null
+          id?: string
+          invoice?: string | null
+          item_id: string
+          item_name?: string | null
+          org_id: string
+          quantity: number
+          reason?: string | null
+          responsible?: string | null
+          tipo: string
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          destination?: string | null
+          id?: string
+          invoice?: string | null
+          item_id?: string
+          item_name?: string | null
+          org_id?: string
+          quantity?: number
+          reason?: string | null
+          responsible?: string | null
+          tipo?: string
+          unit_cost?: number | null
+        }
+        Relationships: []
       }
       licencas: {
         Row: {
@@ -384,6 +525,69 @@ export type Database = {
           },
         ]
       }
+      movimentacoes: {
+        Row: {
+          ativo_id: string
+          ativo_label: string | null
+          created_at: string
+          data: string
+          from_department: string | null
+          from_user: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          reason: string | null
+          recipient: string | null
+          responsible: string | null
+          term_generated: boolean | null
+          tipo: string
+          to_department: string | null
+          to_user: string | null
+          updated_at: string
+          value: number | null
+        }
+        Insert: {
+          ativo_id: string
+          ativo_label?: string | null
+          created_at?: string
+          data?: string
+          from_department?: string | null
+          from_user?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          reason?: string | null
+          recipient?: string | null
+          responsible?: string | null
+          term_generated?: boolean | null
+          tipo: string
+          to_department?: string | null
+          to_user?: string | null
+          updated_at?: string
+          value?: number | null
+        }
+        Update: {
+          ativo_id?: string
+          ativo_label?: string | null
+          created_at?: string
+          data?: string
+          from_department?: string | null
+          from_user?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          reason?: string | null
+          recipient?: string | null
+          responsible?: string | null
+          term_generated?: boolean | null
+          tipo?: string
+          to_department?: string | null
+          to_user?: string | null
+          updated_at?: string
+          value?: number | null
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           cnpj: string | null
@@ -512,9 +716,13 @@ export type Database = {
           id: string
           nivel_acesso: string | null
           org_id: string
+          recurso: string | null
+          recurso_tipo: string | null
           sistema: string
+          ultimo_acesso: string | null
           updated_at: string
-          usuario_id: string
+          user_label: string | null
+          usuario_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -524,9 +732,13 @@ export type Database = {
           id?: string
           nivel_acesso?: string | null
           org_id: string
+          recurso?: string | null
+          recurso_tipo?: string | null
           sistema: string
+          ultimo_acesso?: string | null
           updated_at?: string
-          usuario_id: string
+          user_label?: string | null
+          usuario_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -536,9 +748,13 @@ export type Database = {
           id?: string
           nivel_acesso?: string | null
           org_id?: string
+          recurso?: string | null
+          recurso_tipo?: string | null
           sistema?: string
+          ultimo_acesso?: string | null
           updated_at?: string
-          usuario_id?: string
+          user_label?: string | null
+          usuario_id?: string | null
         }
         Relationships: [
           {

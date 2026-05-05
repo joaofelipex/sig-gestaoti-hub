@@ -35,7 +35,7 @@ export default function StockMovementForm({ open, onOpenChange, onSave, items, d
     if (open) {
       const it = presetItemId ? items.find(i => i.id === presetItemId) : null;
       setForm({
-        id: `SMV-${Date.now().toString().slice(-6)}`,
+        id: crypto.randomUUID(),
         itemId: it?.id || "",
         itemName: it?.name || "",
         type: defaultType,

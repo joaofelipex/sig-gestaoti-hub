@@ -22,11 +22,61 @@ import {
   ArrowRight, Recycle, DollarSign, Heart, Wrench, History, Clock,
 } from "lucide-react";
 import MovementForm from "@/components/forms/MovementForm";
-import { initialMovements, type AssetMovement, type MovementType } from "@/lib/movement-data";
-import { assets as initialAssets, type Asset } from "@/data/mock-data";
-import { usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { type AssetMovement, type MovementType } from "@/lib/movement-data";
+import { type Asset } from "@/data/mock-data";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import { exportToCSV } from "@/lib/export-csv";
 import { toast } from "sonner";
+
+// Asset mappers (read-only here)
+interface AtivoRow {
+  id: string; tipo: string; marca: string | null; modelo: string | null;
+  numero_serie: string | null;
+  status: 'ativo' | 'manutencao' | 'estoque' | 'descartado';
+  assigned_to: string | null; department_nome: string | null;
+  data_aquisicao: string | null; warranty_end: string | null;
+  valor_aquisicao: number | null;
+  specs: { cpu?: string; ram?: string; storage?: string } | null;
+  maintenance_log: { date: string; description: string; cost: number }[] | null;
+}
+const statusDbToUi: Record<AtivoRow['status'], Asset['status']> = {
+  ativo: 'Em uso', estoque: 'Estoque', manutencao: 'Manutenção', descartado: 'Aposentado',
+};
+const assetFromDb = (r: AtivoRow): Asset => ({
+  id: r.id, type: (r.tipo as Asset['type']) ?? 'Notebook',
+  brand: r.marca ?? '', model: r.modelo ?? '', serialNumber: r.numero_serie ?? '',
+  status: statusDbToUi[r.status] ?? 'Estoque', assignedTo: r.assigned_to,
+  department: r.department_nome ?? '', purchaseDate: r.data_aquisicao ?? '',
+  warrantyEnd: r.warranty_end ?? '', specs: r.specs ?? {},
+  purchaseValue: Number(r.valor_aquisicao ?? 0), maintenanceLog: r.maintenance_log ?? [],
+});
+
+// Movement mappers
+interface MovRow {
+  id: string; ativo_id: string; ativo_label: string | null; tipo: string;
+  data: string; from_user: string | null; from_department: string | null;
+  to_user: string | null; to_department: string | null; reason: string | null;
+  responsible: string | null; value: number | null; recipient: string | null;
+  term_generated: boolean | null; notes: string | null;
+}
+const movFromDb = (r: MovRow): AssetMovement => ({
+  id: r.id, assetId: r.ativo_id, assetLabel: r.ativo_label ?? '',
+  type: r.tipo as MovementType, date: r.data,
+  fromUser: r.from_user ?? undefined, fromDepartment: r.from_department ?? undefined,
+  toUser: r.to_user ?? undefined, toDepartment: r.to_department ?? undefined,
+  reason: r.reason ?? '', responsible: r.responsible ?? '',
+  value: r.value ?? undefined, recipient: r.recipient ?? undefined,
+  termGenerated: r.term_generated ?? undefined, notes: r.notes ?? undefined,
+});
+const movToDb = (m: AssetMovement, orgId: string) => ({
+  id: m.id, org_id: orgId, ativo_id: m.assetId, ativo_label: m.assetLabel,
+  tipo: m.type, data: m.date,
+  from_user: m.fromUser ?? null, from_department: m.fromDepartment ?? null,
+  to_user: m.toUser ?? null, to_department: m.toDepartment ?? null,
+  reason: m.reason, responsible: m.responsible,
+  value: m.value ?? 0, recipient: m.recipient ?? null,
+  term_generated: m.termGenerated ?? false, notes: m.notes ?? null,
+});
 
 const typeColor: Record<MovementType, string> = {
   "Transferência": "bg-info/10 text-info border-info/20",
@@ -98,8 +148,11 @@ Assinatura TI - IMTS
 }
 
 export default function MovementsPage() {
-  const { items: movements, save, remove } = usePersistentCollection<AssetMovement>(
-    "imts.movements", initialMovements, "Movimentações", m => `${m.type} — ${m.assetLabel}`,
+  const { items: assetsList } = useSupabaseCollection<Asset, AtivoRow>(
+    "ativos", assetFromDb, () => ({}) as never, "Ativos",
+  );
+  const { items: movements, save, remove } = useSupabaseCollection<AssetMovement, MovRow>(
+    "movimentacoes", movFromDb, movToDb, "Movimentações",
   );
 
   const [search, setSearch] = useState("");
@@ -124,13 +177,6 @@ export default function MovementsPage() {
   const totalSales = movements.filter(m => m.type === "Venda").reduce((s, m) => s + (m.value || 0), 0);
   const monthMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const lastMonth = movements.filter(m => new Date(m.date).getTime() >= monthMs).length;
-
-  const assetsList: Asset[] = (() => {
-    try {
-      const raw = localStorage.getItem("imts.assets");
-      return raw ? JSON.parse(raw) : initialAssets;
-    } catch { return initialAssets; }
-  })();
 
   const timeline = timelineAsset
     ? sorted.filter(m => m.assetId === timelineAsset)
@@ -344,7 +390,7 @@ export default function MovementsPage() {
         </TabsContent>
       </Tabs>
 
-      <MovementForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} movement={editing} />
+      <MovementForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} movement={editing} assets={assetsList} />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
