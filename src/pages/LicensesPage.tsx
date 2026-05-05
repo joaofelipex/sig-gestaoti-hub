@@ -74,11 +74,8 @@ const catBadge: Record<string, string> = {
 };
 
 export default function LicensesPage() {
-  const { items: licenseList, save: saveLicense, remove: removeLicense } = usePersistentCollection(
-    "imts.licenses",
-    initialLicenses,
-    "Licenças",
-    license => license.software,
+  const { items: licenseList, save: saveLicense, remove: removeLicense } = useSupabaseCollection<License, LicenseRow>(
+    "licencas", fromDb, toDb, "Licenças",
   );
   const [formOpen, setFormOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
@@ -95,17 +92,17 @@ export default function LicensesPage() {
       acc[l.category] = (acc[l.category] || 0) + monthly;
       return acc;
     }, {} as Record<string, number>)
-  ).map(([name, value]) => ({ name, value: Math.round(value), color: categoryColors[name] }));
+  ).map(([name, value]) => ({ name, value: Math.round(value as number), color: categoryColors[name] }));
 
-  const handleSave = (license: License) => {
+  const handleSave = async (license: License) => {
     const exists = licenseList.some(l => l.id === license.id);
-    saveLicense(license);
+    await saveLicense(license);
     toast.success(`Licença "${license.software}" ${exists ? 'atualizada' : 'cadastrada'}!`);
     setEditingLicense(null);
   };
 
-  const handleDelete = (license: License) => {
-    removeLicense(license);
+  const handleDelete = async (license: License) => {
+    await removeLicense(license);
     setDeleteTarget(null);
     toast.success(`Licença "${license.software}" removida.`);
   };
