@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
-import { domains, assets, licenses } from "@/data/mock-data";
-import { servers } from "@/data/servers-data";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useMemo, useState } from "react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
