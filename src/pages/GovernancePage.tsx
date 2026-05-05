@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type AccessRecord } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,13 +11,16 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ShieldCheck, Key, Server, FileText, Users, Plus, Pencil, Trash2 } from "lucide-react";
 import AccessForm from "@/components/forms/AccessForm";
 import { toast } from "sonner";
-import { risks, sigUsers, type FinancialContract } from "@/lib/it-governance-data";
+import { type FinancialContract } from "@/lib/it-governance-data";
 import { useAuditLog } from "@/hooks/use-persistent-collection";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import ContractForm from "@/components/forms/ContractForm";
+import { RiskForm, type RiskItem } from "@/components/forms/RiskForm";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AccessRow {
   id: string; usuario_id: string | null; user_label: string | null;
