@@ -114,12 +114,12 @@ export default function EconomistPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [year, setYear] = useState<number>(new Date().getFullYear());
 
-  // Budget & Actions persistidos
-  const budgetCol = usePersistentCollection<BudgetEntry>(
-    "imts.budgets", initialBudgets, "Orçamento", (b) => `${b.category} · ${b.costCenter} (${b.year})`,
+  // Budget & Actions persistidos no Supabase
+  const budgetCol = useSupabaseCollection<BudgetEntry, BudgetRow>(
+    "orcamentos", budgetFromDb, budgetToDb, "Orçamento",
   );
-  const actionCol = usePersistentCollection<ActionItem>(
-    "imts.actions", initialActions, "Ação", (a) => a.title,
+  const actionCol = useSupabaseCollection<ActionItem, ActionRow>(
+    "acoes_economista", actionFromDb, actionToDb, "Ação",
   );
 
   const [budgetDialog, setBudgetDialog] = useState<{ open: boolean; editing?: BudgetEntry }>({ open: false });
