@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Domain } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2, Loader2, Upload } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DomainForm from "@/components/forms/DomainForm";
 import { toast } from "sonner";
@@ -130,6 +130,105 @@ export default function DomainsPage() {
     setFormOpen(true);
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+
+  const parseDate = (s: string): string => {
+    const t = s.trim();
+    if (!t) return "";
+    const br = t.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (br) {
+      const [, d, m, y] = br;
+      const yyyy = y.length === 2 ? `20${y}` : y;
+      return `${yyyy}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+    }
+    const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+    const d = new Date(t);
+    return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+  };
+
+  const mapStatus = (s: string): Domain["status"] => {
+    const v = s.trim().toLowerCase();
+    if (v.includes("expirado")) return "Expirado";
+    if (v.includes("expirando") || v.includes("remoção") || v.includes("remocao") || v.includes("próxima") || v.includes("proxima")) return "Expirando";
+    return "Ativo";
+  };
+
+  const parseCSV = (text: string): string[][] => {
+    const rows: string[][] = [];
+    let cur: string[] = [];
+    let field = "";
+    let inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (inQuotes) {
+        if (c === '"') {
+          if (text[i + 1] === '"') { field += '"'; i++; }
+          else inQuotes = false;
+        } else field += c;
+      } else {
+        if (c === '"') inQuotes = true;
+        else if (c === "," || c === ";" || c === "\t") { cur.push(field); field = ""; }
+        else if (c === "\n" || c === "\r") {
+          if (field !== "" || cur.length) { cur.push(field); rows.push(cur); cur = []; field = ""; }
+          if (c === "\r" && text[i + 1] === "\n") i++;
+        } else field += c;
+      }
+    }
+    if (field !== "" || cur.length) { cur.push(field); rows.push(cur); }
+    return rows.filter(r => r.some(c => c.trim() !== ""));
+  };
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const rows = parseCSV(text);
+      if (rows.length < 1) { toast.error("CSV vazio"); return; }
+      const headers = rows[0].map(h => h.trim().toLowerCase());
+      const findCol = (...keys: string[]) => headers.findIndex(h => keys.some(k => h.includes(k)));
+      const iUrl = findCol("domínio", "dominio", "domain", "url", "nome");
+      const iStatus = findCol("status");
+      const iExp = findCol("expiração", "expiracao", "vencimento", "expira");
+      const iReg = findCol("registrar");
+      const iDns = findCol("dns");
+      const iHost = findCol("host", "hospedagem");
+      const iSsl = findCol("ssl");
+      const iCost = findCol("custo", "renova");
+      if (iUrl < 0) { toast.error("Coluna de domínio não encontrada"); return; }
+
+      let ok = 0, fail = 0;
+      const existing = new Set(domainList.map(d => d.url.toLowerCase()));
+      for (const row of rows.slice(1)) {
+        const url = (row[iUrl] || "").trim();
+        if (!url || existing.has(url.toLowerCase())) continue;
+        const domain: Domain = {
+          id: crypto.randomUUID(),
+          url,
+          registrar: iReg >= 0 ? (row[iReg] || "").trim() : "",
+          dnsProvider: iDns >= 0 ? (row[iDns] || "").trim() : "",
+          hostingProvider: iHost >= 0 ? (row[iHost] || "").trim() : "",
+          expirationDate: iExp >= 0 ? parseDate(row[iExp] || "") : "",
+          sslExpiration: iSsl >= 0 ? parseDate(row[iSsl] || "") : "",
+          renewalCost: iCost >= 0 ? Number((row[iCost] || "0").replace(/[^\d.,-]/g, "").replace(",", ".")) || 0 : 0,
+          autoRenew: true,
+          status: iStatus >= 0 ? mapStatus(row[iStatus] || "") : "Ativo",
+        };
+        try { await saveDomain(domain); ok++; existing.add(url.toLowerCase()); }
+        catch { fail++; }
+      }
+      toast.success(`Importação concluída: ${ok} adicionados${fail ? `, ${fail} falharam` : ""}`);
+    } catch (err) {
+      toast.error("Erro ao processar CSV");
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 rounded-md border border-border bg-card px-4 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5">
@@ -137,9 +236,16 @@ export default function DomainsPage() {
           <h1 className="text-[22px] font-semibold text-foreground">Domínios & Infraestrutura</h1>
           <p className="text-muted-foreground text-[13px] mt-1">Monitoramento de domínios, DNS e certificados SSL</p>
         </div>
-        <Button className="gap-2" onClick={openNew}>
-          <Plus className="w-4 h-4" /> Novo Domínio
-        </Button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleImportCSV} />
+          <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={importing}>
+            {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+            Importar CSV
+          </Button>
+          <Button className="gap-2" onClick={openNew}>
+            <Plus className="w-4 h-4" /> Novo Domínio
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
