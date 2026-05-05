@@ -18,10 +18,42 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
-import {
-  initialBudgets, initialActions, BudgetEntry, ActionItem, ACTION_PRIORITY_WEIGHT,
-} from "@/lib/economist-data";
-import { usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { BudgetEntry, ActionItem, ACTION_PRIORITY_WEIGHT } from "@/lib/economist-data";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
+
+interface BudgetRow {
+  id: string; year: number; category: string; cost_center: string;
+  annual_budget: number; notes: string | null;
+}
+const budgetFromDb = (r: BudgetRow): BudgetEntry => ({
+  id: r.id, year: r.year, category: r.category as BudgetEntry["category"],
+  costCenter: r.cost_center, annualBudget: Number(r.annual_budget), notes: r.notes ?? undefined,
+});
+const budgetToDb = (b: BudgetEntry, orgId: string) => ({
+  id: b.id, org_id: orgId, year: b.year, category: b.category,
+  cost_center: b.costCenter, annual_budget: b.annualBudget, notes: b.notes ?? null,
+});
+
+interface ActionRow {
+  id: string; title: string; description: string | null; category: string;
+  priority: string; effort: string; estimated_savings: number; owner: string | null;
+  due_date: string | null; status: string; created_at: string;
+}
+const actionFromDb = (r: ActionRow): ActionItem => ({
+  id: r.id, title: r.title, description: r.description ?? "",
+  category: r.category as ActionItem["category"],
+  priority: r.priority as ActionItem["priority"],
+  effort: r.effort as ActionItem["effort"],
+  estimatedSavings: Number(r.estimated_savings), owner: r.owner ?? "",
+  dueDate: r.due_date ?? undefined, status: r.status as ActionItem["status"],
+  createdAt: r.created_at,
+});
+const actionToDb = (a: ActionItem, orgId: string) => ({
+  id: a.id, org_id: orgId, title: a.title, description: a.description,
+  category: a.category, priority: a.priority, effort: a.effort,
+  estimated_savings: a.estimatedSavings, owner: a.owner,
+  due_date: a.dueDate || null, status: a.status,
+});
 import { exportToCSV } from "@/lib/export-csv";
 import { BudgetForm } from "@/components/forms/BudgetForm";
 import { ActionForm } from "@/components/forms/ActionForm";
@@ -82,12 +114,12 @@ export default function EconomistPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [year, setYear] = useState<number>(new Date().getFullYear());
 
-  // Budget & Actions persistidos
-  const budgetCol = usePersistentCollection<BudgetEntry>(
-    "imts.budgets", initialBudgets, "Orçamento", (b) => `${b.category} · ${b.costCenter} (${b.year})`,
+  // Budget & Actions persistidos no Supabase
+  const budgetCol = useSupabaseCollection<BudgetEntry, BudgetRow>(
+    "orcamentos", budgetFromDb, budgetToDb, "Orçamento",
   );
-  const actionCol = usePersistentCollection<ActionItem>(
-    "imts.actions", initialActions, "Ação", (a) => a.title,
+  const actionCol = useSupabaseCollection<ActionItem, ActionRow>(
+    "acoes_economista", actionFromDb, actionToDb, "Ação",
   );
 
   const [budgetDialog, setBudgetDialog] = useState<{ open: boolean; editing?: BudgetEntry }>({ open: false });
