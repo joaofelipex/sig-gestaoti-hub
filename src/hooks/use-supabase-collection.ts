@@ -52,7 +52,7 @@ export function useSupabaseCollection<UI extends { id: string }, DB extends { id
   const save = async (item: UI) => {
     if (!orgId) return toast.error("Organização não encontrada");
     const exists = items.some(i => i.id === item.id);
-    const payload = mapToDb(item, orgId);
+    const payload = mapToDbRef.current(item, orgId);
 
     if (exists) {
       const { error } = await supabase
