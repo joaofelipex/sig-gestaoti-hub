@@ -71,6 +71,8 @@ const typeBadge: Record<string, string> = {
   'Banco de Dados': 'bg-warning/10 text-warning border-warning/20',
   Aplicação: 'bg-info/10 text-info border-info/20',
   Storage: 'bg-success/10 text-success border-success/20',
+};
+
 interface RiskRow { id: string; title: string; severity: string; owner: string | null; mitigation: string | null }
 const riskFromDb = (r: RiskRow): RiskItem => ({
   id: r.id, title: r.title, severity: (r.severity as RiskItem["severity"]) ?? "Média",
@@ -82,6 +84,7 @@ const riskToDb = (r: RiskItem, orgId: string) => ({
 });
 type SigUser = { id: string; name: string; department: string; role: string; costCenter: string };
 
+export default function GovernancePage() {
 
   const { items: recordList, save: saveRecord, remove: removeRecord } = useSupabaseCollection<AccessRecord, AccessRow>(
     "registros_acesso", accessFromDb, accessToDb, "Acessos",
