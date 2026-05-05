@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { accessRecords as initialRecords, type AccessRecord } from "@/data/mock-data";
+import { type AccessRecord } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ShieldCheck, Key, Server, FileText, Users, Plus, Pencil, Trash2 } from "lucide-react";
 import AccessForm from "@/components/forms/AccessForm";
 import { toast } from "sonner";
-import { contracts as initialContracts, risks, sigUsers, type FinancialContract } from "@/lib/it-governance-data";
-import { useAuditLog, usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { risks, sigUsers, type FinancialContract } from "@/lib/it-governance-data";
+import { useAuditLog } from "@/hooks/use-persistent-collection";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import ContractForm from "@/components/forms/ContractForm";
+
+interface AccessRow {
+  id: string; usuario_id: string | null; user_label: string | null;
+  recurso: string | null; recurso_tipo: string | null; nivel_acesso: string | null;
+  data_concessao: string; ultimo_acesso: string | null; ativo: boolean;
+}
+const accessFromDb = (r: AccessRow): AccessRecord => ({
+  id: r.id,
+  user: r.user_label ?? '',
+  resource: r.recurso ?? '',
+  resourceType: (r.recurso_tipo as AccessRecord['resourceType']) ?? 'Aplicação',
+  accessLevel: (r.nivel_acesso as AccessRecord['accessLevel']) ?? 'Leitura',
+  grantedDate: r.data_concessao,
+  lastAccess: r.ultimo_acesso ?? r.data_concessao,
+});
+const accessToDb = (a: AccessRecord, orgId: string) => ({
+  id: a.id, org_id: orgId, usuario_id: null,
+  user_label: a.user, recurso: a.resource, recurso_tipo: a.resourceType,
+  sistema: a.resource, nivel_acesso: a.accessLevel,
+  data_concessao: a.grantedDate, ultimo_acesso: a.lastAccess, ativo: true,
+});
+
+interface ContractRow {
+  id: string; supplier: string; object: string; type: string;
+  cost_center: string | null; monthly_cost: number; end_date: string | null; status: string;
+}
+const contractFromDb = (r: ContractRow): FinancialContract => ({
+  id: r.id, supplier: r.supplier, object: r.object,
+  type: (r.type as FinancialContract['type']) ?? 'OPEX',
+  costCenter: r.cost_center ?? '', monthlyCost: Number(r.monthly_cost),
+  endDate: r.end_date ?? '', status: (r.status as FinancialContract['status']) ?? 'Ativo',
+});
+const contractToDb = (c: FinancialContract, orgId: string) => ({
+  id: c.id, org_id: orgId, supplier: c.supplier, object: c.object,
+  type: c.type, cost_center: c.costCenter, monthly_cost: c.monthlyCost,
+  end_date: c.endDate || null, status: c.status,
+});
 
 const accessBadge: Record<string, string> = {
   Admin: 'bg-destructive/10 text-destructive border-destructive/20',
