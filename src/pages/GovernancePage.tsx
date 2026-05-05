@@ -494,6 +494,30 @@ export default function GovernancePage() {
 
       <AccessForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} record={editingRecord} />
       <ContractForm open={contractFormOpen} onOpenChange={setContractFormOpen} onSave={handleContractSave} contract={editingContract} />
+
+      <Dialog open={riskDialog.open} onOpenChange={(o) => setRiskDialog({ open: o })}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{riskDialog.editing ? "Editar" : "Novo"} risco</DialogTitle></DialogHeader>
+          <RiskForm
+            initial={riskDialog.editing}
+            onSave={(r) => { saveRisk(r); setRiskDialog({ open: false }); toast.success("Risco salvo!"); }}
+            onCancel={() => setRiskDialog({ open: false })}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!riskDeleteTarget} onOpenChange={() => setRiskDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir risco?</AlertDialogTitle>
+            <AlertDialogDescription>Tem certeza que deseja excluir <strong>{riskDeleteTarget?.title}</strong>?</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (riskDeleteTarget) { removeRisk(riskDeleteTarget); setRiskDeleteTarget(null); toast.success("Risco excluído"); } }} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
