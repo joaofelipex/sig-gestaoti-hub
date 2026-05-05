@@ -148,8 +148,11 @@ Assinatura TI - IMTS
 }
 
 export default function MovementsPage() {
-  const { items: movements, save, remove } = usePersistentCollection<AssetMovement>(
-    "imts.movements", initialMovements, "Movimentações", m => `${m.type} — ${m.assetLabel}`,
+  const { items: assetsList } = useSupabaseCollection<Asset, AtivoRow>(
+    "ativos", assetFromDb, () => ({}) as never, "Ativos",
+  );
+  const { items: movements, save, remove } = useSupabaseCollection<AssetMovement, MovRow>(
+    "movimentacoes", movFromDb, movToDb, "Movimentações",
   );
 
   const [search, setSearch] = useState("");
@@ -174,13 +177,6 @@ export default function MovementsPage() {
   const totalSales = movements.filter(m => m.type === "Venda").reduce((s, m) => s + (m.value || 0), 0);
   const monthMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const lastMonth = movements.filter(m => new Date(m.date).getTime() >= monthMs).length;
-
-  const assetsList: Asset[] = (() => {
-    try {
-      const raw = localStorage.getItem("imts.assets");
-      return raw ? JSON.parse(raw) : initialAssets;
-    } catch { return initialAssets; }
-  })();
 
   const timeline = timelineAsset
     ? sorted.filter(m => m.assetId === timelineAsset)
