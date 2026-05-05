@@ -17,9 +17,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { assets, licenses, domains } from "@/data/mock-data";
-import { servers } from "@/data/servers-data";
-import { contracts } from "@/lib/it-governance-data";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import {
   initialBudgets, initialActions, BudgetEntry, ActionItem, ACTION_PRIORITY_WEIGHT,
 } from "@/lib/economist-data";
@@ -79,6 +77,7 @@ function depreciacao(purchaseValue: number, purchaseDate: string, vidaUtil = 5):
 function brl(v: number) { return `R$ ${Math.round(v).toLocaleString("pt-BR")}`; }
 
 export default function EconomistPage() {
+  const { assets, licenses, domains, servers, contracts, loading: dashLoading } = useDashboardData();
   const [deptFilter, setDeptFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [year, setYear] = useState<number>(new Date().getFullYear());
