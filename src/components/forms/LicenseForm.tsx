@@ -34,7 +34,7 @@ export default function LicenseForm({ open, onOpenChange, onSave, license }: Lic
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = license?.id || `LIC-${String(Date.now()).slice(-4)}`;
+    const id = license?.id || crypto.randomUUID();
     onSave({ ...form, id } as License);
     onOpenChange(false);
   };
