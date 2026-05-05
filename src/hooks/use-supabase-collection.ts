@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -16,6 +16,11 @@ export function useSupabaseCollection<UI extends { id: string }, DB extends { id
   const [items, setItems] = useState<UI[]>([]);
   const [loading, setLoading] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
+
+  const mapFromDbRef = useRef(mapFromDb);
+  const mapToDbRef = useRef(mapToDb);
+  mapFromDbRef.current = mapFromDb;
+  mapToDbRef.current = mapToDb;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,10 +40,10 @@ export function useSupabaseCollection<UI extends { id: string }, DB extends { id
     if (error) {
       toast.error(`Erro ao carregar ${label}: ${error.message}`);
     } else {
-      setItems(((data as unknown) as DB[]).map(mapFromDb));
+      setItems(((data as unknown) as DB[]).map(mapFromDbRef.current));
     }
     setLoading(false);
-  }, [table, label, mapFromDb]);
+  }, [table, label]);
 
   useEffect(() => {
     load();
@@ -47,7 +52,7 @@ export function useSupabaseCollection<UI extends { id: string }, DB extends { id
   const save = async (item: UI) => {
     if (!orgId) return toast.error("Organização não encontrada");
     const exists = items.some(i => i.id === item.id);
-    const payload = mapToDb(item, orgId);
+    const payload = mapToDbRef.current(item, orgId);
 
     if (exists) {
       const { error } = await supabase
@@ -65,7 +70,7 @@ export function useSupabaseCollection<UI extends { id: string }, DB extends { id
         .select()
         .single();
       if (error) return toast.error(`Erro ao salvar: ${error.message}`);
-      setItems(prev => [mapFromDb(data as unknown as DB), ...prev]);
+      setItems(prev => [mapFromDbRef.current(data as unknown as DB), ...prev]);
     }
   };
 
