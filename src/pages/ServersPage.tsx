@@ -115,11 +115,8 @@ function backupAge(date: string) {
 }
 
 export default function ServersPage() {
-  const { items: servers, save: saveServer, remove: removeServer } = usePersistentCollection(
-    "imts.servers",
-    initialServers,
-    "Servidores",
-    server => server.name,
+  const { items: servers, save: saveServer, remove: removeServer } = useSupabaseCollection<Server, ServerRow>(
+    "servidores", fromDb, toDb, "Servidores",
   );
   const [search, setSearch] = useState("");
   const [filterProvider, setFilterProvider] = useState("all");
@@ -157,16 +154,16 @@ export default function ServersPage() {
 
   const providers = [...new Set(servers.map(s => s.provider))];
 
-  const handleSave = (server: Server) => {
+  const handleSave = async (server: Server) => {
     const exists = servers.some(s => s.id === server.id);
-    saveServer(server);
+    await saveServer(server);
     toast.success(`Servidor "${server.name}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setDialogOpen(false);
     setEditingServer(null);
   };
 
-  const handleDelete = (server: Server) => {
-    removeServer(server);
+  const handleDelete = async (server: Server) => {
+    await removeServer(server);
     setDeleteTarget(null);
     toast.success(`Servidor "${server.name}" removido.`);
   };
