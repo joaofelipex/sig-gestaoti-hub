@@ -27,7 +27,7 @@ export default function ServerForm({ onSubmit, initialData }: ServerFormProps) {
     if (initialData) {
       setForm({ ...initialData });
     } else {
-      setForm({ ...emptyServer, id: `SRV-${String(Date.now()).slice(-4)}` });
+      setForm({ ...emptyServer, id: crypto.randomUUID() });
     }
   }, [initialData]);
 
@@ -35,7 +35,7 @@ export default function ServerForm({ onSubmit, initialData }: ServerFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = form.id || `SRV-${String(Date.now()).slice(-4)}`;
+    const id = form.id || crypto.randomUUID();
     onSubmit({ ...form, id } as Server);
   };
 
