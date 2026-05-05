@@ -53,7 +53,7 @@ export default function MaintenanceForm({ open, onOpenChange, onSave, record, as
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = record?.id || `MNT-${String(Date.now()).slice(-5)}`;
+    const id = record?.id || crypto.randomUUID();
     const completedDate = form.status === "Concluída"
       ? form.completedDate || new Date().toISOString().slice(0, 10)
       : undefined;
