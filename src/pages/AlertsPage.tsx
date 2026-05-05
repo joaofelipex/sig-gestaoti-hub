@@ -27,14 +27,14 @@ interface Alerta {
 
 const sevColors: Record<Severidade, string> = {
   info: "bg-info/10 text-info border-info/30",
-  warning: "bg-warning/10 text-warning border-warning/30",
-  critical: "bg-destructive/10 text-destructive border-destructive/30",
+  aviso: "bg-warning/10 text-warning border-warning/30",
+  critico: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
 const sevIcons: Record<Severidade, typeof Info> = {
   info: Info,
-  warning: AlertCircle,
-  critical: AlertTriangle,
+  aviso: AlertCircle,
+  critico: AlertTriangle,
 };
 
 export default function AlertsPage() {
