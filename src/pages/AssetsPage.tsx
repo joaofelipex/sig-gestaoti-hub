@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { assets as initialAssets, type Asset } from "@/data/mock-data";
+import { type Asset } from "@/data/mock-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,70 @@ import { Progress } from "@/components/ui/progress";
 import AssetForm from "@/components/forms/AssetForm";
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/export-csv";
-import { usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
+
+interface AtivoRow {
+  id: string;
+  tipo: string;
+  marca: string | null;
+  modelo: string | null;
+  numero_serie: string | null;
+  status: 'ativo' | 'manutencao' | 'estoque' | 'descartado';
+  assigned_to: string | null;
+  department_nome: string | null;
+  data_aquisicao: string | null;
+  warranty_end: string | null;
+  valor_aquisicao: number | null;
+  vida_util_meses: number | null;
+  specs: { cpu?: string; ram?: string; storage?: string } | null;
+  maintenance_log: { date: string; description: string; cost: number }[] | null;
+}
+
+const statusUiToDb: Record<Asset['status'], AtivoRow['status']> = {
+  'Em uso': 'ativo',
+  'Estoque': 'estoque',
+  'Manutenção': 'manutencao',
+  'Aposentado': 'descartado',
+};
+const statusDbToUi: Record<AtivoRow['status'], Asset['status']> = {
+  ativo: 'Em uso',
+  estoque: 'Estoque',
+  manutencao: 'Manutenção',
+  descartado: 'Aposentado',
+};
+
+const fromDb = (r: AtivoRow): Asset => ({
+  id: r.id,
+  type: (r.tipo as Asset['type']) ?? 'Notebook',
+  brand: r.marca ?? '',
+  model: r.modelo ?? '',
+  serialNumber: r.numero_serie ?? '',
+  status: statusDbToUi[r.status] ?? 'Estoque',
+  assignedTo: r.assigned_to,
+  department: r.department_nome ?? '',
+  purchaseDate: r.data_aquisicao ?? '',
+  warrantyEnd: r.warranty_end ?? '',
+  specs: r.specs ?? {},
+  purchaseValue: Number(r.valor_aquisicao ?? 0),
+  maintenanceLog: r.maintenance_log ?? [],
+});
+
+const toDb = (a: Asset, orgId: string) => ({
+  id: a.id,
+  org_id: orgId,
+  tipo: a.type,
+  marca: a.brand,
+  modelo: a.model,
+  numero_serie: a.serialNumber,
+  status: statusUiToDb[a.status],
+  assigned_to: a.assignedTo,
+  department_nome: a.department,
+  data_aquisicao: a.purchaseDate || null,
+  warranty_end: a.warrantyEnd || null,
+  valor_aquisicao: a.purchaseValue,
+  specs: a.specs,
+  maintenance_log: a.maintenanceLog,
+});
 
 const statusColor: Record<Asset['status'], string> = {
   'Em uso': 'bg-success/10 text-success border-success/20',
