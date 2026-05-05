@@ -71,17 +71,11 @@ const typeBadge: Record<string, string> = {
 };
 
 export default function GovernancePage() {
-  const { items: recordList, save: saveRecord, remove: removeRecord } = usePersistentCollection(
-    "imts.access-records",
-    initialRecords,
-    "Acessos",
-    record => `${record.user} → ${record.resource}`,
+  const { items: recordList, save: saveRecord, remove: removeRecord } = useSupabaseCollection<AccessRecord, AccessRow>(
+    "registros_acesso", accessFromDb, accessToDb, "Acessos",
   );
-  const { items: contractList, save: saveContract, remove: removeContract } = usePersistentCollection(
-    "imts.contracts",
-    initialContracts,
-    "Contratos",
-    contract => `${contract.supplier} - ${contract.object}`,
+  const { items: contractList, save: saveContract, remove: removeContract } = useSupabaseCollection<FinancialContract, ContractRow>(
+    "contratos", contractFromDb, contractToDb, "Contratos",
   );
   const auditLog = useAuditLog();
   const [formOpen, setFormOpen] = useState(false);
