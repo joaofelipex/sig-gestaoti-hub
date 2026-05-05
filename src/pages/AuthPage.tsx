@@ -100,19 +100,6 @@ export default function AuthPage() {
     toast({ title: "Conta criada", description: "Sua organização foi provisionada. Você já está logado." });
   };
 
-  const handleGoogle = async () => {
-    setSubmitting(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      setSubmitting(false);
-      toast({ title: "Erro no Google Sign-In", description: result.error.message, variant: "destructive" });
-      return;
-    }
-    if (result.redirected) return;
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary to-background px-4 py-10">
       <div className="w-full max-w-md">
