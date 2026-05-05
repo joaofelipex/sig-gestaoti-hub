@@ -152,7 +152,7 @@ export default function ServersPage() {
     return { online, total: servers.length, totalCost, avgUptime, alerts };
   }, [servers]);
 
-  const providers = [...new Set(servers.map(s => s.provider))];
+  const providers = Array.from(new Set(servers.map(s => s.provider))) as string[];
 
   const handleSave = async (server: Server) => {
     const exists = servers.some(s => s.id === server.id);
