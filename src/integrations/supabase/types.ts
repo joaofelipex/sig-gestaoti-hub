@@ -60,10 +60,13 @@ export type Database = {
       }
       ativos: {
         Row: {
+          assigned_to: string | null
           created_at: string
           data_aquisicao: string | null
           departamento_id: string | null
+          department_nome: string | null
           id: string
+          maintenance_log: Json | null
           marca: string | null
           modelo: string | null
           numero_serie: string | null
@@ -71,17 +74,22 @@ export type Database = {
           org_id: string
           patrimonio: string | null
           responsavel_id: string | null
+          specs: Json | null
           status: Database["public"]["Enums"]["ativo_status"]
           tipo: string
           updated_at: string
           valor_aquisicao: number | null
           vida_util_meses: number | null
+          warranty_end: string | null
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           data_aquisicao?: string | null
           departamento_id?: string | null
+          department_nome?: string | null
           id?: string
+          maintenance_log?: Json | null
           marca?: string | null
           modelo?: string | null
           numero_serie?: string | null
@@ -89,17 +97,22 @@ export type Database = {
           org_id: string
           patrimonio?: string | null
           responsavel_id?: string | null
+          specs?: Json | null
           status?: Database["public"]["Enums"]["ativo_status"]
           tipo: string
           updated_at?: string
           valor_aquisicao?: number | null
           vida_util_meses?: number | null
+          warranty_end?: string | null
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           data_aquisicao?: string | null
           departamento_id?: string | null
+          department_nome?: string | null
           id?: string
+          maintenance_log?: Json | null
           marca?: string | null
           modelo?: string | null
           numero_serie?: string | null
@@ -107,11 +120,13 @@ export type Database = {
           org_id?: string
           patrimonio?: string | null
           responsavel_id?: string | null
+          specs?: Json | null
           status?: Database["public"]["Enums"]["ativo_status"]
           tipo?: string
           updated_at?: string
           valor_aquisicao?: number | null
           vida_util_meses?: number | null
+          warranty_end?: string | null
         }
         Relationships: [
           {

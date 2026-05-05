@@ -17,11 +17,93 @@ import {
   TrendingUp, DollarSign, Search,
 } from "lucide-react";
 import MaintenanceForm from "@/components/forms/MaintenanceForm";
-import { initialMaintenance, type MaintenanceRecord } from "@/lib/maintenance-data";
-import { assets as initialAssets, type Asset } from "@/data/mock-data";
-import { usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { type MaintenanceRecord } from "@/lib/maintenance-data";
+import { type Asset } from "@/data/mock-data";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import { exportToCSV } from "@/lib/export-csv";
 import { toast } from "sonner";
+
+// ----- Asset mappers (must mirror AssetsPage) -----
+interface AtivoRow {
+  id: string; tipo: string; marca: string | null; modelo: string | null;
+  numero_serie: string | null;
+  status: 'ativo' | 'manutencao' | 'estoque' | 'descartado';
+  assigned_to: string | null; department_nome: string | null;
+  data_aquisicao: string | null; warranty_end: string | null;
+  valor_aquisicao: number | null;
+  specs: { cpu?: string; ram?: string; storage?: string } | null;
+  maintenance_log: { date: string; description: string; cost: number }[] | null;
+}
+const statusDbToUi: Record<AtivoRow['status'], Asset['status']> = {
+  ativo: 'Em uso', estoque: 'Estoque', manutencao: 'Manutenção', descartado: 'Aposentado',
+};
+const assetFromDb = (r: AtivoRow): Asset => ({
+  id: r.id, type: (r.tipo as Asset['type']) ?? 'Notebook',
+  brand: r.marca ?? '', model: r.modelo ?? '', serialNumber: r.numero_serie ?? '',
+  status: statusDbToUi[r.status] ?? 'Estoque', assignedTo: r.assigned_to,
+  department: r.department_nome ?? '', purchaseDate: r.data_aquisicao ?? '',
+  warrantyEnd: r.warranty_end ?? '', specs: r.specs ?? {},
+  purchaseValue: Number(r.valor_aquisicao ?? 0), maintenanceLog: r.maintenance_log ?? [],
+});
+const assetToDb = () => ({}); // unused (read-only here)
+
+// ----- Maintenance mappers -----
+interface ManutRow {
+  id: string;
+  ativo_id: string;
+  tipo: string;
+  descricao: string | null;
+  custo: number | null;
+  fornecedor: string | null;
+  data_abertura: string;
+  data_conclusao: string | null;
+  status: string;
+}
+
+const statusUiToDb: Record<MaintenanceRecord['status'], string> = {
+  Agendada: 'aberta',
+  'Em andamento': 'em_andamento',
+  Concluída: 'concluida',
+  Cancelada: 'cancelada',
+};
+const statusDbToUiM: Record<string, MaintenanceRecord['status']> = {
+  aberta: 'Agendada',
+  em_andamento: 'Em andamento',
+  concluida: 'Concluída',
+  cancelada: 'Cancelada',
+};
+
+const maintFromDb = (r: ManutRow, assetsById: Map<string, Asset>): MaintenanceRecord => {
+  const a = assetsById.get(r.ativo_id);
+  return {
+    id: r.id,
+    assetId: r.ativo_id,
+    assetLabel: a ? `${a.type} ${a.brand} ${a.model}` : r.ativo_id,
+    type: (r.tipo as MaintenanceRecord['type']) === 'Corretiva' ? 'Corretiva' : 'Preventiva',
+    status: statusDbToUiM[r.status] ?? 'Agendada',
+    scheduledDate: r.data_abertura,
+    completedDate: r.data_conclusao ?? undefined,
+    description: r.descricao ?? '',
+    technician: '',
+    supplier: r.fornecedor ?? '',
+    ticketNumber: '',
+    cost: Number(r.custo ?? 0),
+    warrantyCovered: false,
+  };
+};
+
+const maintToDb = (m: MaintenanceRecord, orgId: string) => ({
+  id: m.id,
+  org_id: orgId,
+  ativo_id: m.assetId,
+  tipo: m.type,
+  descricao: m.description,
+  custo: m.cost,
+  fornecedor: m.supplier ?? null,
+  data_abertura: m.scheduledDate,
+  data_conclusao: m.completedDate ?? null,
+  status: statusUiToDb[m.status],
+});
 
 const statusColor: Record<MaintenanceRecord["status"], string> = {
   Agendada: "bg-info/10 text-info border-info/20",
@@ -48,17 +130,15 @@ function warrantyState(warrantyEnd: string) {
 }
 
 export default function MaintenancePage() {
-  const { items: assets } = usePersistentCollection<Asset>(
-    "imts.assets",
-    initialAssets,
-    "Ativos",
-    a => `${a.brand} ${a.model}`,
+  const { items: assets } = useSupabaseCollection<Asset, AtivoRow>(
+    "ativos", assetFromDb, assetToDb as never, "Ativos",
   );
-  const { items: records, save, remove } = usePersistentCollection<MaintenanceRecord>(
-    "imts.maintenance",
-    initialMaintenance,
+  const assetsById = useMemo(() => new Map(assets.map(a => [a.id, a])), [assets]);
+  const { items: records, save, remove } = useSupabaseCollection<MaintenanceRecord, ManutRow>(
+    "manutencoes",
+    (r) => maintFromDb(r, assetsById),
+    maintToDb,
     "Manutenções",
-    r => `${r.type} - ${r.assetLabel}`,
   );
 
   const [formOpen, setFormOpen] = useState(false);
