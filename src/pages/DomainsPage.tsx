@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { domains as initialDomains, type Domain } from "@/data/mock-data";
+import type { Domain } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,51 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2 } from "lucide-react";
+import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DomainForm from "@/components/forms/DomainForm";
 import { toast } from "sonner";
-import { usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
+
+interface DomainRow {
+  id: string;
+  nome: string;
+  registrar: string | null;
+  dns_provider: string | null;
+  hosting_provider: string | null;
+  data_vencimento: string | null;
+  ssl_vencimento: string | null;
+  custo_renovacao: number | null;
+  auto_renovacao: boolean;
+  status: string;
+}
+
+const fromDb = (r: DomainRow): Domain => ({
+  id: r.id,
+  url: r.nome,
+  registrar: r.registrar ?? "",
+  dnsProvider: r.dns_provider ?? "",
+  hostingProvider: r.hosting_provider ?? "",
+  expirationDate: r.data_vencimento ?? "",
+  sslExpiration: r.ssl_vencimento ?? "",
+  renewalCost: Number(r.custo_renovacao ?? 0),
+  autoRenew: r.auto_renovacao,
+  status: (r.status as Domain['status']) ?? "Ativo",
+});
+
+const toDb = (d: Domain, orgId: string) => ({
+  id: d.id,
+  org_id: orgId,
+  nome: d.url,
+  registrar: d.registrar,
+  dns_provider: d.dnsProvider,
+  hosting_provider: d.hostingProvider,
+  data_vencimento: d.expirationDate || null,
+  ssl_vencimento: d.sslExpiration || null,
+  custo_renovacao: d.renewalCost,
+  auto_renovacao: d.autoRenew,
+  status: d.status,
+});
 
 function daysUntil(dateStr: string): number {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
