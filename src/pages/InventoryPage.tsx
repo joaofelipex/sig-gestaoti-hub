@@ -72,11 +72,11 @@ function statusOf(item: InventoryItem) {
 }
 
 export default function InventoryPage() {
-  const { items, save, remove, setItems } = usePersistentCollection<InventoryItem>(
-    "imts.inventory", initialInventory, "Estoque TI", i => i.name,
+  const { items, save, remove } = useSupabaseCollection<InventoryItem, InvRow>(
+    "inventario", invFromDb, invToDb, "Estoque TI",
   );
-  const { items: stockMoves, save: saveMov } = usePersistentCollection<StockMovement>(
-    "imts.stock-movements", initialStockMovements, "Estoque – Movimentações", m => `${m.type} ${m.itemName}`,
+  const { items: stockMoves, save: saveMov } = useSupabaseCollection<StockMovement, InvMovRow>(
+    "inventario_movimentacoes", movFromDb, movToDb, "Estoque – Movimentações",
   );
 
   const [search, setSearch] = useState("");
@@ -121,17 +121,16 @@ export default function InventoryPage() {
     toast.success("Item removido");
   };
 
-  const handleSaveMov = (m: StockMovement) => {
-    // Update stock quantity
-    setItems(prev => prev.map(i => {
-      if (i.id !== m.itemId) return i;
-      let q = i.quantity;
+  const handleSaveMov = async (m: StockMovement) => {
+    const target = items.find(i => i.id === m.itemId);
+    if (target) {
+      let q = target.quantity;
       if (m.type === "Entrada") q += m.quantity;
       else if (m.type === "Saída") q = Math.max(0, q - m.quantity);
       else if (m.type === "Ajuste") q = m.quantity;
-      return { ...i, quantity: q };
-    }));
-    saveMov(m);
+      await save({ ...target, quantity: q });
+    }
+    await saveMov(m);
     toast.success(`${m.type} registrada — ${m.itemName}`);
   };
 
