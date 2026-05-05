@@ -177,39 +177,54 @@ export type Database = {
       }
       dominios: {
         Row: {
+          auto_renovacao: boolean
           created_at: string
           custo_anual: number | null
+          custo_renovacao: number | null
           data_vencimento: string | null
+          dns_provider: string | null
+          hosting_provider: string | null
           id: string
           nome: string
           observacoes: string | null
           org_id: string
           registrar: string | null
           ssl_vencimento: string | null
+          status: string
           updated_at: string
         }
         Insert: {
+          auto_renovacao?: boolean
           created_at?: string
           custo_anual?: number | null
+          custo_renovacao?: number | null
           data_vencimento?: string | null
+          dns_provider?: string | null
+          hosting_provider?: string | null
           id?: string
           nome: string
           observacoes?: string | null
           org_id: string
           registrar?: string | null
           ssl_vencimento?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
+          auto_renovacao?: boolean
           created_at?: string
           custo_anual?: number | null
+          custo_renovacao?: number | null
           data_vencimento?: string | null
+          dns_provider?: string | null
+          hosting_provider?: string | null
           id?: string
           nome?: string
           observacoes?: string | null
           org_id?: string
           registrar?: string | null
           ssl_vencimento?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
@@ -224,8 +239,11 @@ export type Database = {
       }
       licencas: {
         Row: {
+          categoria: string
+          chave_ativacao: string | null
           created_at: string
           custo_mensal: number | null
+          custo_unitario: number
           data_renovacao: string | null
           fornecedor: string | null
           id: string
@@ -235,11 +253,15 @@ export type Database = {
           qtd_usuarios: number | null
           responsavel_id: string | null
           tipo: string | null
+          total_licencas: number
           updated_at: string
         }
         Insert: {
+          categoria?: string
+          chave_ativacao?: string | null
           created_at?: string
           custo_mensal?: number | null
+          custo_unitario?: number
           data_renovacao?: string | null
           fornecedor?: string | null
           id?: string
@@ -249,11 +271,15 @@ export type Database = {
           qtd_usuarios?: number | null
           responsavel_id?: string | null
           tipo?: string | null
+          total_licencas?: number
           updated_at?: string
         }
         Update: {
+          categoria?: string
+          chave_ativacao?: string | null
           created_at?: string
           custo_mensal?: number | null
+          custo_unitario?: number
           data_renovacao?: string | null
           fornecedor?: string | null
           id?: string
@@ -263,6 +289,7 @@ export type Database = {
           qtd_usuarios?: number | null
           responsavel_id?: string | null
           tipo?: string | null
+          total_licencas?: number
           updated_at?: string
         }
         Relationships: [
@@ -518,42 +545,81 @@ export type Database = {
       servidores: {
         Row: {
           ambiente: string | null
+          armazenamento: string | null
+          contrato_fim: string | null
+          cpu: string | null
           created_at: string
           custo_mensal: number | null
+          equipe_responsavel: string | null
+          finalidade: string | null
           id: string
           ip_publico: string | null
           nome: string
           observacoes: string | null
           org_id: string
           provedor: string | null
+          ram: string | null
+          regiao: string | null
+          sistema_operacional: string | null
+          ssl_vencimento: string | null
+          status: string
+          tipo: string | null
+          ultimo_backup: string | null
           updated_at: string
           uptime_pct: number | null
+          url_monitoramento: string | null
         }
         Insert: {
           ambiente?: string | null
+          armazenamento?: string | null
+          contrato_fim?: string | null
+          cpu?: string | null
           created_at?: string
           custo_mensal?: number | null
+          equipe_responsavel?: string | null
+          finalidade?: string | null
           id?: string
           ip_publico?: string | null
           nome: string
           observacoes?: string | null
           org_id: string
           provedor?: string | null
+          ram?: string | null
+          regiao?: string | null
+          sistema_operacional?: string | null
+          ssl_vencimento?: string | null
+          status?: string
+          tipo?: string | null
+          ultimo_backup?: string | null
           updated_at?: string
           uptime_pct?: number | null
+          url_monitoramento?: string | null
         }
         Update: {
           ambiente?: string | null
+          armazenamento?: string | null
+          contrato_fim?: string | null
+          cpu?: string | null
           created_at?: string
           custo_mensal?: number | null
+          equipe_responsavel?: string | null
+          finalidade?: string | null
           id?: string
           ip_publico?: string | null
           nome?: string
           observacoes?: string | null
           org_id?: string
           provedor?: string | null
+          ram?: string | null
+          regiao?: string | null
+          sistema_operacional?: string | null
+          ssl_vencimento?: string | null
+          status?: string
+          tipo?: string | null
+          ultimo_backup?: string | null
           updated_at?: string
           uptime_pct?: number | null
+          url_monitoramento?: string | null
         }
         Relationships: [
           {
