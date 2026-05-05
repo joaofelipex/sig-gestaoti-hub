@@ -369,6 +369,57 @@ export type Database = {
         }
         Relationships: []
       }
+      pagamentos: {
+        Row: {
+          categoria: Database["public"]["Enums"]["pagamento_categoria"]
+          competencia: string
+          created_at: string
+          data_pagamento: string | null
+          fornecedor: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          org_id: string
+          referencia_id: string | null
+          status: Database["public"]["Enums"]["pagamento_status"]
+          updated_at: string
+          valor: number
+          vencimento: string | null
+        }
+        Insert: {
+          categoria: Database["public"]["Enums"]["pagamento_categoria"]
+          competencia: string
+          created_at?: string
+          data_pagamento?: string | null
+          fornecedor?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          org_id: string
+          referencia_id?: string | null
+          status?: Database["public"]["Enums"]["pagamento_status"]
+          updated_at?: string
+          valor?: number
+          vencimento?: string | null
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["pagamento_categoria"]
+          competencia?: string
+          created_at?: string
+          data_pagamento?: string | null
+          fornecedor?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          org_id?: string
+          referencia_id?: string | null
+          status?: Database["public"]["Enums"]["pagamento_status"]
+          updated_at?: string
+          valor?: number
+          vencimento?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -677,6 +728,13 @@ export type Database = {
       alerta_severidade: "info" | "aviso" | "critico"
       app_role: "admin" | "gestor" | "usuario"
       ativo_status: "ativo" | "manutencao" | "estoque" | "descartado"
+      pagamento_categoria:
+        | "servidor"
+        | "licenca"
+        | "dominio"
+        | "contrato"
+        | "outro"
+      pagamento_status: "pendente" | "pago" | "atrasado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -807,6 +865,14 @@ export const Constants = {
       alerta_severidade: ["info", "aviso", "critico"],
       app_role: ["admin", "gestor", "usuario"],
       ativo_status: ["ativo", "manutencao", "estoque", "descartado"],
+      pagamento_categoria: [
+        "servidor",
+        "licenca",
+        "dominio",
+        "contrato",
+        "outro",
+      ],
+      pagamento_status: ["pendente", "pago", "atrasado"],
     },
   },
 } as const
