@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      acoes_economista: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          effort: string
+          estimated_savings: number
+          id: string
+          org_id: string
+          owner: string | null
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          effort?: string
+          estimated_savings?: number
+          id?: string
+          org_id: string
+          owner?: string | null
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          effort?: string
+          estimated_savings?: number
+          id?: string
+          org_id?: string
+          owner?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       alertas: {
         Row: {
           created_at: string
@@ -588,6 +636,42 @@ export type Database = {
         }
         Relationships: []
       }
+      orcamentos: {
+        Row: {
+          annual_budget: number
+          category: string
+          cost_center: string
+          created_at: string
+          id: string
+          notes: string | null
+          org_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          annual_budget?: number
+          category: string
+          cost_center: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          annual_budget?: number
+          category?: string
+          cost_center?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           cnpj: string | null
@@ -772,6 +856,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      riscos: {
+        Row: {
+          created_at: string
+          id: string
+          mitigation: string | null
+          org_id: string
+          owner: string | null
+          severity: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mitigation?: string | null
+          org_id: string
+          owner?: string | null
+          severity?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mitigation?: string | null
+          org_id?: string
+          owner?: string | null
+          severity?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       servidores: {
         Row: {
