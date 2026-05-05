@@ -390,7 +390,7 @@ export default function MovementsPage() {
         </TabsContent>
       </Tabs>
 
-      <MovementForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} movement={editing} />
+      <MovementForm open={formOpen} onOpenChange={setFormOpen} onSave={handleSave} movement={editing} assets={assetsList} />
 
       <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
