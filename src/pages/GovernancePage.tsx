@@ -310,18 +310,44 @@ export default function GovernancePage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="riscos" className="mt-4 grid gap-3 md:grid-cols-3">
-          {risks.map(risk => (
-            <Card key={risk.id}>
-              <CardContent className="p-4">
-                <Badge variant="outline" className={risk.severity === "Alta" ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-warning/10 text-warning border-warning/20"}>{risk.severity}</Badge>
-                <p className="mt-3 font-semibold text-foreground">{risk.title}</p>
-                <p className="mt-1 text-xs text-muted-foreground">Responsável: {risk.owner}</p>
-                <p className="mt-3 text-sm text-foreground">{risk.mitigation}</p>
-              </CardContent>
-            </Card>
-          ))}
+        <TabsContent value="riscos" className="mt-4 space-y-3">
+          <div className="flex justify-end">
+            <Button size="sm" className="gap-2" onClick={() => setRiskDialog({ open: true })}>
+              <Plus className="w-4 h-4" /> Novo Risco
+            </Button>
+          </div>
+          {risks.length === 0 ? (
+            <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">Nenhum risco cadastrado.</CardContent></Card>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-3">
+              {risks.map(risk => (
+                <Card key={risk.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <Badge variant="outline" className={
+                        risk.severity === "Alta" ? "bg-destructive/10 text-destructive border-destructive/20" :
+                        risk.severity === "Média" ? "bg-warning/10 text-warning border-warning/20" :
+                        "bg-muted text-muted-foreground"
+                      }>{risk.severity}</Badge>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setRiskDialog({ open: true, editing: risk })}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setRiskDeleteTarget(risk)}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="mt-3 font-semibold text-foreground">{risk.title}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Responsável: {risk.owner || "—"}</p>
+                    <p className="mt-3 text-sm text-foreground">{risk.mitigation}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
+
 
         <TabsContent value="auditoria" className="mt-4">
           <Card>
