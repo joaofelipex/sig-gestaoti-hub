@@ -37,7 +37,7 @@ export default function ContractForm({ open, onOpenChange, onSave, contract }: C
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    onSave({ ...form, id: contract?.id || `CTR-${String(Date.now()).slice(-4)}` } as FinancialContract);
+    onSave({ ...form, id: contract?.id || crypto.randomUUID() } as FinancialContract);
     onOpenChange(false);
   };
 
