@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { licenses as initialLicenses, type License } from "@/data/mock-data";
+import type { License } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,49 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 import LicenseForm from "@/components/forms/LicenseForm";
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/export-csv";
-import { usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
+
+interface LicenseRow {
+  id: string;
+  nome: string;
+  fornecedor: string | null;
+  tipo: string | null;
+  categoria: string;
+  total_licencas: number;
+  qtd_usuarios: number;
+  custo_unitario: number;
+  custo_mensal: number;
+  data_renovacao: string | null;
+  chave_ativacao: string | null;
+}
+
+const fromDb = (r: LicenseRow): License => ({
+  id: r.id,
+  software: r.nome,
+  vendor: r.fornecedor ?? "",
+  type: (r.tipo as License['type']) ?? "Mensal",
+  category: (r.categoria as License['category']) ?? "Produtividade",
+  totalLicenses: r.total_licencas,
+  usedLicenses: r.qtd_usuarios,
+  costPerUnit: Number(r.custo_unitario ?? 0),
+  renewalDate: r.data_renovacao ?? "",
+  activationKey: r.chave_ativacao ?? "",
+});
+
+const toDb = (l: License, orgId: string) => ({
+  id: l.id,
+  org_id: orgId,
+  nome: l.software,
+  fornecedor: l.vendor,
+  tipo: l.type,
+  categoria: l.category,
+  total_licencas: l.totalLicenses,
+  qtd_usuarios: l.usedLicenses,
+  custo_unitario: l.costPerUnit,
+  custo_mensal: l.type === "Anual" ? (l.costPerUnit * l.usedLicenses) / 12 : l.costPerUnit * l.usedLicenses,
+  data_renovacao: l.renewalDate || null,
+  chave_ativacao: l.activationKey,
+});
 
 const categoryColors: Record<string, string> = {
   Produtividade: 'hsl(217, 91%, 60%)',
@@ -32,11 +74,8 @@ const catBadge: Record<string, string> = {
 };
 
 export default function LicensesPage() {
-  const { items: licenseList, save: saveLicense, remove: removeLicense } = usePersistentCollection(
-    "imts.licenses",
-    initialLicenses,
-    "Licenças",
-    license => license.software,
+  const { items: licenseList, save: saveLicense, remove: removeLicense } = useSupabaseCollection<License, LicenseRow>(
+    "licencas", fromDb, toDb, "Licenças",
   );
   const [formOpen, setFormOpen] = useState(false);
   const [editingLicense, setEditingLicense] = useState<License | null>(null);
@@ -53,17 +92,17 @@ export default function LicensesPage() {
       acc[l.category] = (acc[l.category] || 0) + monthly;
       return acc;
     }, {} as Record<string, number>)
-  ).map(([name, value]) => ({ name, value: Math.round(value), color: categoryColors[name] }));
+  ).map(([name, value]) => ({ name, value: Math.round(value as number), color: categoryColors[name] }));
 
-  const handleSave = (license: License) => {
+  const handleSave = async (license: License) => {
     const exists = licenseList.some(l => l.id === license.id);
-    saveLicense(license);
+    await saveLicense(license);
     toast.success(`Licença "${license.software}" ${exists ? 'atualizada' : 'cadastrada'}!`);
     setEditingLicense(null);
   };
 
-  const handleDelete = (license: License) => {
-    removeLicense(license);
+  const handleDelete = async (license: License) => {
+    await removeLicense(license);
     setDeleteTarget(null);
     toast.success(`Licença "${license.software}" removida.`);
   };

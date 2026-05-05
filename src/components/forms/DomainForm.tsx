@@ -35,7 +35,7 @@ export default function DomainForm({ open, onOpenChange, onSave, domain }: Domai
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = domain?.id || `DOM-${String(Date.now()).slice(-4)}`;
+    const id = domain?.id || crypto.randomUUID();
     onSave({ ...form, id } as Domain);
     onOpenChange(false);
   };

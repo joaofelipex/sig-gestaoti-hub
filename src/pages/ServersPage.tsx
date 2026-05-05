@@ -1,5 +1,5 @@
 import { useState, useMemo, Fragment } from "react";
-import { servers as initialServers, type Server } from "@/data/servers-data";
+import type { Server } from "@/data/servers-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,78 @@ import {
 import ServerForm from "@/components/forms/ServerForm";
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/export-csv";
-import { usePersistentCollection } from "@/hooks/use-persistent-collection";
+import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
+
+interface ServerRow {
+  id: string;
+  nome: string;
+  provedor: string | null;
+  tipo: string | null;
+  regiao: string | null;
+  ip_publico: string | null;
+  sistema_operacional: string | null;
+  cpu: string | null;
+  ram: string | null;
+  armazenamento: string | null;
+  status: string;
+  uptime_pct: number;
+  custo_mensal: number;
+  finalidade: string | null;
+  equipe_responsavel: string | null;
+  contrato_fim: string | null;
+  ultimo_backup: string | null;
+  ssl_vencimento: string | null;
+  url_monitoramento: string | null;
+  observacoes: string | null;
+}
+
+const fromDb = (r: ServerRow): Server => ({
+  id: r.id,
+  name: r.nome,
+  provider: (r.provedor as Server['provider']) ?? "AWS",
+  type: (r.tipo as Server['type']) ?? "Cloud Instance",
+  region: r.regiao ?? "",
+  ip: r.ip_publico ?? "",
+  os: r.sistema_operacional ?? "",
+  cpu: r.cpu ?? "",
+  ram: r.ram ?? "",
+  storage: r.armazenamento ?? "",
+  status: (r.status as Server['status']) ?? "Online",
+  uptime: Number(r.uptime_pct ?? 0),
+  monthlyCost: Number(r.custo_mensal ?? 0),
+  purpose: r.finalidade ?? "",
+  responsibleTeam: r.equipe_responsavel ?? "",
+  contractEnd: r.contrato_fim ?? "",
+  lastBackup: r.ultimo_backup ?? "",
+  sslExpiration: r.ssl_vencimento ?? undefined,
+  monitoringUrl: r.url_monitoramento ?? undefined,
+  notes: r.observacoes ?? undefined,
+});
+
+const toDb = (s: Server, orgId: string) => ({
+  id: s.id,
+  org_id: orgId,
+  nome: s.name,
+  provedor: s.provider,
+  tipo: s.type,
+  regiao: s.region,
+  ip_publico: s.ip,
+  sistema_operacional: s.os,
+  cpu: s.cpu,
+  ram: s.ram,
+  armazenamento: s.storage,
+  status: s.status,
+  uptime_pct: s.uptime,
+  custo_mensal: s.monthlyCost,
+  finalidade: s.purpose,
+  equipe_responsavel: s.responsibleTeam,
+  contrato_fim: s.contractEnd || null,
+  ultimo_backup: s.lastBackup || null,
+  ssl_vencimento: s.sslExpiration || null,
+  url_monitoramento: s.monitoringUrl,
+  observacoes: s.notes,
+  ambiente: 'producao',
+});
 
 const statusConfig: Record<Server['status'], { class: string; dot: string }> = {
   'Online': { class: 'bg-success/10 text-success border-success/20', dot: 'bg-success' },
@@ -44,11 +115,8 @@ function backupAge(date: string) {
 }
 
 export default function ServersPage() {
-  const { items: servers, save: saveServer, remove: removeServer } = usePersistentCollection(
-    "imts.servers",
-    initialServers,
-    "Servidores",
-    server => server.name,
+  const { items: servers, save: saveServer, remove: removeServer } = useSupabaseCollection<Server, ServerRow>(
+    "servidores", fromDb, toDb, "Servidores",
   );
   const [search, setSearch] = useState("");
   const [filterProvider, setFilterProvider] = useState("all");
@@ -84,18 +152,18 @@ export default function ServersPage() {
     return { online, total: servers.length, totalCost, avgUptime, alerts };
   }, [servers]);
 
-  const providers = [...new Set(servers.map(s => s.provider))];
+  const providers = Array.from(new Set(servers.map(s => s.provider))) as string[];
 
-  const handleSave = (server: Server) => {
+  const handleSave = async (server: Server) => {
     const exists = servers.some(s => s.id === server.id);
-    saveServer(server);
+    await saveServer(server);
     toast.success(`Servidor "${server.name}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setDialogOpen(false);
     setEditingServer(null);
   };
 
-  const handleDelete = (server: Server) => {
-    removeServer(server);
+  const handleDelete = async (server: Server) => {
+    await removeServer(server);
     setDeleteTarget(null);
     toast.success(`Servidor "${server.name}" removido.`);
   };
