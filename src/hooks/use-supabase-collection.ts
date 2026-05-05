@@ -17,6 +17,11 @@ export function useSupabaseCollection<UI extends { id: string }, DB extends { id
   const [loading, setLoading] = useState(true);
   const [orgId, setOrgId] = useState<string | null>(null);
 
+  const mapFromDbRef = useRef(mapFromDb);
+  const mapToDbRef = useRef(mapToDb);
+  mapFromDbRef.current = mapFromDb;
+  mapToDbRef.current = mapToDb;
+
   const load = useCallback(async () => {
     setLoading(true);
     const { data: profile } = await supabase
@@ -35,10 +40,10 @@ export function useSupabaseCollection<UI extends { id: string }, DB extends { id
     if (error) {
       toast.error(`Erro ao carregar ${label}: ${error.message}`);
     } else {
-      setItems(((data as unknown) as DB[]).map(mapFromDb));
+      setItems(((data as unknown) as DB[]).map(mapFromDbRef.current));
     }
     setLoading(false);
-  }, [table, label, mapFromDb]);
+  }, [table, label]);
 
   useEffect(() => {
     load();
