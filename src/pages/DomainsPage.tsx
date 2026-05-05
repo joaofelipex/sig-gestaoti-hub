@@ -96,15 +96,15 @@ export default function DomainsPage() {
 
   const sorted = [...domainList].sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
-  const handleSave = (domain: Domain) => {
+  const handleSave = async (domain: Domain) => {
     const exists = domainList.some(d => d.id === domain.id);
-    saveDomain(domain);
+    await saveDomain(domain);
     toast.success(`Domínio "${domain.url}" ${exists ? 'atualizado' : 'cadastrado'}!`);
     setEditingDomain(null);
   };
 
-  const handleDelete = (domain: Domain) => {
-    removeDomain(domain);
+  const handleDelete = async (domain: Domain) => {
+    await removeDomain(domain);
     setDeleteTarget(null);
     toast.success(`Domínio "${domain.url}" removido.`);
   };
