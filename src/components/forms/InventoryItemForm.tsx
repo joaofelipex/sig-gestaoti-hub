@@ -38,7 +38,7 @@ export default function InventoryItemForm({ open, onOpenChange, onSave, item }: 
   useEffect(() => {
     if (item) setForm(item);
     else setForm({
-      id: `INV-${Date.now().toString().slice(-6)}`,
+      id: crypto.randomUUID(),
       name: "", category: "Periféricos", unit: "un",
       quantity: 0, minQuantity: 0, unitCost: 0,
       location: "Almoxarifado TI",
