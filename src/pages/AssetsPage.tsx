@@ -155,11 +155,11 @@ Assinatura TI - IMTS
 }
 
 export default function AssetsPage() {
-  const { items: assetList, save: saveAsset, remove: removeAsset } = usePersistentCollection(
-    "imts.assets",
-    initialAssets,
+  const { items: assetList, save: saveAsset, remove: removeAsset } = useSupabaseCollection<Asset, AtivoRow>(
+    "ativos",
+    fromDb,
+    toDb,
     "Ativos",
-    asset => `${asset.brand} ${asset.model}`,
   );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
