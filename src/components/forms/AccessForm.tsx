@@ -33,7 +33,7 @@ export default function AccessForm({ open, onOpenChange, onSave, record }: Acces
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const id = record?.id || `ACC-${String(Date.now()).slice(-4)}`;
+    const id = record?.id || crypto.randomUUID();
     onSave({ ...form, id } as AccessRecord);
     onOpenChange(false);
   };
