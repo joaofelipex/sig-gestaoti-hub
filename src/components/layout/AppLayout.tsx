@@ -160,25 +160,32 @@ function LayoutChrome() {
   const [searchOpen, setSearchOpen] = useState(false);
   const { openTab } = useAppTabs();
 
+  const { assets, domains, licenses, servers } = useDashboardData();
+
   const alerts = useMemo(() => {
     const items: { label: string; type: string; route: string }[] = [];
     domains.forEach((d) => {
+      if (!d.expirationDate) return;
       const days = daysUntil(d.expirationDate);
       if (days <= 30 && days > 0) items.push({ label: `${d.url} expira em ${days}d`, type: "warning", route: "/dominios" });
       if (days <= 0) items.push({ label: `${d.url} expirado!`, type: "critical", route: "/dominios" });
-      const sslDays = daysUntil(d.sslExpiration);
-      if (sslDays <= 30 && sslDays > 0) items.push({ label: `SSL ${d.url} expira em ${sslDays}d`, type: "warning", route: "/dominios" });
+      if (d.sslExpiration) {
+        const sslDays = daysUntil(d.sslExpiration);
+        if (sslDays <= 30 && sslDays > 0) items.push({ label: `SSL ${d.url} expira em ${sslDays}d`, type: "warning", route: "/dominios" });
+      }
     });
     servers.forEach((s) => {
       if (s.status === "Offline" || s.status === "Degradado") items.push({ label: `${s.name} está ${s.status}`, type: "critical", route: "/servidores" });
-      const cd = daysUntil(s.contractEnd);
-      if (cd <= 30 && cd > 0) items.push({ label: `Contrato ${s.name} vence em ${cd}d`, type: "warning", route: "/servidores" });
+      if (s.contractEnd) {
+        const cd = daysUntil(s.contractEnd);
+        if (cd <= 30 && cd > 0) items.push({ label: `Contrato ${s.name} vence em ${cd}d`, type: "warning", route: "/servidores" });
+      }
     });
     assets.forEach((a) => {
       if (a.status === "Manutenção") items.push({ label: `${a.brand} ${a.model} em manutenção`, type: "warning", route: "/ativos" });
     });
     return items;
-  }, []);
+  }, [assets, domains, servers]);
 
   const searchResults = useMemo(() => {
     if (searchValue.length < 2) return [];
@@ -186,7 +193,7 @@ function LayoutChrome() {
     const results: { label: string; sub: string; route: string }[] = [];
     assets.forEach((a) => {
       if (`${a.brand} ${a.model} ${a.serialNumber}`.toLowerCase().includes(q))
-        results.push({ label: `${a.brand} ${a.model}`, sub: a.id, route: "/ativos" });
+        results.push({ label: `${a.brand} ${a.model}`, sub: a.serialNumber || a.id, route: "/ativos" });
     });
     domains.forEach((d) => {
       if (d.url.toLowerCase().includes(q)) results.push({ label: d.url, sub: d.registrar, route: "/dominios" });
@@ -199,7 +206,7 @@ function LayoutChrome() {
         results.push({ label: s.name, sub: s.provider, route: "/servidores" });
     });
     return results.slice(0, 8);
-  }, [searchValue]);
+  }, [searchValue, assets, domains, licenses, servers]);
 
   const navigateAndOpen = (route: string) => {
     const def = APP_TAB_DEFAULTS[route];
