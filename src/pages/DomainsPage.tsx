@@ -359,6 +359,10 @@ export default function DomainsPage() {
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-border">
+                  <DnsRecordsManager dominioId={domain.id} />
+                </div>
+
+                <div className="mt-3 pt-3 border-t border-border">
                   <div className="flex items-center gap-2 mb-2">
                     <Server className="w-4 h-4 text-muted-foreground" />
                     <span className="text-xs font-semibold text-foreground">Documentação de Desastre</span>
