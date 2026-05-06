@@ -249,44 +249,63 @@ export default function DomainsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <Globe className="w-8 h-8 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Total Domínios</p>
-              <p className="text-2xl font-bold text-foreground">{domainList.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-destructive" />
-            <div>
-              <p className="text-xs text-muted-foreground">Urgente (&lt;15d)</p>
-              <p className="text-2xl font-bold text-destructive">{domainList.filter(d => { const dd = daysUntil(d.expirationDate); return dd > 0 && dd <= 15; }).length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="w-8 h-8 text-warning" />
-            <div>
-              <p className="text-xs text-muted-foreground">Atenção (&lt;30d)</p>
-              <p className="text-2xl font-bold text-warning">{domainList.filter(d => { const dd = daysUntil(d.expirationDate); return dd > 15 && dd <= 30; }).length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-3">
-            <ShieldCheck className="w-8 h-8 text-success" />
-            <div>
-              <p className="text-xs text-muted-foreground">SSL Válidos</p>
-              <p className="text-2xl font-bold text-foreground">{domainList.filter(d => daysUntil(d.sslExpiration) > 0).length}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {(() => {
+        const withDate = domainList.filter(d => d.expirationDate);
+        const expired = withDate.filter(d => daysUntil(d.expirationDate) <= 0).length;
+        const urgent = withDate.filter(d => { const dd = daysUntil(d.expirationDate); return dd > 0 && dd <= 15; }).length;
+        const attention = withDate.filter(d => { const dd = daysUntil(d.expirationDate); return dd > 15 && dd <= 30; }).length;
+        const noDate = domainList.length - withDate.length;
+        return (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <Globe className="w-8 h-8 text-primary" />
+              <div>
+                <p className="text-xs text-muted-foreground">Total Domínios</p>
+                <p className="text-2xl font-bold text-foreground">{domainList.length}</p>
+                {noDate > 0 && <p className="text-[10px] text-muted-foreground">{noDate} sem data</p>}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="w-8 h-8 text-destructive" />
+              <div>
+                <p className="text-xs text-muted-foreground">Expirados</p>
+                <p className="text-2xl font-bold text-destructive">{expired}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="w-8 h-8 text-destructive" />
+              <div>
+                <p className="text-xs text-muted-foreground">Urgente (1–15d)</p>
+                <p className="text-2xl font-bold text-destructive">{urgent}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="w-8 h-8 text-warning" />
+              <div>
+                <p className="text-xs text-muted-foreground">Atenção (16–30d)</p>
+                <p className="text-2xl font-bold text-warning">{attention}</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 flex items-center gap-3">
+              <ShieldCheck className="w-8 h-8 text-success" />
+              <div>
+                <p className="text-xs text-muted-foreground">SSL Válidos</p>
+                <p className="text-2xl font-bold text-foreground">{domainList.filter(d => d.sslExpiration && daysUntil(d.sslExpiration) > 0).length}</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        );
+      })()}
 
       <Card>
         <CardHeader>
