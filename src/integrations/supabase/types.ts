@@ -280,6 +280,48 @@ export type Database = {
           },
         ]
       }
+      dns_records: {
+        Row: {
+          created_at: string
+          dominio_id: string
+          id: string
+          nome: string
+          observacoes: string | null
+          org_id: string
+          prioridade: number | null
+          tipo: string
+          ttl: number
+          updated_at: string
+          valor: string
+        }
+        Insert: {
+          created_at?: string
+          dominio_id: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          org_id: string
+          prioridade?: number | null
+          tipo?: string
+          ttl?: number
+          updated_at?: string
+          valor: string
+        }
+        Update: {
+          created_at?: string
+          dominio_id?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          org_id?: string
+          prioridade?: number | null
+          tipo?: string
+          ttl?: number
+          updated_at?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       dominios: {
         Row: {
           auto_renovacao: boolean
