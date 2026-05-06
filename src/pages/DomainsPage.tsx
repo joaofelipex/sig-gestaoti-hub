@@ -12,6 +12,7 @@ import {
 import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2, Loader2, Upload } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DomainForm from "@/components/forms/DomainForm";
+import DnsRecordsManager from "@/components/DnsRecordsManager";
 import { toast } from "sonner";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 
