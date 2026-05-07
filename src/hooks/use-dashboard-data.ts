@@ -128,11 +128,9 @@ export function useDashboardData(): DashboardData {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
-
-  // Realtime: recarrega automaticamente quando ativos/licenças/servidores/etc mudam
-  // (ex.: alteração de valor_aquisicao em AssetsPage recalcula depreciação e TCO)
   useEffect(() => {
+    load();
+    // Realtime: recarrega automaticamente quando ativos/licenças/servidores/etc mudam
     const tables = ["ativos", "dominios", "licencas", "servidores", "contratos"];
     const channel = supabase.channel("dashboard-data-sync");
     tables.forEach((t) => {
