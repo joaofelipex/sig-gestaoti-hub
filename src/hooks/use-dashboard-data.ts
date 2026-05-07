@@ -132,14 +132,15 @@ export function useDashboardData(): DashboardData {
     load();
     // Realtime: recarrega automaticamente quando ativos/licenças/servidores/etc mudam
     const tables = ["ativos", "dominios", "licencas", "servidores", "contratos"];
-    const channel = supabase.channel("dashboard-data-sync");
-    tables.forEach((t) => {
-      channel.on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: t },
-        () => { load(); },
-      );
-    });
+    const channel = tables.reduce(
+      (ch, t) =>
+        ch.on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: t },
+          () => { load(); },
+        ),
+      supabase.channel(`dashboard-data-sync-${Math.random().toString(36).slice(2)}`),
+    );
     channel.subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [load]);
