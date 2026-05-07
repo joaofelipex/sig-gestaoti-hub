@@ -130,5 +130,21 @@ export function useDashboardData(): DashboardData {
 
   useEffect(() => { load(); }, [load]);
 
+  // Realtime: recarrega automaticamente quando ativos/licenças/servidores/etc mudam
+  // (ex.: alteração de valor_aquisicao em AssetsPage recalcula depreciação e TCO)
+  useEffect(() => {
+    const tables = ["ativos", "dominios", "licencas", "servidores", "contratos"];
+    const channel = supabase.channel("dashboard-data-sync");
+    tables.forEach((t) => {
+      channel.on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: t },
+        () => { load(); },
+      );
+    });
+    channel.subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [load]);
+
   return { assets, domains, licenses, servers, contracts, loading, reload: load };
 }
