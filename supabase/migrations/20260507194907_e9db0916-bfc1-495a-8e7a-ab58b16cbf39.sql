@@ -1,0 +1,1 @@
+DELETE FROM public.dominios WHERE id IN ('d8989f2e-1c83-481e-bb33-023c263571c3','54882573-cf97-40a0-9355-1db4d898c7c6');
