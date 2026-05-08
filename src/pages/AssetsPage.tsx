@@ -220,6 +220,44 @@ export default function AssetsPage() {
           }}>
             <FileDown className="w-4 h-4" /> Exportar CSV
           </Button>
+          <ImportCSVButton onImport={async (rows, headers) => {
+            const iType = findCol(headers, "tipo", "type");
+            const iBrand = findCol(headers, "marca", "brand");
+            const iModel = findCol(headers, "modelo", "model");
+            const iSerial = findCol(headers, "serial", "série", "serie");
+            const iStatus = findCol(headers, "status");
+            const iResp = findCol(headers, "responsável", "responsavel", "assigned");
+            const iDept = findCol(headers, "departamento", "department", "setor");
+            const iVal = findCol(headers, "valor compra", "valor_compra", "purchase");
+            const iDate = findCol(headers, "data", "aquisição", "aquisicao");
+            if (iBrand < 0 && iModel < 0) { toast.error("Coluna 'Marca' ou 'Modelo' não encontrada"); return { ok: 0, fail: 0 }; }
+            const existing = new Set(assetList.map(a => (a.serialNumber || `${a.brand}${a.model}`).toLowerCase()));
+            let ok = 0, fail = 0, skipped = 0;
+            const validStatus: Asset['status'][] = ['Em uso','Estoque','Manutenção','Aposentado'];
+            for (const row of rows) {
+              const brand = iBrand >= 0 ? (row[iBrand] || "").trim() : "";
+              const model = iModel >= 0 ? (row[iModel] || "").trim() : "";
+              const serial = iSerial >= 0 ? (row[iSerial] || "").trim() : "";
+              if (!brand && !model && !serial) continue;
+              const key = (serial || `${brand}${model}`).toLowerCase();
+              if (existing.has(key)) { skipped++; continue; }
+              const statusRaw = iStatus >= 0 ? (row[iStatus] || "").trim() : "Estoque";
+              const status = (validStatus.find(s => s.toLowerCase() === statusRaw.toLowerCase()) || 'Estoque') as Asset['status'];
+              const asset: Asset = {
+                id: crypto.randomUUID(),
+                type: ((iType >= 0 ? row[iType] : "Notebook") || "Notebook").trim() as Asset['type'],
+                brand, model, serialNumber: serial, status,
+                assignedTo: iResp >= 0 ? (row[iResp] || "").trim() || null : null,
+                department: iDept >= 0 ? (row[iDept] || "").trim() : "",
+                purchaseDate: iDate >= 0 ? parseDate(row[iDate]) : new Date().toISOString().slice(0,10),
+                warrantyEnd: "", specs: {},
+                purchaseValue: iVal >= 0 ? parseNumber(row[iVal]) : 0,
+                maintenanceLog: [],
+              };
+              try { await saveAsset(asset); ok++; existing.add(key); } catch { fail++; }
+            }
+            return { ok, fail, skipped };
+          }} />
           <Button className="gap-2" onClick={openNew}>
             <Plus className="w-4 h-4" /> Novo Ativo
           </Button>
