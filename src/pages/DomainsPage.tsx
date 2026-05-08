@@ -9,11 +9,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2, Loader2, Upload } from "lucide-react";
+import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2, Loader2, Upload, FileDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DomainForm from "@/components/forms/DomainForm";
 import DnsRecordsManager from "@/components/DnsRecordsManager";
 import { toast } from "sonner";
+import { exportToCSV } from "@/lib/export-csv";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 
 interface DomainRow {
