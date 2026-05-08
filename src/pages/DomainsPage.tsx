@@ -240,6 +240,14 @@ export default function DomainsPage() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleImportCSV} />
+          <Button variant="outline" className="gap-2" onClick={() => {
+            exportToCSV('dominios_IMTS',
+              ['Domínio','Registrar','DNS','Hosting','Status','Expiração','SSL','Custo Renovação','Auto-renew'],
+              domainList.map(d => [d.url, d.registrar, d.dnsProvider, d.hostingProvider, d.status, d.expirationDate, d.sslExpiration, d.renewalCost, d.autoRenew ? 'Sim' : 'Não']));
+            toast.success('CSV exportado!');
+          }}>
+            <FileDown className="w-4 h-4" /> Exportar CSV
+          </Button>
           <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={importing}>
             {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             Importar CSV
