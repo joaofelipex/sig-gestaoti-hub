@@ -9,11 +9,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2, Loader2, Upload } from "lucide-react";
+import { Globe, ShieldCheck, AlertTriangle, ExternalLink, Plus, Server, Database, UserCheck, Pencil, Trash2, Loader2, Upload, FileDown } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import DomainForm from "@/components/forms/DomainForm";
 import DnsRecordsManager from "@/components/DnsRecordsManager";
 import { toast } from "sonner";
+import { exportToCSV } from "@/lib/export-csv";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 
 interface DomainRow {
@@ -239,6 +240,14 @@ export default function DomainsPage() {
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleImportCSV} />
+          <Button variant="outline" className="gap-2" onClick={() => {
+            exportToCSV('dominios_IMTS',
+              ['Domínio','Registrar','DNS','Hosting','Status','Expiração','SSL','Custo Renovação','Auto-renew'],
+              domainList.map(d => [d.url, d.registrar, d.dnsProvider, d.hostingProvider, d.status, d.expirationDate, d.sslExpiration, d.renewalCost, d.autoRenew ? 'Sim' : 'Não']));
+            toast.success('CSV exportado!');
+          }}>
+            <FileDown className="w-4 h-4" /> Exportar CSV
+          </Button>
           <Button variant="outline" className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={importing}>
             {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
             Importar CSV

@@ -26,6 +26,8 @@ import {
 } from "@/lib/inventory-data";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import { exportToCSV } from "@/lib/export-csv";
+import { findCol, parseNumber } from "@/lib/import-csv";
+import ImportCSVButton from "@/components/ImportCSVButton";
 import { toast } from "sonner";
 
 interface InvRow {
@@ -230,6 +232,38 @@ export default function InventoryPage() {
             }}>
               <FileDown className="w-4 h-4" /> Exportar
             </Button>
+            <ImportCSVButton onImport={async (rows, headers) => {
+              const iName = findCol(headers, "nome", "name");
+              const iCat = findCol(headers, "categoria", "category");
+              const iSku = findCol(headers, "sku");
+              const iQtd = findCol(headers, "qtd", "quantidade", "quantity");
+              const iMin = findCol(headers, "mínimo", "minimo", "min");
+              const iUnit = findCol(headers, "unidade", "unit");
+              const iCost = findCol(headers, "custo");
+              const iLoc = findCol(headers, "local", "location");
+              if (iName < 0) { toast.error("Coluna 'Nome' não encontrada"); return { ok: 0, fail: 0 }; }
+              const existing = new Set(items.map(i => `${i.name}|${i.sku||""}`.toLowerCase()));
+              let ok = 0, fail = 0, skipped = 0;
+              for (const row of rows) {
+                const name = (row[iName] || "").trim();
+                if (!name) continue;
+                const sku = iSku >= 0 ? (row[iSku] || "").trim() : "";
+                const key = `${name}|${sku}`.toLowerCase();
+                if (existing.has(key)) { skipped++; continue; }
+                const item: InventoryItem = {
+                  id: crypto.randomUUID(), name,
+                  category: ((iCat >= 0 ? row[iCat] : "Outros") || "Outros").trim() as InventoryItem['category'],
+                  sku: sku || undefined,
+                  unit: iUnit >= 0 ? (row[iUnit] || "un").trim() : "un",
+                  quantity: iQtd >= 0 ? parseNumber(row[iQtd]) : 0,
+                  minQuantity: iMin >= 0 ? parseNumber(row[iMin]) : 0,
+                  unitCost: iCost >= 0 ? parseNumber(row[iCost]) : 0,
+                  location: iLoc >= 0 ? (row[iLoc] || "").trim() : "",
+                };
+                try { await save(item); ok++; existing.add(key); } catch { fail++; }
+              }
+              return { ok, fail, skipped };
+            }} />
           </div>
 
           <Card className="shadow-sm">

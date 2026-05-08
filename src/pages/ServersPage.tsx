@@ -26,6 +26,8 @@ import {
 import ServerForm from "@/components/forms/ServerForm";
 import { toast } from "sonner";
 import { exportToCSV } from "@/lib/export-csv";
+import { findCol, parseDate, parseNumber } from "@/lib/import-csv";
+import ImportCSVButton from "@/components/ImportCSVButton";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 
 interface ServerRow {
@@ -200,6 +202,39 @@ export default function ServersPage() {
           }}>
             <FileDown className="w-4 h-4" /> Exportar CSV
           </Button>
+          <ImportCSVButton onImport={async (rows, headers) => {
+            const iName = findCol(headers, "nome", "name");
+            const iProv = findCol(headers, "provedor", "provider");
+            const iType = findCol(headers, "tipo", "type");
+            const iIp = findCol(headers, "ip");
+            const iStatus = findCol(headers, "status");
+            const iUptime = findCol(headers, "uptime");
+            const iCost = findCol(headers, "custo", "cost");
+            const iContract = findCol(headers, "contrato", "contract");
+            if (iName < 0) { toast.error("Coluna 'Nome' não encontrada"); return { ok: 0, fail: 0 }; }
+            const existing = new Set(servers.map(s => s.name.toLowerCase()));
+            let ok = 0, fail = 0, skipped = 0;
+            for (const row of rows) {
+              const name = (row[iName] || "").trim();
+              if (!name) continue;
+              if (existing.has(name.toLowerCase())) { skipped++; continue; }
+              const server: Server = {
+                id: crypto.randomUUID(), name,
+                provider: ((iProv >= 0 ? row[iProv] : "AWS") || "AWS").trim() as Server['provider'],
+                type: ((iType >= 0 ? row[iType] : "Cloud Instance") || "Cloud Instance").trim() as Server['type'],
+                region: "", ip: iIp >= 0 ? (row[iIp] || "").trim() : "",
+                os: "", cpu: "", ram: "", storage: "",
+                status: ((iStatus >= 0 ? row[iStatus] : "Online") || "Online").trim() as Server['status'],
+                uptime: iUptime >= 0 ? parseNumber(row[iUptime]) : 99,
+                monthlyCost: iCost >= 0 ? parseNumber(row[iCost]) : 0,
+                purpose: "", responsibleTeam: "",
+                contractEnd: iContract >= 0 ? parseDate(row[iContract]) : "",
+                lastBackup: new Date().toISOString().slice(0, 10),
+              };
+              try { await saveServer(server); ok++; existing.add(name.toLowerCase()); } catch { fail++; }
+            }
+            return { ok, fail, skipped };
+          }} />
           <Button onClick={openNew} className="gap-2">
             <Plus className="w-4 h-4" /> Novo Servidor
           </Button>

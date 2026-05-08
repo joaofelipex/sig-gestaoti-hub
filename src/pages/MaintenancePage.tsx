@@ -21,6 +21,8 @@ import { type MaintenanceRecord } from "@/lib/maintenance-data";
 import { type Asset } from "@/data/mock-data";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import { exportToCSV } from "@/lib/export-csv";
+import { findCol, parseDate, parseNumber } from "@/lib/import-csv";
+import ImportCSVButton from "@/components/ImportCSVButton";
 import { toast } from "sonner";
 
 // ----- Asset mappers (must mirror AssetsPage) -----
@@ -228,6 +230,46 @@ export default function MaintenancePage() {
           }}>
             <FileDown className="w-4 h-4" /> Exportar
           </Button>
+          <ImportCSVButton onImport={async (rows, headers) => {
+            const iAsset = findCol(headers, "ativo", "asset");
+            const iType = findCol(headers, "tipo", "type");
+            const iStatus = findCol(headers, "status");
+            const iSched = findCol(headers, "agendada", "scheduled");
+            const iComp = findCol(headers, "concluída", "concluida", "completed");
+            const iTech = findCol(headers, "técnico", "tecnico", "technician");
+            const iSup = findCol(headers, "fornecedor", "supplier");
+            const iTicket = findCol(headers, "chamado", "ticket");
+            const iCost = findCol(headers, "custo", "cost");
+            const iWar = findCol(headers, "garantia", "warranty");
+            if (iAsset < 0) { toast.error("Coluna 'Ativo' não encontrada"); return { ok: 0, fail: 0 }; }
+            const validStatus: MaintenanceRecord['status'][] = ['Agendada','Em andamento','Concluída','Cancelada'];
+            let ok = 0, fail = 0;
+            for (const row of rows) {
+              const label = (row[iAsset] || "").trim();
+              if (!label) continue;
+              const matchAsset = assets.find(a => `${a.type} ${a.brand} ${a.model}`.toLowerCase().includes(label.toLowerCase()) || a.id === label);
+              if (!matchAsset) { fail++; continue; }
+              const statusRaw = iStatus >= 0 ? (row[iStatus] || "").trim() : "Agendada";
+              const status = validStatus.find(s => s.toLowerCase() === statusRaw.toLowerCase()) || 'Agendada';
+              const rec: MaintenanceRecord = {
+                id: crypto.randomUUID(),
+                assetId: matchAsset.id,
+                assetLabel: `${matchAsset.type} ${matchAsset.brand} ${matchAsset.model}`,
+                type: ((iType >= 0 ? row[iType] : "Preventiva") || "Preventiva").trim() === "Corretiva" ? "Corretiva" : "Preventiva",
+                status,
+                scheduledDate: iSched >= 0 ? parseDate(row[iSched]) || new Date().toISOString().slice(0,10) : new Date().toISOString().slice(0,10),
+                completedDate: iComp >= 0 ? parseDate(row[iComp]) || undefined : undefined,
+                description: "",
+                technician: iTech >= 0 ? (row[iTech] || "").trim() : "",
+                supplier: iSup >= 0 ? (row[iSup] || "").trim() : "",
+                ticketNumber: iTicket >= 0 ? (row[iTicket] || "").trim() : "",
+                cost: iCost >= 0 ? parseNumber(row[iCost]) : 0,
+                warrantyCovered: iWar >= 0 ? /sim|yes|true|1/i.test(row[iWar] || "") : false,
+              };
+              try { await save(rec); ok++; } catch { fail++; }
+            }
+            return { ok, fail };
+          }} />
           <Button className="gap-2" onClick={() => { setEditing(null); setFormOpen(true); }}>
             <Plus className="w-4 h-4" /> Nova Manutenção
           </Button>

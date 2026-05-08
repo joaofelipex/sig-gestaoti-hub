@@ -26,6 +26,8 @@ import { type AssetMovement, type MovementType } from "@/lib/movement-data";
 import { type Asset } from "@/data/mock-data";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import { exportToCSV } from "@/lib/export-csv";
+import { findCol, parseDate, parseNumber } from "@/lib/import-csv";
+import ImportCSVButton from "@/components/ImportCSVButton";
 import { toast } from "sonner";
 
 // Asset mappers (read-only here)
@@ -214,6 +216,38 @@ export default function MovementsPage() {
           }}>
             <FileDown className="w-4 h-4" /> Exportar
           </Button>
+          <ImportCSVButton onImport={async (rows, headers) => {
+            const iDate = findCol(headers, "data", "date");
+            const iType = findCol(headers, "tipo", "type");
+            const iAsset = findCol(headers, "ativo", "asset");
+            const iFrom = findCol(headers, "de", "from", "origem");
+            const iTo = findCol(headers, "para", "to", "destino");
+            const iReason = findCol(headers, "motivo", "reason");
+            const iResp = findCol(headers, "responsável", "responsavel");
+            const iVal = findCol(headers, "valor", "value");
+            if (iAsset < 0 || iType < 0) { toast.error("Colunas 'Ativo' e 'Tipo' são obrigatórias"); return { ok: 0, fail: 0 }; }
+            let ok = 0, fail = 0;
+            for (const row of rows) {
+              const label = (row[iAsset] || "").trim();
+              const type = (row[iType] || "").trim() as MovementType;
+              if (!label || !type) continue;
+              const matchAsset = assetsList.find(a => `${a.type} ${a.brand} ${a.model}`.toLowerCase().includes(label.toLowerCase()) || a.id === label);
+              const mov: AssetMovement = {
+                id: crypto.randomUUID(),
+                assetId: matchAsset?.id || label,
+                assetLabel: matchAsset ? `${matchAsset.type} ${matchAsset.brand} ${matchAsset.model}` : label,
+                type,
+                date: iDate >= 0 ? parseDate(row[iDate]) || new Date().toISOString().slice(0,10) : new Date().toISOString().slice(0,10),
+                fromUser: iFrom >= 0 ? (row[iFrom] || "").trim() || undefined : undefined,
+                toUser: iTo >= 0 ? (row[iTo] || "").trim() || undefined : undefined,
+                reason: iReason >= 0 ? (row[iReason] || "").trim() : "",
+                responsible: iResp >= 0 ? (row[iResp] || "").trim() : "",
+                value: iVal >= 0 ? parseNumber(row[iVal]) : undefined,
+              };
+              try { await save(mov); ok++; } catch { fail++; }
+            }
+            return { ok, fail };
+          }} />
           <Button className="gap-2" onClick={() => { setEditing(null); setFormOpen(true); }}>
             <Plus className="w-4 h-4" /> Nova Movimentação
           </Button>
