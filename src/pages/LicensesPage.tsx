@@ -134,6 +134,37 @@ export default function LicensesPage() {
           }}>
             <FileDown className="w-4 h-4" /> Exportar CSV
           </Button>
+          <ImportCSVButton onImport={async (rows, headers) => {
+            const iSw = findCol(headers, "software", "nome");
+            const iVendor = findCol(headers, "vendor", "fornecedor");
+            const iType = findCol(headers, "tipo");
+            const iCat = findCol(headers, "categoria");
+            const iUsed = findCol(headers, "usad");
+            const iTotal = findCol(headers, "total");
+            const iCost = findCol(headers, "custo");
+            const iRen = findCol(headers, "renova");
+            if (iSw < 0) { toast.error("Coluna 'Software' não encontrada"); return { ok: 0, fail: 0 }; }
+            const existing = new Set(licenseList.map(l => l.software.toLowerCase()));
+            let ok = 0, fail = 0, skipped = 0;
+            for (const row of rows) {
+              const software = (row[iSw] || "").trim();
+              if (!software) continue;
+              if (existing.has(software.toLowerCase())) { skipped++; continue; }
+              const lic: License = {
+                id: crypto.randomUUID(), software,
+                vendor: iVendor >= 0 ? (row[iVendor] || "").trim() : "",
+                type: ((iType >= 0 ? row[iType] : "Mensal") || "Mensal").trim() as License['type'],
+                category: ((iCat >= 0 ? row[iCat] : "Produtividade") || "Produtividade").trim() as License['category'],
+                totalLicenses: iTotal >= 0 ? parseNumber(row[iTotal]) : 1,
+                usedLicenses: iUsed >= 0 ? parseNumber(row[iUsed]) : 1,
+                costPerUnit: iCost >= 0 ? parseNumber(row[iCost]) : 0,
+                renewalDate: iRen >= 0 ? parseDate(row[iRen]) : "",
+                activationKey: "",
+              };
+              try { await saveLicense(lic); ok++; existing.add(software.toLowerCase()); } catch { fail++; }
+            }
+            return { ok, fail, skipped };
+          }} />
           <Button className="gap-2" onClick={openNew}>
             <Plus className="w-4 h-4" /> Nova Licença
           </Button>
