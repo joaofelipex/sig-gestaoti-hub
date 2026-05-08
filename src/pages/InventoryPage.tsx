@@ -26,6 +26,8 @@ import {
 } from "@/lib/inventory-data";
 import { useSupabaseCollection } from "@/hooks/use-supabase-collection";
 import { exportToCSV } from "@/lib/export-csv";
+import { findCol, parseNumber } from "@/lib/import-csv";
+import ImportCSVButton from "@/components/ImportCSVButton";
 import { toast } from "sonner";
 
 interface InvRow {
