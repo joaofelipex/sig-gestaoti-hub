@@ -1,0 +1,10 @@
+{
+  "name": "root-proxy",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "cd frontend && (test -d node_modules || npm install --no-audit --no-fund) && npx ng serve --host 0.0.0.0 --port 8080 --poll 1000",
+    "build": "cd frontend && (test -d node_modules || npm install --no-audit --no-fund) && npx ng build",
+    "start": "npm run dev"
+  }
+}
