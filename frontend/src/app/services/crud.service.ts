@@ -2,6 +2,14 @@ import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 import { DashboardService } from './dashboard.service';
 import { ToastService } from './toast.service';
+import { EmpresaService } from './empresa.service';
+
+const TABLES_WITH_EMPRESA = new Set([
+  'ativos','licencas','dominios','servidores','manutencoes','movimentacoes',
+  'pagamentos','contratos','inventario','inventario_movimentacoes',
+  'registros_acesso','riscos','orcamentos','acoes_economista',
+  'termos_responsabilidade','usuarios','departamentos','dns_records','alertas'
+]);
 
 @Injectable({ providedIn: 'root' })
 export class CrudService {
@@ -9,6 +17,7 @@ export class CrudService {
     private supa: SupabaseService,
     private dashboard: DashboardService,
     private toast: ToastService,
+    private empresa: EmpresaService,
   ) {}
 
   private async getOrgId(): Promise<string | null> {
