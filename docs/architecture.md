@@ -6,7 +6,7 @@ Este documento descreve o **projeto atual do sistema** (maio de 2026): objetivos
 
 - Centralizar a operação de TI em uma única aplicação web: inventário, contratos, DNS, riscos, orçamentos, alertas, etc.
 - Suportar **várias organizações** (tenants lógicos via `org_id`) e **várias empresas** da holding por organização (`empresa_id`).
-- Expor dados de forma segura no **Supabase**, com políticas RLS alinhadas ao `org_id` do usuário autenticado.
+- Expor dados de forma segura através de uma **API REST** (Express + `pg`) que valida JWT e restringe operações ao `org_id` do perfil do utilizador.
 
 ## 2. Vista de contexto
 
@@ -15,18 +15,15 @@ flowchart LR
   subgraph browser [Navegador]
     SPA[Angular SPA]
   end
-  subgraph supa [Supabase]
-    Auth[GoTrue Auth]
-    API[PostgREST]
-    PG[(PostgreSQL)]
-    Auth --> PG
-    API --> PG
+  subgraph api [API Node]
+    REST[Express REST]
   end
-  SPA -->|JWT + REST| Auth
-  SPA -->|JWT + REST| API
+  PG[(PostgreSQL)]
+  SPA -->|JWT Bearer + JSON| REST
+  REST --> PG
 ```
 
-O **backend Node** em `backend/` é um servidor Express mínimo com TypeORM; **não** é hoje o canal principal de leitura/escrita de dados — a SPA fala **diretamente** com o Supabase.
+A SPA **não** liga diretamente ao Postgres: usa `HttpClient` contra `backend/` (porta 3000 por defeito).
 
 ## 3. Stack tecnológica
 
@@ -35,12 +32,10 @@ O **backend Node** em `backend/` é um servidor Express mínimo com TypeORM; **n
 | SPA | Angular 21, componentes standalone, router com lazy loading |
 | Estilos | Tailwind CSS 4 (`frontend/src/styles.css` importa `tailwindcss`) |
 | Ícones | `lucide-angular` |
-| Cliente dados | `@supabase/supabase-js` com tipagem em `frontend/src/app/services/database.types.ts` |
-| Banco cloud | PostgreSQL gerenciado pelo Supabase + migrações em `supabase/migrations/` |
-| Banco local | Postgres 16 em Docker/Podman, schema em `database/init/01_schema.sql` |
-| Monorepo scripts | `package.json` na raiz: `dev`, `build`, `db:*` |
-
-Nota: existe também `src/integrations/supabase/` (cliente Vite + `import.meta.env`) — artefato paralelo; a aplicação principal é **`frontend/`**.
+| Cliente HTTP | `@angular/common/http` + `ApiService` (`environment.apiUrl`) |
+| API | Express 5, `pg`, JWT (`jsonwebtoken`), bcrypt (`bcryptjs`) no registo |
+| Banco | PostgreSQL 16 — Docker `database/init/` (`01_schema`, `02_seed`, `03_api_auth`) |
+| Monorepo scripts | `package.json` na raiz: `dev`, `build`, `db:*`, `api:dev` |
 
 ## 4. Front-end — organização
 
@@ -50,22 +45,22 @@ Nota: existe também `src/integrations/supabase/` (cliente Vite + `import.meta.e
 - O layout principal (`AppLayoutComponent`) agrupa as áreas da aplicação com shell comum.
 - Rota pública **`/auth`** — login e cadastro (`AuthComponent`).
 
-O arquivo `frontend/src/app/guards/auth.guard.ts` redireciona para `/auth` quando não há sessão, mas **as rotas do layout não aplicam esse guard por padrão**; a proteção efetiva depende do Supabase (RLS) e, no futuro, de `canActivate` onde fizer sentido.
+O arquivo `frontend/src/app/guards/auth.guard.ts` redireciona para `/auth` quando não há utilizador autenticado (após o bootstrap da sessão JWT).
 
 ### Serviços principais
 
 | Serviço | Papel |
 |---------|--------|
-| `SupabaseService` | Instância única do `SupabaseClient` (URL/chave em `environment.ts`). |
-| `AuthService` | Sessão, `signIn` / `signUp` / `signOut`, `onAuthStateChange`. |
+| `ApiService` | URL base, token em `localStorage`, pedidos HTTP (`/api/auth/*`, `/api/data/*`). |
+| `AuthService` | Sessão, `signIn` / `signUp` / `signOut`, bootstrap com `/auth/me`. |
 | `EmpresaService` | Lista `empresas`, empresa selecionada (persistida), seed opcional de nomes da holding. |
-| `DashboardService` | Carrega agregações e listas, mapeia linhas SQL para modelos de UI; `BehaviorSubject`s para reactividade. |
-| `CrudService` | Insert/update/delete e bulk insert; injeta `org_id` e, para tabelas listadas, `empresa_id` conforme a seleção. |
+| `DashboardService` | Carrega dados via `GET /api/data/dashboard`, mapeia linhas SQL para modelos de UI. |
+| `CrudService` | Insert/update/delete e bulk insert via API; injeta `org_id` e `empresa_id` conforme a seleção. |
 | `ToastService` | Feedback de operações. |
 
 ### Componentes compartilhados
 
-Em `frontend/src/app/components/` (exemplos): `data-toolbar`, modais, gráficos SVG, toasts — padrão de listagens com CSV e formulários alinhado ao roadmap em `.lovable/plan.md`.
+Em `frontend/src/app/components/` (exemplos): `data-toolbar`, modais, gráficos SVG, toasts — padrão de listagens com CSV e formulários.
 
 ## 5. Modelo de dados (lógico)
 
@@ -80,29 +75,34 @@ A referência do schema local está em **`database/init/01_schema.sql`**. Tabela
 
 Enums relevantes (exemplos): `ativo_status`, `alerta_severidade`, `app_role`, `pagamento_categoria`, `pagamento_status`.
 
-As migrações em **`supabase/migrations/`** aplicam alterações ao projeto Supabase (ex.: políticas RLS em `empresas`, coluna `empresa_id` em módulos). O arquivo local `01_schema.sql` deve permanecer coerente com o modelo usado pela app.
+A **fonte de verdade** para desenvolvimento local é `database/init/` (`01_schema.sql`, `02_seed.sql`, `03_api_auth.sql`). Alterações incrementais em SQL vivem em **`database/migrations/`** (aplicar com `npm run db:apply-migrations`).
 
 ## 6. Segurança e multi-tenant
 
-- **Autenticação:** Supabase Auth; usuários em `auth.users` (no Postgres local há stub de `auth.users` para FKs).
-- **Perfil:** `profiles` liga `user_id` a `org_id` (e metadados de apresentação).
-- **RLS (Supabase):** políticas típicas comparam `org_id` da linha com **`current_org_id()`** (função no servidor). No Postgres local do contêiner, a função pode ser stub (`NULL`) — nesse caso o isolamento não reproduz o Supabase; o foco é desenvolvimento de schema e queries.
-- **Empresa:** `CrudService` define `empresa_id` em um conjunto fixo de tabelas ao criar/atualizar registros, alinhado às colunas das migrações.
+- **Autenticação:** JWT emitido pela API (`POST /api/auth/login`); verificação de palavra-passe com `crypt()` no PostgreSQL (compatível com bcrypt) ou hash criado no registo com `bcryptjs`.
+- **Perfil:** `profiles` liga `user_id` a `org_id`.
+- **Isolamento:** a API filtra sempre por `org_id` obtido de `profiles` para `GET /api/data/dashboard`, `GET /api/data/empresas` e mutações em `public.*`. Não há RLS obrigatória no Postgres enquanto o único cliente da base for a API.
+- **Empresa:** `CrudService` define `empresa_id` num conjunto fixo de tabelas ao criar/atualizar registros.
 
 ## 7. Configuração e ambientes
 
-- **Supabase (Angular):** `frontend/src/environments/environment.ts` — substituir `placeholder` pela URL do projeto e pela **anon key** (nunca commitar secrets de serviço).
-- **Produção:** usar `fileReplacements` no `angular.json` ou variáveis de CI para injetar `environment.prod.ts` (criar se necessário).
+- **Angular:** `environment.ts` (URL da API por defeito `http://127.0.0.1:3000/api`). Em desenvolvimento local, na raiz `npm run dev`, `npm run dev:ui` ou `npm run dev:stack` usam `environment.local.ts` (credenciais demo no login); em `frontend/`, `npm run dev:local` faz o mesmo.
+- **Produção:** `fileReplacements` no `angular.json` ou variáveis de CI para `environment.prod.ts` (criar se necessário).
 
 ## 8. Operação local da base
 
-- Scripts: `npm run db:up` | `db:down` | `db:reset` na raiz.
-- Porta no host padrão **5433** (`HOST_PG_PORT`); ver `scripts/db.sh`.
+- **Postgres Docker:** `npm run db:up` | `db:down` | `db:reset` na raiz; porta no host **5433** (`HOST_PG_PORT`); ver `scripts/db.sh`.
+- **API + UI:** `npm run dev:stack` na raiz (com Postgres já a correr); ou `npm run api:dev` e `npm run dev:ui` em separado.
+- **Verificação:** `npm run check:stack` (Postgres + `/health`).
+- **API:** `npm run api:dev` na raiz (ou `cd backend && npm run dev`).
+- **Na aplicação:** com sessão, rota **`/dados-banco`** (menu **Dados & base**) — ligações, health da API e contagens por tabela da organização.
+- Importação pontual de um servidor Postgres remoto para o contentor da 5433: `npm run db:sync-remote` e `.env` (opcional).
+- Guia único no repositório: [dados-e-banco.md](./dados-e-banco.md).
 
 ## 9. Relação com outros documentos
 
-- **`.lovable/plan.md`** — plano de funcionalidades e ordem de entrega no front; não substitui modelo de segurança nem diagrama de implantação.
-- **Este arquivo** — visão de arquitetura estável; atualizar em PRs que alterem auth, RLS ou rotas principais.
+- **[dados-e-banco.md](./dados-e-banco.md)** — guia operacional (Docker, API, import CSV, migrações).
+- **Este arquivo** — visão de arquitetura estável; atualizar em PRs que alterem auth, API ou rotas principais.
 
 ## 10. Diagrama de módulos de UI (rotas)
 

@@ -1,3 +1,4 @@
+-- RLS em empresas, colunas empresa_id e índices — Postgres local (sem Supabase CLI).
 -- Tabela central de Empresas da holding
 CREATE TABLE IF NOT EXISTS public.empresas (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

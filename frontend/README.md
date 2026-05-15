@@ -6,13 +6,31 @@ Documentação de arquitetura do monorepo (stack, dados, segurança): [../docs/a
 
 ## Development server
 
-To start a local development server, run:
+To start a local development server, run from this folder:
 
 ```bash
-ng serve
+npm run dev
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+(same as `npm start` — `ng serve` on `http://0.0.0.0:8080` with `--poll` for WSL/Docker file watching.)
+
+### Modo 100% local (Supabase CLI na máquina)
+
+Com o stack `supabase start` a correr na raiz do monorepo (ver [../docs/local-stack.md](../docs/local-stack.md)):
+
+```bash
+npm run dev:local
+```
+
+Isto usa `environment.local.ts` (`http://127.0.0.1:54321` + chave anon local).
+
+From the **repository root**, you can still use `npm run dev` (it `cd`s into `frontend` first).
+
+Once the server is running, open your browser and navigate to `http://localhost:8080/`. The application will automatically reload whenever you modify any of the source files.
+
+### Tailwind CSS v4
+
+Global styles live in `src/styles.css`. Tailwind is wired through **PostCSS** (`.postcssrc.json` + devDependency `@tailwindcss/postcss`). If the UI looks like unstyled HTML, run `npm install` again inside `frontend/` in the **same environment you use for `ng serve`** (prefer running commands inside WSL, not against `\\wsl.localhost\…` from Windows, to avoid broken `node_modules`).
 
 ## Code scaffolding
 

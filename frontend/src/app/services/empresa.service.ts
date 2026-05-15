@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
-import { SupabaseService } from './supabase.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { BehaviorSubject, firstValueFrom } from 'rxjs';
+import { ApiService } from './api.service';
 import { ToastService } from './toast.service';
 
 export interface Empresa {
@@ -15,9 +16,21 @@ export interface Empresa {
 
 const STORAGE_KEY = 'imts_selected_empresa';
 const SEED_NAMES = [
-  'IMTS Holding', 'Onni.ai', 'Reach', 'Mobcall', 'PMGT', 'Hcitis',
-  'TRON', 'Auttis', 'Onni.ai Fortaleza', 'Doutor-ai', 'Siders',
-  'Vycma', 'Visttoriar', 'Smartts', 'Reddi'
+  'IMTS Holding',
+  'Onni.ai',
+  'Reach',
+  'Mobcall',
+  'PMGT',
+  'Hcitis',
+  'TRON',
+  'Auttis',
+  'Onni.ai Fortaleza',
+  'Doutor-ai',
+  'Siders',
+  'Vycma',
+  'Visttoriar',
+  'Smartts',
+  'Reddi',
 ];
 
 @Injectable({ providedIn: 'root' })
@@ -28,12 +41,25 @@ export class EmpresaService {
   list$ = this._list.asObservable();
   selected$ = this._selected.asObservable();
 
-  constructor(private supa: SupabaseService, private toast: ToastService) {
-    this.load();
+  constructor(
+    private api: ApiService,
+    private toast: ToastService,
+  ) {
+    this.api.authChanged$.subscribe(() => {
+      if (!this.api.getToken()) {
+        this._list.next([]);
+        return;
+      }
+      void this.load();
+    });
   }
 
-  get selectedId() { return this._selected.value; }
-  get list() { return this._list.value; }
+  get selectedId() {
+    return this._selected.value;
+  }
+  get list() {
+    return this._list.value;
+  }
 
   setSelected(id: string | null) {
     if (id) localStorage.setItem(STORAGE_KEY, id);
@@ -42,59 +68,99 @@ export class EmpresaService {
   }
 
   async load() {
-    const { data } = await this.supa.client.from('empresas').select('*').order('nome');
-    const list = (data ?? []) as Empresa[];
-    this._list.next(list);
-    if (list.length === 0) {
-      await this.seedDefaults();
-    } else if (this._selected.value && !list.find(e => e.id === this._selected.value)) {
-      this.setSelected(null);
+    try {
+      const data = (await firstValueFrom(this.api.getEmpresas())) as Empresa[];
+      const list = data ?? [];
+      this._list.next(list);
+      if (list.length === 0) {
+        await this.seedDefaults();
+      } else if (this._selected.value && !list.find((e) => e.id === this._selected.value)) {
+        this.setSelected(null);
+      }
+    } catch {
+      this._list.next([]);
     }
   }
 
   private async getOrgId(): Promise<string | null> {
-    const { data } = await this.supa.client.auth.getUser();
-    if (!data.user) return null;
-    const { data: prof } = await this.supa.client.from('profiles').select('org_id').eq('user_id', data.user.id).maybeSingle();
-    return (prof as any)?.org_id || null;
+    try {
+      const me = await firstValueFrom(this.api.me());
+      return me.profile.org_id;
+    } catch {
+      return null;
+    }
   }
 
   private async seedDefaults() {
     const orgId = await this.getOrgId();
     if (!orgId) return;
-    const rows = SEED_NAMES.map(nome => ({ org_id: orgId, nome, ativo: true }));
-    const { data, error } = await this.supa.client.from('empresas').insert(rows).select();
-    if (!error && data) {
-      this._list.next((data ?? []) as Empresa[]);
-      this.toast.show({ title: 'Empresas cadastradas', description: `${data.length} empresas da holding inicializadas` });
+    const rows = SEED_NAMES.map((nome) => ({ org_id: orgId, nome, ativo: true }));
+    try {
+      const data = (await firstValueFrom(this.api.postTable('empresas', rows))) as Empresa[];
+      if (data?.length) {
+        this._list.next(data);
+        this.toast.show({
+          title: 'Empresas cadastradas',
+          description: `${data.length} empresas da holding inicializadas`,
+        });
+      }
+    } catch (e: unknown) {
+      const msg =
+        e instanceof HttpErrorResponse && e.error && typeof e.error === 'object' && 'error' in e.error
+          ? String((e.error as { error: string }).error)
+          : e instanceof HttpErrorResponse
+            ? e.message
+            : '';
+      if (msg) this.toast.show({ title: 'Erro', description: msg, variant: 'destructive' });
     }
   }
 
   async upsert(payload: Partial<Empresa> & { id?: string }): Promise<boolean> {
     const orgId = await this.getOrgId();
     if (!orgId) return false;
-    const row: any = { ...payload, org_id: orgId };
-    const op = row.id
-      ? this.supa.client.from('empresas').update(row).eq('id', row.id)
-      : this.supa.client.from('empresas').insert(row);
-    const { error } = await op;
-    if (error) { this.toast.show({ title: 'Erro', description: error.message, variant: 'destructive' }); return false; }
-    this.toast.show({ title: 'Salvo', description: 'Empresa salva com sucesso' });
-    await this.load();
-    return true;
+    const row: Record<string, unknown> = { ...payload, org_id: orgId };
+    try {
+      if (row.id) {
+        await firstValueFrom(this.api.patchTable('empresas', String(row.id), row));
+      } else {
+        await firstValueFrom(this.api.postTable('empresas', row));
+      }
+      this.toast.show({ title: 'Salvo', description: 'Empresa salva com sucesso' });
+      await this.load();
+      return true;
+    } catch (e: unknown) {
+      const msg =
+        e instanceof HttpErrorResponse && e.error && typeof e.error === 'object' && 'error' in e.error
+          ? String((e.error as { error: string }).error)
+          : e instanceof HttpErrorResponse
+            ? e.message
+            : 'Erro';
+      this.toast.show({ title: 'Erro', description: msg, variant: 'destructive' });
+      return false;
+    }
   }
 
   async remove(id: string): Promise<boolean> {
-    const { error } = await this.supa.client.from('empresas').delete().eq('id', id);
-    if (error) { this.toast.show({ title: 'Erro', description: error.message, variant: 'destructive' }); return false; }
-    this.toast.show({ title: 'Removida', description: 'Empresa removida' });
-    if (this._selected.value === id) this.setSelected(null);
-    await this.load();
-    return true;
+    try {
+      await firstValueFrom(this.api.deleteTable('empresas', id));
+      this.toast.show({ title: 'Removida', description: 'Empresa removida' });
+      if (this._selected.value === id) this.setSelected(null);
+      await this.load();
+      return true;
+    } catch (e: unknown) {
+      const msg =
+        e instanceof HttpErrorResponse && e.error && typeof e.error === 'object' && 'error' in e.error
+          ? String((e.error as { error: string }).error)
+          : e instanceof HttpErrorResponse
+            ? e.message
+            : 'Erro';
+      this.toast.show({ title: 'Erro', description: msg, variant: 'destructive' });
+      return false;
+    }
   }
 
   nameOf(id: string | null | undefined): string {
     if (!id) return '—';
-    return this._list.value.find(e => e.id === id)?.nome || '—';
+    return this._list.value.find((e) => e.id === id)?.nome || '—';
   }
 }

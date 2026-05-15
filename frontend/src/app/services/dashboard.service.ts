@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { SupabaseService } from './supabase.service';
+import { ApiService } from './api.service';
 import { EmpresaService } from './empresa.service';
 
 interface HasEmpresa { empresa_id?: string | null; }
@@ -219,7 +219,7 @@ export class DashboardService {
   /** Populated in the constructor so `empresa` (a ctor parameter) exists before use. */
   public readonly data$: Observable<any>;
 
-  constructor(private supabaseService: SupabaseService, private empresa: EmpresaService) {
+  constructor(private api: ApiService, private empresa: EmpresaService) {
     this.data$ = combineLatest([this._raw, this.empresa.selected$]).pipe(
       map(([raw, empId]) => {
         if (!empId) return raw;
@@ -234,51 +234,57 @@ export class DashboardService {
         };
       })
     );
-    this.loadData();
+    this.api.authChanged$.subscribe(() => {
+      if (!this.api.getToken()) {
+        this._raw.next({
+          assets: [], domains: [], licenses: [], servers: [], contracts: [],
+          maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
+          actions: [], accessRecords: [], risks: [], payments: [], loading: false
+        });
+        return;
+      }
+      void this.loadData();
+    });
   }
 
   async loadData() {
     this._raw.next({ ...this._raw.value, loading: true });
 
     try {
-      const [assetsRes, domainsRes, licensesRes, serversRes, contractsRes, maintenanceRes, movementsRes, inventoryRes, alertsRes, budgetsRes, actionsRes, accessRes, risksRes, paymentsRes] = await Promise.all([
-        this.supabaseService.client.from('ativos').select('*'),
-        this.supabaseService.client.from('dominios').select('*'),
-        this.supabaseService.client.from('licencas').select('*'),
-        this.supabaseService.client.from('servidores').select('*'),
-        this.supabaseService.client.from('contratos').select('*'),
-        this.supabaseService.client.from('manutencoes').select('*'),
-        this.supabaseService.client.from('movimentacoes').select('*'),
-        this.supabaseService.client.from('inventario').select('*'),
-        this.supabaseService.client.from('alertas').select('*'),
-        this.supabaseService.client.from('orcamentos').select('*'),
-        this.supabaseService.client.from('acoes_economista').select('*'),
-        this.supabaseService.client.from('registros_acesso').select('*'),
-        this.supabaseService.client.from('riscos').select('*'),
-        this.supabaseService.client.from('pagamentos').select('*')
-      ]);
-
+      const d = await firstValueFrom(this.api.getDashboard());
       const attach = <T>(rows: any[] | null | undefined, mapper: (r: any) => T): T[] =>
-        (rows || []).map(r => ({ ...mapper(r), empresa_id: r.empresa_id ?? null } as T));
-      const assets = attach(assetsRes.data, this.mapAsset);
-      const domains = attach(domainsRes.data, this.mapDomain);
-      const licenses = attach(licensesRes.data, this.mapLicense);
-      const servers = attach(serversRes.data, this.mapServer);
-      const contracts = attach(contractsRes.data, this.mapContract);
-      const maintenance = attach(maintenanceRes.data, this.mapMaintenance);
-      const movements = attach(movementsRes.data, this.mapMovement);
-      const inventory = attach(inventoryRes.data, this.mapInventory);
-      const alerts = attach(alertsRes.data, this.mapAlert);
-      const budgets = attach(budgetsRes.data, this.mapBudget);
-      const actions = attach(actionsRes.data, this.mapAction);
-      const accessRecords = attach(accessRes.data, this.mapAccessRecord);
-      const risks = attach(risksRes.data, this.mapRisk);
-      const payments = attach(paymentsRes.data, this.mapPayment);
+        (rows || []).map((r) => ({ ...mapper(r), empresa_id: r.empresa_id ?? null } as T));
+      const assets = attach(d.ativos, this.mapAsset);
+      const domains = attach(d.dominios, this.mapDomain);
+      const licenses = attach(d.licencas, this.mapLicense);
+      const servers = attach(d.servidores, this.mapServer);
+      const contracts = attach(d.contratos, this.mapContract);
+      const maintenance = attach(d.manutencoes, this.mapMaintenance);
+      const movements = attach(d.movimentacoes, this.mapMovement);
+      const inventory = attach(d.inventario, this.mapInventory);
+      const alerts = attach(d.alertas, this.mapAlert);
+      const budgets = attach(d.orcamentos, this.mapBudget);
+      const actions = attach(d.acoes_economista, this.mapAction);
+      const accessRecords = attach(d.registros_acesso, this.mapAccessRecord);
+      const risks = attach(d.riscos, this.mapRisk);
+      const payments = attach(d.pagamentos, this.mapPayment);
 
       this._raw.next({
-        assets, domains, licenses, servers, contracts,
-        maintenance, movements, inventory, alerts, budgets,
-        actions, accessRecords, risks, payments, loading: false
+        assets,
+        domains,
+        licenses,
+        servers,
+        contracts,
+        maintenance,
+        movements,
+        inventory,
+        alerts,
+        budgets,
+        actions,
+        accessRecords,
+        risks,
+        payments,
+        loading: false,
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);

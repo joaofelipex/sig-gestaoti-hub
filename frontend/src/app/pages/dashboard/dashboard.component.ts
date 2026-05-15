@@ -10,19 +10,23 @@ import { KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComp
   standalone: true,
   imports: [CommonModule, KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComponent],
   template: `
-    <div class="p-6 space-y-6 bg-gray-50 min-h-full">
-      <div class="flex items-center justify-between">
+    <div class="min-h-full space-y-6 p-5 md:p-8">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p class="text-sm text-gray-500">Bem-vindo, {{ user?.email }}</p>
+          <h1 class="app-page-title">Dashboard</h1>
+          <p class="app-page-sub">Bem-vindo, <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
         </div>
-        <button (click)="logout()" class="text-sm text-gray-500 hover:text-red-600">Sair</button>
+        <button type="button" (click)="logout()" class="app-btn-ghost self-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:self-auto">
+          Sair
+        </button>
       </div>
 
-      <div *ngIf="loading" class="text-center py-12 text-gray-500">Carregando...</div>
+      <div *ngIf="loading" class="rounded-lg border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 shadow-sm">
+        Carregando…
+      </div>
 
       <ng-container *ngIf="!loading">
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6">
           <app-kpi-card label="Health Score" [value]="healthScore + '%'" icon="❤️" [color]="healthColor" hint="Saúde geral"></app-kpi-card>
           <app-kpi-card label="Ativos em uso" [value]="assetsInUse" icon="💻" color="#3b82f6"></app-kpi-card>
           <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" icon="💰" color="#10b981"></app-kpi-card>
@@ -31,24 +35,24 @@ import { KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComp
           <app-kpi-card label="Alertas críticos" [value]="criticalAlerts" icon="🚨" color="#ef4444"></app-kpi-card>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 lg:col-span-2">
-            <h3 class="font-semibold text-gray-900 mb-4">Custos por Categoria (mensal)</h3>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="app-card lg:col-span-2">
+            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Custos por categoria (mensal)</h3>
             <app-bar-chart [data]="costByCategory" prefix="R$ "></app-bar-chart>
           </div>
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-            <h3 class="font-semibold text-gray-900 mb-4">Status dos Ativos</h3>
+          <div class="app-card">
+            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Status dos ativos</h3>
             <app-donut-chart [data]="assetStatus"></app-donut-chart>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-            <h3 class="font-semibold text-gray-900 mb-4">Pagamentos últimos 6 meses</h3>
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="app-card">
+            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Pagamentos últimos 6 meses</h3>
             <app-line-chart [data]="paymentTrend"></app-line-chart>
           </div>
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
-            <h3 class="font-semibold text-gray-900 mb-4">Domínios por Status</h3>
+          <div class="app-card">
+            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Domínios por status</h3>
             <app-donut-chart [data]="domainStatus"></app-donut-chart>
           </div>
         </div>

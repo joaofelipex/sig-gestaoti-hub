@@ -10,18 +10,18 @@ import { EmpresaService, Empresa } from '../services/empresa.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-3">
-      <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Empresa ativa</span>
+      <span class="text-xs font-medium uppercase tracking-wide text-gray-500">Empresa</span>
       <div class="relative">
         <select
           [ngModel]="selectedId"
           (ngModelChange)="onChange($event)"
-          class="app-select min-w-[12rem] max-w-[20rem] cursor-pointer appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-3 pr-9 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-brand-300 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+          class="app-select min-w-[200px] max-w-[20rem] cursor-pointer appearance-none rounded-md border border-gray-300 bg-white py-1.5 pl-3 pr-9 text-sm font-medium text-gray-900 shadow-sm transition-colors hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
         >
           <option [ngValue]="null">Todas as empresas</option>
           <option *ngFor="let e of empresas" [ngValue]="e.id">{{ e.nome }}</option>
         </select>
         <span
-          class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+          class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400"
           aria-hidden="true"
         >
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -4,7 +4,7 @@ import { Subscription, firstValueFrom } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { DashboardService, Alert } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
-import { SupabaseService } from '../../services/supabase.service';
+import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { KpiCardComponent } from '../../components/charts.component';
 
@@ -68,7 +68,7 @@ import { KpiCardComponent } from '../../components/charts.component';
 export class AlertsComponent implements OnInit, OnDestroy {
   alerts: Alert[] = []; loading = true; filter = 'todos'; generating = false;
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService, private supa: SupabaseService, private toast: ToastService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private api: ApiService, private toast: ToastService) {}
   ngOnInit() {
     this.sub = this.dashboard.data$.subscribe(d => { this.alerts = [...d.alerts].sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||'')); this.loading = d.loading; });
   }
@@ -87,8 +87,16 @@ export class AlertsComponent implements OnInit, OnDestroy {
   sevClass(s: string) { return s === 'critico' ? 'bg-red-100 text-red-800' : s === 'aviso' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'; }
   borderClass(s: string) { return s === 'critico' ? 'border-red-500' : s === 'aviso' ? 'border-yellow-500' : 'border-blue-500'; }
 
-  async markRead(a: Alert) { await this.supa.client.from('alertas').update({ lida: true }).eq('id', a.id); a.lida = true; }
-  async markAllRead() { const ids = this.alerts.filter(a => !a.lida).map(a => a.id); if (!ids.length) return; await this.supa.client.from('alertas').update({ lida: true }).in('id', ids); this.dashboard.loadData(); }
+  async markRead(a: Alert) {
+    await firstValueFrom(this.api.patchTable('alertas', a.id, { lida: true }));
+    a.lida = true;
+  }
+  async markAllRead() {
+    const ids = this.alerts.filter((x) => !x.lida).map((x) => x.id);
+    if (!ids.length) return;
+    await Promise.all(ids.map((id) => firstValueFrom(this.api.patchTable('alertas', id, { lida: true }))));
+    this.dashboard.loadData();
+  }
   async remove(a: Alert) { await this.crud.remove('alertas', a.id); }
 
   async generate() {

@@ -2,12 +2,28 @@
   "name": "root-proxy",
   "private": true,
   "version": "0.0.0",
+  "dependencies": {
+    "csv-parse": "^5.6.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
   "scripts": {
-    "dev": "cd frontend && (test -d node_modules || npm install --no-audit --no-fund) && npx ng serve --host 0.0.0.0 --port 8080 --poll 1000",
+    "check:stack": "node scripts/check-stack.cjs",
+    "dev:ui": "cd frontend && (test -d node_modules || npm install --no-audit --no-fund) && npx ng serve --host 0.0.0.0 --port 8080 --poll 1000 --configuration=local",
+    "dev:stack": "concurrently -c auto -n api,ui \"npm run api:dev\" \"npm run dev:ui\"",
+    "dev": "npm run dev:ui",
     "build": "cd frontend && (test -d node_modules || npm install --no-audit --no-fund) && npx ng build",
     "start": "npm run dev",
     "db:up": "node scripts/strip-db-sh.cjs && bash scripts/db.sh up",
     "db:down": "node scripts/strip-db-sh.cjs && bash scripts/db.sh down",
-    "db:reset": "node scripts/strip-db-sh.cjs && bash scripts/db.sh reset"
+    "db:reset": "node scripts/strip-db-sh.cjs && bash scripts/db.sh reset",
+    "db:sync-remote": "node scripts/strip-db-sh.cjs && bash scripts/sync-remote-to-docker.sh",
+    "db:seed": "node scripts/strip-db-sh.cjs && bash scripts/seed-local-docker.sh",
+    "db:import-csv": "node scripts/import-csv-dir.cjs",
+    "db:apply-migrations": "node scripts/apply-repo-migrations.cjs",
+    "db:gen-baseline": "node scripts/gen-baseline-migration.cjs",
+    "api:dev": "cd backend && (test -d node_modules || npm install --no-audit --no-fund) && npm run dev"
   }
 }

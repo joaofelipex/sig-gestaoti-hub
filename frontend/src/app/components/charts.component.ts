@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface ChartDatum { label: string; value: number; color?: string }
-const PALETTE = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
+const PALETTE = ['#2563eb', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#6b7280'];
 
 @Component({
   selector: 'app-bar-chart',
@@ -11,17 +11,17 @@ const PALETTE = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4
   template: `
     <div class="space-y-2">
       <div *ngFor="let d of data; let i = index" class="group">
-        <div class="flex justify-between text-xs text-gray-600 mb-1">
-          <span class="font-medium">{{ d.label }}</span>
+        <div class="mb-1 flex justify-between text-xs text-gray-500">
+          <span class="font-medium text-gray-700">{{ d.label }}</span>
           <span>{{ formatValue(d.value) }}</span>
         </div>
-        <div class="h-3 bg-gray-100 rounded-full overflow-hidden">
+        <div class="h-3 overflow-hidden rounded-full bg-gray-100 ring-1 ring-gray-200/80">
           <div class="h-full rounded-full transition-all duration-500"
                [style.width.%]="pct(d.value)"
                [style.background]="d.color || color(i)"></div>
         </div>
       </div>
-      <div *ngIf="!data.length" class="text-center text-sm text-gray-400 py-6">Sem dados</div>
+      <div *ngIf="!data.length" class="py-6 text-center text-sm text-gray-400">Sem dados</div>
     </div>
   `
 })
@@ -52,7 +52,7 @@ export class BarChartComponent {
         <div *ngFor="let d of data; let i = index" class="flex items-center justify-between text-sm">
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-sm" [style.background]="d.color || color(i)"></span>
-            <span class="text-gray-700">{{ d.label }}</span>
+            <span class="text-gray-600">{{ d.label }}</span>
           </div>
           <span class="font-semibold text-gray-900">{{ d.value }}</span>
         </div>
@@ -121,15 +121,19 @@ export class LineChartComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div class="flex items-start justify-between">
-        <div>
-          <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">{{ label }}</p>
-          <p class="text-2xl font-bold mt-2" [style.color]="color">{{ value }}</p>
-          <p *ngIf="hint" class="text-xs text-gray-500 mt-1">{{ hint }}</p>
+    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{{ label }}</p>
+          <p class="mt-2 text-2xl font-bold tabular-nums tracking-tight" [style.color]="color">{{ value }}</p>
+          <p *ngIf="hint" class="mt-1 text-xs text-gray-500">{{ hint }}</p>
         </div>
-        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-             [style.background]="color + '15'">{{ icon }}</div>
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg ring-1 ring-black/5"
+          [style.background]="color + '18'"
+        >
+          {{ icon }}
+        </div>
       </div>
     </div>
   `

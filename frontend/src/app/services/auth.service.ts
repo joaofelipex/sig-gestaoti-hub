@@ -1,72 +1,102 @@
 import { Injectable } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { User, Session } from '@supabase/supabase-js';
-import { SupabaseService } from './supabase.service';
+import { BehaviorSubject, Observable, finalize, of } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
+import { ApiService } from './api.service';
+
+export interface AuthUser {
+  id: string;
+  email?: string;
+}
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
-  private _user = new BehaviorSubject<User | null>(null);
-  private _session = new BehaviorSubject<Session | null>(null);
+  private _user = new BehaviorSubject<AuthUser | null>(null);
   private _loading = new BehaviorSubject<boolean>(true);
 
-  public readonly user$ = this._user.asObservable();
-  public readonly session$ = this._session.asObservable();
-  public readonly loading$ = this._loading.asObservable();
+  readonly user$ = this._user.asObservable();
+  readonly loading$ = this._loading.asObservable();
 
   constructor(
-    private supabaseService: SupabaseService,
-    private router: Router
+    private api: ApiService,
+    private router: Router,
   ) {
-    this.initializeAuth();
+    this.bootstrap();
   }
 
-  private async initializeAuth() {
-    const { data: { session } } = await this.supabaseService.client.auth.getSession();
-    this._session.next(session);
-    this._user.next(session?.user ?? null);
-    this._loading.next(false);
-
-    this.supabaseService.client.auth.onAuthStateChange((event, session) => {
-      this._session.next(session);
-      this._user.next(session?.user ?? null);
+  private bootstrap() {
+    const token = this.api.getToken();
+    if (!token) {
       this._loading.next(false);
+      this.api.emitAuthChange();
+      return;
+    }
+    this.api
+      .me()
+      .pipe(
+        tap((res) => this._user.next({ id: res.user.id, email: res.user.email })),
+        catchError(() => {
+          this.api.setToken(null);
+          this._user.next(null);
+          return of(null);
+        }),
+        finalize(() => {
+          this._loading.next(false);
+          this.api.emitAuthChange();
+        }),
+      )
+      .subscribe();
+  }
+
+  signIn(email: string, password: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.login(email, password).subscribe({
+        next: (res) => {
+          this.api.setToken(res.token);
+          this._user.next({ id: res.user.id, email: res.user.email });
+          resolve();
+        },
+        error: (err: unknown) => {
+          if (err instanceof HttpErrorResponse && err.error && typeof err.error === 'object' && 'error' in err.error) {
+            reject(new Error(String((err.error as { error: string }).error)));
+            return;
+          }
+          reject(err instanceof Error ? err : new Error('Erro'));
+        },
+      });
     });
   }
 
-  async signIn(email: string, password: string) {
-    const { error } = await this.supabaseService.client.auth.signInWithPassword({
-      email,
-      password
+  signUp(email: string, password: string, nome: string, organizacao: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.api.signup({ email, password, nome, organizacao }).subscribe({
+        next: (res) => {
+          this.api.setToken(res.token);
+          this._user.next({ id: res.user.id, email: res.user.email });
+          resolve();
+        },
+        error: (err: unknown) => {
+          if (err instanceof HttpErrorResponse && err.error && typeof err.error === 'object' && 'error' in err.error) {
+            reject(new Error(String((err.error as { error: string }).error)));
+            return;
+          }
+          reject(err instanceof Error ? err : new Error('Erro'));
+        },
+      });
     });
-    if (error) throw error;
-  }
-
-  async signUp(email: string, password: string, nome: string, organizacao: string) {
-    const { error } = await this.supabaseService.client.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { nome, organizacao }
-      }
-    });
-    if (error) throw error;
   }
 
   async signOut() {
-    const { error } = await this.supabaseService.client.auth.signOut();
-    if (error) throw error;
+    this.api.setToken(null);
+    this._user.next(null);
     this.router.navigate(['/auth']);
   }
 
-  get user(): User | null {
+  get user(): AuthUser | null {
     return this._user.value;
-  }
-
-  get session(): Session | null {
-    return this._session.value;
   }
 
   get loading(): boolean {

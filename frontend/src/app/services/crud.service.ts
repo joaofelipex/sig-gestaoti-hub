@@ -1,70 +1,115 @@
 import { Injectable } from '@angular/core';
-import { SupabaseService } from './supabase.service';
+import { HttpErrorResponse } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { ApiService } from './api.service';
 import { DashboardService } from './dashboard.service';
 import { ToastService } from './toast.service';
 import { EmpresaService } from './empresa.service';
 
 const TABLES_WITH_EMPRESA = new Set([
-  'ativos','licencas','dominios','servidores','manutencoes','movimentacoes',
-  'pagamentos','contratos','inventario','inventario_movimentacoes',
-  'registros_acesso','riscos','orcamentos','acoes_economista',
-  'termos_responsabilidade','usuarios','departamentos','dns_records','alertas'
+  'ativos',
+  'licencas',
+  'dominios',
+  'servidores',
+  'manutencoes',
+  'movimentacoes',
+  'pagamentos',
+  'contratos',
+  'inventario',
+  'inventario_movimentacoes',
+  'registros_acesso',
+  'riscos',
+  'orcamentos',
+  'acoes_economista',
+  'termos_responsabilidade',
+  'usuarios',
+  'departamentos',
+  'dns_records',
+  'alertas',
 ]);
 
 @Injectable({ providedIn: 'root' })
 export class CrudService {
   constructor(
-    private supa: SupabaseService,
+    private api: ApiService,
     private dashboard: DashboardService,
     private toast: ToastService,
     private empresa: EmpresaService,
   ) {}
 
   private async getOrgId(): Promise<string | null> {
-    const { data } = await this.supa.client.auth.getUser();
-    if (!data.user) return null;
-    const { data: prof } = await this.supa.client.from('profiles').select('org_id').eq('user_id', data.user.id).maybeSingle();
-    return (prof as any)?.org_id || null;
+    try {
+      const me = await firstValueFrom(this.api.me());
+      return me.profile.org_id;
+    } catch {
+      return null;
+    }
   }
 
-  private withEmpresa(table: string, row: any): any {
+  private withEmpresa(table: string, row: Record<string, unknown>): Record<string, unknown> {
     if (!TABLES_WITH_EMPRESA.has(table)) return row;
     if (row.empresa_id !== undefined && row.empresa_id !== '') return row;
     const sel = this.empresa.selectedId;
     return sel ? { ...row, empresa_id: sel } : { ...row, empresa_id: row.empresa_id || null };
   }
 
-  async upsert(table: string, payload: any): Promise<boolean> {
+  private errMsg(e: unknown): string {
+    if (e instanceof HttpErrorResponse) {
+      const b = e.error as { error?: string } | undefined;
+      if (b?.error) return b.error;
+      return e.message;
+    }
+    return e instanceof Error ? e.message : 'Erro';
+  }
+
+  async upsert(table: string, payload: Record<string, unknown>): Promise<boolean> {
     const orgId = await this.getOrgId();
-    if (!orgId) { this.toast.show({ title: 'Erro', description: 'Sessão inválida', variant: 'destructive' }); return false; }
-    const row = this.withEmpresa(table, { ...payload, org_id: orgId });
+    if (!orgId) {
+      this.toast.show({ title: 'Erro', description: 'Sessão inválida', variant: 'destructive' });
+      return false;
+    }
+    const row = this.withEmpresa(table, { ...payload, org_id: orgId }) as Record<string, unknown>;
     if (row.empresa_id === '') row.empresa_id = null;
-    const op = row.id
-      ? this.supa.client.from(table as any).update(row).eq('id', row.id)
-      : this.supa.client.from(table as any).insert(row);
-    const { error } = await op;
-    if (error) { this.toast.show({ title: 'Erro', description: error.message, variant: 'destructive' }); return false; }
-    this.toast.show({ title: row.id ? 'Atualizado' : 'Criado', description: 'Registro salvo com sucesso' });
-    await this.dashboard.loadData();
-    return true;
+    try {
+      if (row.id) {
+        await firstValueFrom(this.api.patchTable(table, String(row.id), row));
+      } else {
+        await firstValueFrom(this.api.postTable(table, row));
+      }
+      this.toast.show({ title: row.id ? 'Atualizado' : 'Criado', description: 'Registro salvo com sucesso' });
+      await this.dashboard.loadData();
+      return true;
+    } catch (e: unknown) {
+      this.toast.show({ title: 'Erro', description: this.errMsg(e), variant: 'destructive' });
+      return false;
+    }
   }
 
   async remove(table: string, id: string): Promise<boolean> {
-    const { error } = await this.supa.client.from(table as any).delete().eq('id', id);
-    if (error) { this.toast.show({ title: 'Erro', description: error.message, variant: 'destructive' }); return false; }
-    this.toast.show({ title: 'Excluído', description: 'Registro removido' });
-    await this.dashboard.loadData();
-    return true;
+    try {
+      await firstValueFrom(this.api.deleteTable(table, id));
+      this.toast.show({ title: 'Excluído', description: 'Registro removido' });
+      await this.dashboard.loadData();
+      return true;
+    } catch (e: unknown) {
+      this.toast.show({ title: 'Erro', description: this.errMsg(e), variant: 'destructive' });
+      return false;
+    }
   }
 
-  async bulkInsert(table: string, rows: any[]): Promise<number> {
+  async bulkInsert(table: string, rows: Record<string, unknown>[]): Promise<number> {
     const orgId = await this.getOrgId();
     if (!orgId || !rows.length) return 0;
-    const payload = rows.map(r => this.withEmpresa(table, { ...r, org_id: orgId }));
-    const { error, data } = await this.supa.client.from(table as any).insert(payload).select();
-    if (error) { this.toast.show({ title: 'Erro na importação', description: error.message, variant: 'destructive' }); return 0; }
-    this.toast.show({ title: 'Importação concluída', description: `${data?.length || 0} registros importados` });
-    await this.dashboard.loadData();
-    return data?.length || 0;
+    const payload = rows.map((r) => this.withEmpresa(table, { ...r, org_id: orgId }));
+    try {
+      const data = await firstValueFrom(this.api.postTable(table, payload));
+      const n = Array.isArray(data) ? data.length : 1;
+      this.toast.show({ title: 'Importação concluída', description: `${n} registros importados` });
+      await this.dashboard.loadData();
+      return n;
+    } catch (e: unknown) {
+      this.toast.show({ title: 'Erro na importação', description: this.errMsg(e), variant: 'destructive' });
+      return 0;
+    }
   }
 }

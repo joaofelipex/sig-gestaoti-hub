@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
 
@@ -10,41 +11,53 @@ import { ToastService } from '../../services/toast.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center bg-gray-50">
-      <div class="max-w-md w-full space-y-8">
-        <div>
-          <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+    <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div class="w-full max-w-md space-y-8 rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
+        <div class="text-center">
+          <h2 class="text-3xl font-extrabold tracking-tight text-gray-900">
             {{ tab === 'signin' ? 'Entrar na sua conta' : 'Criar nova conta' }}
           </h2>
+          <p class="mt-2 text-sm text-gray-500">SIG Heartbeat Hub · Holding IMTS</p>
+          <p *ngIf="showLocalDemoHint" class="mt-3 rounded-md bg-slate-50 px-3 py-2 text-left text-xs text-slate-600">
+            Stack local após <code class="rounded bg-slate-200 px-1">npm run db:up</code> na raiz e
+            <code class="rounded bg-slate-200 px-1">npm run api:dev</code>:
+            <span class="font-medium">dev@local.imts</span> · palavra-passe
+            <span class="font-medium">demo123456</span>
+          </p>
         </div>
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-8 space-y-6">
-          <div *ngIf="tab === 'signup'">
-            <input formControlName="nome" type="text" placeholder="Nome" class="input">
-            <input formControlName="organizacao" type="text" placeholder="Organização" class="input">
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+          <div *ngIf="tab === 'signup'" class="space-y-3">
+            <input formControlName="nome" type="text" placeholder="Nome" class="app-field" />
+            <input formControlName="organizacao" type="text" placeholder="Organização" class="app-field" />
           </div>
-          <input formControlName="email" type="email" placeholder="E-mail" class="input">
-          <input formControlName="password" type="password" placeholder="Senha" class="input">
-          <button type="submit" [disabled]="loading" class="btn">
+          <input formControlName="email" type="email" placeholder="E-mail" class="app-field" autocomplete="email" />
+          <input
+            formControlName="password"
+            type="password"
+            placeholder="Senha"
+            class="app-field"
+            autocomplete="current-password"
+          />
+          <button type="submit" [disabled]="loading" class="app-btn-primary mt-2">
             {{ tab === 'signin' ? 'Entrar' : 'Cadastrar' }}
           </button>
         </form>
         <div class="text-center">
-          <button (click)="toggleTab()" class="text-blue-600">
+          <button type="button" (click)="toggleTab()" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">
             {{ tab === 'signin' ? 'Não tem conta? Criar' : 'Já tem conta? Entrar' }}
           </button>
         </div>
       </div>
     </div>
   `,
-  styles: [`
-    .input { @apply w-full px-3 py-2 border border-gray-300 rounded-md; }
-    .btn { @apply w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700; }
-  `]
+  styles: []
 })
 export class AuthComponent {
   tab: 'signin' | 'signup' = 'signin';
   form: FormGroup;
   loading = false;
+  /** Mostrar credenciais demo quando corres contra a stack local (Postgres + API). */
+  readonly showLocalDemoHint = environment.showLocalDemoHint;
 
   constructor(
     private fb: FormBuilder,
