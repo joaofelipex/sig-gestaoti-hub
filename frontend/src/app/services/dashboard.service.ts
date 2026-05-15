@@ -271,26 +271,14 @@ export class DashboardService {
       const risks = risksRes.data?.map(this.mapRisk) || [];
       const payments = paymentsRes.data?.map(this.mapPayment) || [];
 
-      this._data.next({
-        assets,
-        domains,
-        licenses,
-        servers,
-        contracts,
-        maintenance,
-        movements,
-        inventory,
-        alerts,
-        budgets,
-        actions,
-        accessRecords,
-        risks,
-        payments,
-        loading: false
+      this._raw.next({
+        assets, domains, licenses, servers, contracts,
+        maintenance, movements, inventory, alerts, budgets,
+        actions, accessRecords, risks, payments, loading: false
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      this._data.next({ ...this._data.value, loading: false });
+      this._raw.next({ ...this._raw.value, loading: false });
     }
   }
 
