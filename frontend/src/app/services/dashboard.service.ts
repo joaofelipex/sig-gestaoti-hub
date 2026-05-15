@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
+import { EmpresaService } from './empresa.service';
 
-export interface Asset {
+interface HasEmpresa { empresa_id?: string | null; }
+
+export interface Asset extends HasEmpresa {
   id: string;
   type: string;
   brand: string;
@@ -190,7 +194,7 @@ export interface FinancialContract {
   providedIn: 'root'
 })
 export class DashboardService {
-  private _data = new BehaviorSubject<{
+  private _raw = new BehaviorSubject<{
     assets: Asset[];
     domains: Domain[];
     licenses: License[];
@@ -207,31 +211,32 @@ export class DashboardService {
     payments: Payment[];
     loading: boolean;
   }>({
-    assets: [],
-    domains: [],
-    licenses: [],
-    servers: [],
-    contracts: [],
-    maintenance: [],
-    movements: [],
-    inventory: [],
-    alerts: [],
-    budgets: [],
-    actions: [],
-    accessRecords: [],
-    risks: [],
-    payments: [],
-    loading: true
+    assets: [], domains: [], licenses: [], servers: [], contracts: [],
+    maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
+    actions: [], accessRecords: [], risks: [], payments: [], loading: true
   });
 
-  public readonly data$ = this._data.asObservable();
+  public readonly data$: Observable<any> = combineLatest([this._raw, this.empresa.selected$]).pipe(
+    map(([raw, empId]) => {
+      if (!empId) return raw;
+      const f = (arr: any[]) => arr.filter(i => !i.empresa_id || i.empresa_id === empId);
+      return {
+        ...raw,
+        assets: f(raw.assets), domains: f(raw.domains), licenses: f(raw.licenses),
+        servers: f(raw.servers), contracts: f(raw.contracts), maintenance: f(raw.maintenance),
+        movements: f(raw.movements), inventory: f(raw.inventory), alerts: f(raw.alerts),
+        budgets: f(raw.budgets), actions: f(raw.actions), accessRecords: f(raw.accessRecords),
+        risks: f(raw.risks), payments: f(raw.payments)
+      };
+    })
+  );
 
-  constructor(private supabaseService: SupabaseService) {
+  constructor(private supabaseService: SupabaseService, private empresa: EmpresaService) {
     this.loadData();
   }
 
   async loadData() {
-    this._data.next({ ...this._data.value, loading: true });
+    this._raw.next({ ...this._raw.value, loading: true });
 
     try {
       const [assetsRes, domainsRes, licensesRes, serversRes, contractsRes, maintenanceRes, movementsRes, inventoryRes, alertsRes, budgetsRes, actionsRes, accessRes, risksRes, paymentsRes] = await Promise.all([
@@ -251,41 +256,31 @@ export class DashboardService {
         this.supabaseService.client.from('pagamentos').select('*')
       ]);
 
-      const assets = assetsRes.data?.map(this.mapAsset) || [];
-      const domains = domainsRes.data?.map(this.mapDomain) || [];
-      const licenses = licensesRes.data?.map(this.mapLicense) || [];
-      const servers = serversRes.data?.map(this.mapServer) || [];
-      const contracts = contractsRes.data?.map(this.mapContract) || [];
-      const maintenance = maintenanceRes.data?.map(this.mapMaintenance) || [];
-      const movements = movementsRes.data?.map(this.mapMovement) || [];
-      const inventory = inventoryRes.data?.map(this.mapInventory) || [];
-      const alerts = alertsRes.data?.map(this.mapAlert) || [];
-      const budgets = budgetsRes.data?.map(this.mapBudget) || [];
-      const actions = actionsRes.data?.map(this.mapAction) || [];
-      const accessRecords = accessRes.data?.map(this.mapAccessRecord) || [];
-      const risks = risksRes.data?.map(this.mapRisk) || [];
-      const payments = paymentsRes.data?.map(this.mapPayment) || [];
+      const attach = <T>(rows: any[] | null | undefined, mapper: (r: any) => T): T[] =>
+        (rows || []).map(r => ({ ...mapper(r), empresa_id: r.empresa_id ?? null } as T));
+      const assets = attach(assetsRes.data, this.mapAsset);
+      const domains = attach(domainsRes.data, this.mapDomain);
+      const licenses = attach(licensesRes.data, this.mapLicense);
+      const servers = attach(serversRes.data, this.mapServer);
+      const contracts = attach(contractsRes.data, this.mapContract);
+      const maintenance = attach(maintenanceRes.data, this.mapMaintenance);
+      const movements = attach(movementsRes.data, this.mapMovement);
+      const inventory = attach(inventoryRes.data, this.mapInventory);
+      const alerts = attach(alertsRes.data, this.mapAlert);
+      const budgets = attach(budgetsRes.data, this.mapBudget);
+      const actions = attach(actionsRes.data, this.mapAction);
+      const accessRecords = attach(accessRes.data, this.mapAccessRecord);
+      const risks = attach(risksRes.data, this.mapRisk);
+      const payments = attach(paymentsRes.data, this.mapPayment);
 
-      this._data.next({
-        assets,
-        domains,
-        licenses,
-        servers,
-        contracts,
-        maintenance,
-        movements,
-        inventory,
-        alerts,
-        budgets,
-        actions,
-        accessRecords,
-        risks,
-        payments,
-        loading: false
+      this._raw.next({
+        assets, domains, licenses, servers, contracts,
+        maintenance, movements, inventory, alerts, budgets,
+        actions, accessRecords, risks, payments, loading: false
       });
     } catch (error) {
       console.error('Error loading dashboard data:', error);
-      this._data.next({ ...this._data.value, loading: false });
+      this._raw.next({ ...this._raw.value, loading: false });
     }
   }
 
