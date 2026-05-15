@@ -256,20 +256,22 @@ export class DashboardService {
         this.supabaseService.client.from('pagamentos').select('*')
       ]);
 
-      const assets = assetsRes.data?.map(this.mapAsset) || [];
-      const domains = domainsRes.data?.map(this.mapDomain) || [];
-      const licenses = licensesRes.data?.map(this.mapLicense) || [];
-      const servers = serversRes.data?.map(this.mapServer) || [];
-      const contracts = contractsRes.data?.map(this.mapContract) || [];
-      const maintenance = maintenanceRes.data?.map(this.mapMaintenance) || [];
-      const movements = movementsRes.data?.map(this.mapMovement) || [];
-      const inventory = inventoryRes.data?.map(this.mapInventory) || [];
-      const alerts = alertsRes.data?.map(this.mapAlert) || [];
-      const budgets = budgetsRes.data?.map(this.mapBudget) || [];
-      const actions = actionsRes.data?.map(this.mapAction) || [];
-      const accessRecords = accessRes.data?.map(this.mapAccessRecord) || [];
-      const risks = risksRes.data?.map(this.mapRisk) || [];
-      const payments = paymentsRes.data?.map(this.mapPayment) || [];
+      const attach = <T>(rows: any[] | null | undefined, mapper: (r: any) => T): T[] =>
+        (rows || []).map(r => ({ ...mapper(r), empresa_id: r.empresa_id ?? null } as T));
+      const assets = attach(assetsRes.data, this.mapAsset);
+      const domains = attach(domainsRes.data, this.mapDomain);
+      const licenses = attach(licensesRes.data, this.mapLicense);
+      const servers = attach(serversRes.data, this.mapServer);
+      const contracts = attach(contractsRes.data, this.mapContract);
+      const maintenance = attach(maintenanceRes.data, this.mapMaintenance);
+      const movements = attach(movementsRes.data, this.mapMovement);
+      const inventory = attach(inventoryRes.data, this.mapInventory);
+      const alerts = attach(alertsRes.data, this.mapAlert);
+      const budgets = attach(budgetsRes.data, this.mapBudget);
+      const actions = attach(actionsRes.data, this.mapAction);
+      const accessRecords = attach(accessRes.data, this.mapAccessRecord);
+      const risks = attach(risksRes.data, this.mapRisk);
+      const payments = attach(paymentsRes.data, this.mapPayment);
 
       this._raw.next({
         assets, domains, licenses, servers, contracts,
