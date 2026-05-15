@@ -219,11 +219,11 @@ export class DashboardService {
   public readonly data$: Observable<any> = combineLatest([this._raw, this.empresa.selected$]).pipe(
     map(([raw, empId]) => {
       if (!empId) return raw;
-      const f = <T extends HasEmpresa>(arr: T[]) => arr.filter(i => !i.empresa_id || i.empresa_id === empId);
+      const f = (arr: any[]) => arr.filter(i => !i.empresa_id || i.empresa_id === empId);
       return {
         ...raw,
         assets: f(raw.assets), domains: f(raw.domains), licenses: f(raw.licenses),
-        servers: f(raw.servers), contracts: f(raw.contracts as any), maintenance: f(raw.maintenance),
+        servers: f(raw.servers), contracts: f(raw.contracts), maintenance: f(raw.maintenance),
         movements: f(raw.movements), inventory: f(raw.inventory), alerts: f(raw.alerts),
         budgets: f(raw.budgets), actions: f(raw.actions), accessRecords: f(raw.accessRecords),
         risks: f(raw.risks), payments: f(raw.payments)
