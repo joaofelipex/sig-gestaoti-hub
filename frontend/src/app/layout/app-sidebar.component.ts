@@ -59,6 +59,7 @@ export class AppSidebarComponent {
 
   navItems: NavItem[] = [
     { to: '/dashboard', icon: '📊', label: 'Dashboard' },
+    { to: '/empresas', icon: '🏢', label: 'Empresas' },
     { to: '/ativos', icon: '💻', label: 'Ativos (ITAM)' },
     { to: '/dominios', icon: '🌐', label: 'Domínios & DNS' },
     { to: '/licencas', icon: '🔑', label: 'Licenças (SAM)' },

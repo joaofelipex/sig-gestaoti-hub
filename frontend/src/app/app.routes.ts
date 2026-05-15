@@ -7,6 +7,7 @@ export const routes: Routes = [
     loadComponent: () => import('./layout/app-layout.component').then(m => m.AppLayoutComponent),
     children: [
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
+      { path: 'empresas', loadComponent: () => import('./pages/empresas/empresas.component').then(m => m.EmpresasComponent) },
       { path: 'ativos', loadComponent: () => import('./pages/assets/assets.component').then(m => m.AssetsComponent) },
       { path: 'dominios', loadComponent: () => import('./pages/domains/domains.component').then(m => m.DomainsComponent) },
       { path: 'licencas', loadComponent: () => import('./pages/licenses/licenses.component').then(m => m.LicensesComponent) },
