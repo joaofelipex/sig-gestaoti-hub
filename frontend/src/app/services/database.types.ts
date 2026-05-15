@@ -384,6 +384,53 @@ export type Database = {
           },
         ]
       }
+      empresas: {
+        Row: {
+          ativo: boolean
+          cnpj: string | null
+          created_at: string
+          id: string
+          nome: string
+          observacoes: string | null
+          org_id: string
+          responsavel: string | null
+          segmento: string | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome: string
+          observacoes?: string | null
+          org_id: string
+          responsavel?: string | null
+          segmento?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          cnpj?: string | null
+          created_at?: string
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          org_id?: string
+          responsavel?: string | null
+          segmento?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empresas_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inventario: {
         Row: {
           categoria: string

@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { DashboardService, Alert } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { SupabaseService } from '../../services/supabase.service';
@@ -94,7 +95,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
     this.generating = true;
     try {
       const today = new Date(); const in30 = new Date(Date.now() + 30*86400000); const in15 = new Date(Date.now() + 15*86400000);
-      const data = this.dashboard['_data'].value;
+      const data = await firstValueFrom(this.dashboard.data$.pipe(take(1)));
       const newAlerts: any[] = [];
       const existingTitles = new Set(this.alerts.map(a => a.titulo));
       const push = (titulo: string, mensagem: string, tipo: string, severidade: string) => {

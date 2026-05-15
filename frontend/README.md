@@ -2,6 +2,8 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.10.
 
+Documentação de arquitetura do monorepo (stack, dados, segurança): [../docs/architecture.md](../docs/architecture.md).
+
 ## Development server
 
 To start a local development server, run:

@@ -43,7 +43,7 @@ export class EmpresaService {
 
   async load() {
     const { data } = await this.supa.client.from('empresas').select('*').order('nome');
-    const list = (data || []) as Empresa[];
+    const list = (data ?? []) as Empresa[];
     this._list.next(list);
     if (list.length === 0) {
       await this.seedDefaults();
@@ -65,7 +65,7 @@ export class EmpresaService {
     const rows = SEED_NAMES.map(nome => ({ org_id: orgId, nome, ativo: true }));
     const { data, error } = await this.supa.client.from('empresas').insert(rows).select();
     if (!error && data) {
-      this._list.next(data as Empresa[]);
+      this._list.next((data ?? []) as Empresa[]);
       this.toast.show({ title: 'Empresas cadastradas', description: `${data.length} empresas da holding inicializadas` });
     }
   }

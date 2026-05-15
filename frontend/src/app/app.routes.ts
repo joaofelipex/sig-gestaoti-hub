@@ -3,6 +3,10 @@ import { Routes } from '@angular/router';
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
   {
+    path: 'auth',
+    loadComponent: () => import('./pages/auth/auth.component').then(m => m.AuthComponent),
+  },
+  {
     path: '',
     loadComponent: () => import('./layout/app-layout.component').then(m => m.AppLayoutComponent),
     children: [

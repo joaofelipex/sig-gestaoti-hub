@@ -216,22 +216,24 @@ export class DashboardService {
     actions: [], accessRecords: [], risks: [], payments: [], loading: true
   });
 
-  public readonly data$: Observable<any> = combineLatest([this._raw, this.empresa.selected$]).pipe(
-    map(([raw, empId]) => {
-      if (!empId) return raw;
-      const f = (arr: any[]) => arr.filter(i => !i.empresa_id || i.empresa_id === empId);
-      return {
-        ...raw,
-        assets: f(raw.assets), domains: f(raw.domains), licenses: f(raw.licenses),
-        servers: f(raw.servers), contracts: f(raw.contracts), maintenance: f(raw.maintenance),
-        movements: f(raw.movements), inventory: f(raw.inventory), alerts: f(raw.alerts),
-        budgets: f(raw.budgets), actions: f(raw.actions), accessRecords: f(raw.accessRecords),
-        risks: f(raw.risks), payments: f(raw.payments)
-      };
-    })
-  );
+  /** Populated in the constructor so `empresa` (a ctor parameter) exists before use. */
+  public readonly data$: Observable<any>;
 
   constructor(private supabaseService: SupabaseService, private empresa: EmpresaService) {
+    this.data$ = combineLatest([this._raw, this.empresa.selected$]).pipe(
+      map(([raw, empId]) => {
+        if (!empId) return raw;
+        const f = (arr: any[]) => arr.filter(i => !i.empresa_id || i.empresa_id === empId);
+        return {
+          ...raw,
+          assets: f(raw.assets), domains: f(raw.domains), licenses: f(raw.licenses),
+          servers: f(raw.servers), contracts: f(raw.contracts), maintenance: f(raw.maintenance),
+          movements: f(raw.movements), inventory: f(raw.inventory), alerts: f(raw.alerts),
+          budgets: f(raw.budgets), actions: f(raw.actions), accessRecords: f(raw.accessRecords),
+          risks: f(raw.risks), payments: f(raw.payments)
+        };
+      })
+    );
     this.loadData();
   }
 
