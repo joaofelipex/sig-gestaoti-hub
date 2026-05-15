@@ -1,8 +1,12 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { SupabaseService } from './supabase.service';
+import { EmpresaService } from './empresa.service';
 
-export interface Asset {
+interface HasEmpresa { empresa_id?: string | null; }
+
+export interface Asset extends HasEmpresa {
   id: string;
   type: string;
   brand: string;
