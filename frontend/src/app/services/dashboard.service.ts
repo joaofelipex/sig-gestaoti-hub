@@ -194,7 +194,7 @@ export interface FinancialContract {
   providedIn: 'root'
 })
 export class DashboardService {
-  private _data = new BehaviorSubject<{
+  private _raw = new BehaviorSubject<{
     assets: Asset[];
     domains: Domain[];
     licenses: License[];
@@ -211,31 +211,32 @@ export class DashboardService {
     payments: Payment[];
     loading: boolean;
   }>({
-    assets: [],
-    domains: [],
-    licenses: [],
-    servers: [],
-    contracts: [],
-    maintenance: [],
-    movements: [],
-    inventory: [],
-    alerts: [],
-    budgets: [],
-    actions: [],
-    accessRecords: [],
-    risks: [],
-    payments: [],
-    loading: true
+    assets: [], domains: [], licenses: [], servers: [], contracts: [],
+    maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
+    actions: [], accessRecords: [], risks: [], payments: [], loading: true
   });
 
-  public readonly data$ = this._data.asObservable();
+  public readonly data$: Observable<any> = combineLatest([this._raw, this.empresa.selected$]).pipe(
+    map(([raw, empId]) => {
+      if (!empId) return raw;
+      const f = <T extends HasEmpresa>(arr: T[]) => arr.filter(i => !i.empresa_id || i.empresa_id === empId);
+      return {
+        ...raw,
+        assets: f(raw.assets), domains: f(raw.domains), licenses: f(raw.licenses),
+        servers: f(raw.servers), contracts: f(raw.contracts as any), maintenance: f(raw.maintenance),
+        movements: f(raw.movements), inventory: f(raw.inventory), alerts: f(raw.alerts),
+        budgets: f(raw.budgets), actions: f(raw.actions), accessRecords: f(raw.accessRecords),
+        risks: f(raw.risks), payments: f(raw.payments)
+      };
+    })
+  );
 
-  constructor(private supabaseService: SupabaseService) {
+  constructor(private supabaseService: SupabaseService, private empresa: EmpresaService) {
     this.loadData();
   }
 
   async loadData() {
-    this._data.next({ ...this._data.value, loading: true });
+    this._raw.next({ ...this._raw.value, loading: true });
 
     try {
       const [assetsRes, domainsRes, licensesRes, serversRes, contractsRes, maintenanceRes, movementsRes, inventoryRes, alertsRes, budgetsRes, actionsRes, accessRes, risksRes, paymentsRes] = await Promise.all([
