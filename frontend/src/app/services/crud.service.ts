@@ -27,10 +27,18 @@ export class CrudService {
     return (prof as any)?.org_id || null;
   }
 
+  private withEmpresa(table: string, row: any): any {
+    if (!TABLES_WITH_EMPRESA.has(table)) return row;
+    if (row.empresa_id !== undefined && row.empresa_id !== '') return row;
+    const sel = this.empresa.selectedId;
+    return sel ? { ...row, empresa_id: sel } : { ...row, empresa_id: row.empresa_id || null };
+  }
+
   async upsert(table: string, payload: any): Promise<boolean> {
     const orgId = await this.getOrgId();
     if (!orgId) { this.toast.show({ title: 'Erro', description: 'Sessão inválida', variant: 'destructive' }); return false; }
-    const row = { ...payload, org_id: orgId };
+    const row = this.withEmpresa(table, { ...payload, org_id: orgId });
+    if (row.empresa_id === '') row.empresa_id = null;
     const op = row.id
       ? this.supa.client.from(table as any).update(row).eq('id', row.id)
       : this.supa.client.from(table as any).insert(row);
@@ -52,7 +60,7 @@ export class CrudService {
   async bulkInsert(table: string, rows: any[]): Promise<number> {
     const orgId = await this.getOrgId();
     if (!orgId || !rows.length) return 0;
-    const payload = rows.map(r => ({ ...r, org_id: orgId }));
+    const payload = rows.map(r => this.withEmpresa(table, { ...r, org_id: orgId }));
     const { error, data } = await this.supa.client.from(table as any).insert(payload).select();
     if (error) { this.toast.show({ title: 'Erro na importação', description: error.message, variant: 'destructive' }); return 0; }
     this.toast.show({ title: 'Importação concluída', description: `${data?.length || 0} registros importados` });
