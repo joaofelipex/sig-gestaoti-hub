@@ -60,44 +60,6 @@ r.get('/empresas', async (req: AuthedRequest, res) => {
   res.json(q.rows);
 });
 
-/** Contagens por tabela (schema `public`) para a org do utilizador — usado na página «Dados & base». */
-const SUMMARY_TABLES = [
-  'empresas',
-  'departamentos',
-  'usuarios',
-  ...DASHBOARD_TABLES,
-  'dns_records',
-  'inventario_movimentacoes',
-  'termos_responsabilidade',
-] as const;
-
-r.get('/summary', async (req: AuthedRequest, res) => {
-  const uid = req.userId!;
-  const prof = await getProfileOrg(uid);
-  if (!prof) {
-    res.status(403).json({ error: 'Sem perfil' });
-    return;
-  }
-  const orgId = prof.org_id;
-  try {
-    const ver = await pool.query(`SELECT version() AS v`);
-    const counts: Record<string, number> = {};
-    for (const t of SUMMARY_TABLES) {
-      const q = await pool.query(`SELECT count(*)::int AS c FROM public.${t} WHERE org_id = $1::uuid`, [orgId]);
-      counts[t] = q.rows[0]?.c ?? 0;
-    }
-    res.json({
-      org_id: orgId,
-      profile_email: prof.email,
-      postgres_version: ver.rows[0]?.v as string,
-      counts,
-    });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: 'Erro ao ler resumo da base' });
-  }
-});
-
 r.post('/:table', async (req: AuthedRequest, res) => {
   const table = String(req.params.table || '');
   if (!API_TABLES.has(table)) {

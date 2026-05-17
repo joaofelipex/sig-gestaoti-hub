@@ -1,19 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
 @import "tailwindcss";
 
-/* Paleta alinhada ao shell claro + azul (próximo ao export típico Lovable / versão anterior do repo) */
+@import "./design/tokens.css";
+@import "./design/bootstrap-theme.css";
+@import "./design/adminlte-overrides.css";
+@import "./design/legacy-forms.css";
+@import "./design/pages.css";
+@import "./design/modals.css";
+@import "./design/feedback.css";
+@import "./design/sweetalert-skin.css";
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --color-brand-50: oklch(0.97 0.02 264);
-  --color-brand-100: oklch(0.93 0.05 264);
-  --color-brand-200: oklch(0.88 0.09 264);
-  --color-brand-300: oklch(0.78 0.12 264);
-  --color-brand-400: oklch(0.68 0.16 264);
-  --color-brand-500: oklch(0.58 0.19 264);
-  --color-brand-600: oklch(0.49 0.21 264);
-  --color-brand-700: oklch(0.42 0.19 264);
-  --color-brand-800: oklch(0.35 0.15 264);
-  --color-brand-900: oklch(0.28 0.12 264);
+  --font-sans: "Source Sans Pro", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 @source "./**/*.{html,ts,css}";
@@ -21,29 +19,5 @@
 @layer base {
   html {
     @apply scroll-smooth;
-  }
-  body {
-    @apply font-sans antialiased text-gray-900 bg-gray-100;
-  }
-}
-
-@layer components {
-  .app-field {
-    @apply w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/25;
-  }
-  .app-btn-primary {
-    @apply inline-flex w-full items-center justify-center rounded-md bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
-  }
-  .app-btn-ghost {
-    @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900;
-  }
-  .app-card {
-    @apply rounded-lg border border-gray-200 bg-white p-5 shadow-sm;
-  }
-  .app-page-title {
-    @apply text-2xl font-bold tracking-tight text-gray-900;
-  }
-  .app-page-sub {
-    @apply text-sm text-gray-500;
   }
 }

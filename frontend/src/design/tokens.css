@@ -1,0 +1,40 @@
+/**
+ * Paleta Lara Light Blue (stack visual do projeto)
+ * PrimeNG lara-light-blue · Bootstrap 5 · AdminLTE
+ */
+:root {
+  /* Superfície / fundo da app */
+  --wl-background-color: #eff6ff;
+  --wl-surface-color: #ffffff;
+  --wl-border-color: #dbeafe;
+
+  /* Primária (blue-500 → blue-700) */
+  --wl-primary-color: #3b82f6;
+  --wl-primary-hover: #2563eb;
+  --wl-primary-dark: #1d4ed8;
+  --wl-primary-light: #dbeafe;
+  --wl-primary-subtle: #eff6ff;
+
+  /* Texto */
+  --wl-text-color: #0f172a;
+  --wl-text-muted: #64748b;
+
+  /* Marca */
+  --wl-brand-name: "IMTS";
+  --wl-brand-subtitle: "Gestão TI";
+
+  /* Layout */
+  --wl-header-height: 3.5rem;
+  --wl-sidebar-width: 250px;
+  --wl-content-padding: 1rem;
+  --wl-radius: 0.375rem;
+  --wl-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
+
+  /* Bootstrap 5 (override via variáveis) */
+  --bs-primary: var(--wl-primary-color);
+  --bs-primary-rgb: 59, 130, 246;
+  --bs-body-bg: var(--wl-background-color);
+  --bs-border-color: var(--wl-border-color);
+  --bs-link-color: var(--wl-primary-color);
+  --bs-link-hover-color: var(--wl-primary-hover);
+}

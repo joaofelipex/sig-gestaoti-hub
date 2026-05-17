@@ -9,13 +9,6 @@ export interface MeResponse {
   profile: { org_id: string; nome: string; email: string };
 }
 
-export interface DataSummaryResponse {
-  org_id: string;
-  profile_email: string;
-  postgres_version: string;
-  counts: Record<string, number>;
-}
-
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   /** Replay(1) para serviços criados depois do bootstrap/login ainda receberem o sinal. */
@@ -74,10 +67,6 @@ export class ApiService {
 
   getEmpresas(): Observable<unknown[]> {
     return this.http.get<unknown[]>(this.api('/data/empresas'));
-  }
-
-  getSummary(): Observable<DataSummaryResponse> {
-    return this.http.get<DataSummaryResponse>(this.api('/data/summary'));
   }
 
   postTable(table: string, body: unknown): Observable<unknown> {

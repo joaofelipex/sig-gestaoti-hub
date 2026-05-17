@@ -1,0 +1,68 @@
+/* Conteúdo das páginas — Lara Light Blue */
+
+.content-wrapper .container-fluid {
+  padding-bottom: 0.5rem;
+}
+
+.app-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.app-page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--wl-text-color);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.app-page-sub {
+  font-size: 0.875rem;
+  color: var(--wl-text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.content-wrapper .bg-white.rounded-lg.border {
+  border-color: var(--wl-border-color) !important;
+  box-shadow: var(--wl-shadow);
+}
+
+.content-wrapper .bg-blue-600,
+.content-wrapper .bg-blue-700 {
+  background-color: var(--wl-primary-color) !important;
+  border-color: var(--wl-primary-color);
+}
+
+.content-wrapper .bg-blue-600:hover,
+.content-wrapper .hover\:bg-blue-700:hover {
+  background-color: var(--wl-primary-hover) !important;
+}
+
+.content-wrapper .text-blue-600,
+.content-wrapper .text-blue-700,
+.content-wrapper .text-blue-800 {
+  color: var(--wl-primary-color) !important;
+}
+
+.content-wrapper .bg-blue-100 {
+  background-color: var(--wl-primary-light) !important;
+}
+
+.content-wrapper .text-blue-700,
+.content-wrapper .text-blue-800 {
+  color: var(--wl-primary-dark) !important;
+}
+
+.content-wrapper .border-blue-600,
+.content-wrapper .border-blue-500 {
+  border-color: var(--wl-primary-color) !important;
+}
+
+.content-wrapper .ring-blue-500 {
+  --tw-ring-color: var(--wl-primary-color) !important;
+}

@@ -1,0 +1,62 @@
+/* Formulários/cards das páginas (Tailwind) — cores via tokens */
+
+@layer components {
+  .app-field {
+    @apply w-full rounded-md border bg-white px-3 py-2.5 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-2;
+    border-color: var(--wl-border-color);
+    color: var(--wl-text-color);
+  }
+  .app-field:focus {
+    border-color: var(--wl-primary-color);
+    --tw-ring-color: color-mix(in srgb, var(--wl-primary-color) 35%, transparent);
+  }
+  .app-btn-primary {
+    @apply inline-flex w-full items-center justify-center rounded-md px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+    background-color: var(--wl-primary-color);
+  }
+  .app-btn-primary:hover {
+    background-color: var(--wl-primary-hover);
+  }
+  .app-btn-primary:focus {
+    --tw-ring-color: var(--wl-primary-color);
+  }
+  .app-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors;
+    color: var(--wl-text-muted);
+  }
+  .app-btn-ghost:hover {
+    background-color: var(--wl-primary-subtle);
+    color: var(--wl-text-color);
+  }
+  .app-card {
+    @apply rounded-lg border bg-white p-5 shadow-sm;
+    border-color: var(--wl-border-color);
+    box-shadow: var(--wl-shadow);
+  }
+  .app-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--wl-text-color);
+  }
+  .app-page-sub {
+    font-size: 0.875rem;
+    color: var(--wl-text-muted);
+  }
+}
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: linear-gradient(160deg, var(--wl-primary-subtle) 0%, var(--wl-background-color) 45%, #f8fafc 100%);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 28rem;
+  border-radius: var(--wl-radius);
+  box-shadow: var(--wl-shadow);
+  border-color: var(--wl-border-color);
+}

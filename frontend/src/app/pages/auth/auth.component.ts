@@ -11,41 +11,44 @@ import { ToastService } from '../../services/toast.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
-      <div class="w-full max-w-md space-y-8 rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-        <div class="text-center">
-          <h2 class="text-3xl font-extrabold tracking-tight text-gray-900">
+    <div class="auth-page">
+      <div class="card auth-card shadow-sm">
+        <div class="card-body p-4 p-md-5">
+          <div class="text-center mb-4">
+          <h1 class="h3 fw-bold text-dark mb-1">
             {{ tab === 'signin' ? 'Entrar na sua conta' : 'Criar nova conta' }}
-          </h2>
-          <p class="mt-2 text-sm text-gray-500">SIG Heartbeat Hub · Holding IMTS</p>
-          <p *ngIf="showLocalDemoHint" class="mt-3 rounded-md bg-slate-50 px-3 py-2 text-left text-xs text-slate-600">
-            Stack local após <code class="rounded bg-slate-200 px-1">npm run db:up</code> na raiz e
-            <code class="rounded bg-slate-200 px-1">npm run api:dev</code>:
-            <span class="font-medium">dev@local.imts</span> · palavra-passe
-            <span class="font-medium">demo123456</span>
+          </h1>
+          <p class="text-muted small mb-0">SIG Heartbeat Hub · Holding IMTS</p>
+          <p *ngIf="showLocalDemoHint" class="alert alert-secondary small text-start mt-3 mb-0 py-2">
+            Stack local: <strong>dev@local.imts</strong> · <strong>demo123456</strong>
           </p>
-        </div>
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
-          <div *ngIf="tab === 'signup'" class="space-y-3">
-            <input formControlName="nome" type="text" placeholder="Nome" class="app-field" />
-            <input formControlName="organizacao" type="text" placeholder="Organização" class="app-field" />
           </div>
-          <input formControlName="email" type="email" placeholder="E-mail" class="app-field" autocomplete="email" />
+          <form [formGroup]="form" (ngSubmit)="onSubmit()">
+          <div *ngIf="tab === 'signup'" class="mb-3 d-flex flex-column gap-2">
+            <input formControlName="nome" type="text" placeholder="Nome" class="form-control" />
+            <input formControlName="organizacao" type="text" placeholder="Organização" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <input formControlName="email" type="email" placeholder="E-mail" class="form-control" autocomplete="email" />
+          </div>
+          <div class="mb-3">
           <input
             formControlName="password"
             type="password"
             placeholder="Senha"
-            class="app-field"
+            class="form-control"
             autocomplete="current-password"
           />
-          <button type="submit" [disabled]="loading" class="app-btn-primary mt-2">
+          </div>
+          <button type="submit" [disabled]="loading" class="btn btn-primary w-100">
             {{ tab === 'signin' ? 'Entrar' : 'Cadastrar' }}
           </button>
         </form>
-        <div class="text-center">
-          <button type="button" (click)="toggleTab()" class="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline">
+        <div class="text-center mt-3">
+          <button type="button" (click)="toggleTab()" class="btn btn-link btn-sm p-0">
             {{ tab === 'signin' ? 'Não tem conta? Criar' : 'Já tem conta? Entrar' }}
           </button>
+        </div>
         </div>
       </div>
     </div>

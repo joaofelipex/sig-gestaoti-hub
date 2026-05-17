@@ -13,7 +13,6 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: 'dashboard', loadComponent: () => import('./pages/dashboard/dashboard.component').then(m => m.DashboardComponent) },
-      { path: 'dados-banco', loadComponent: () => import('./pages/data-database/data-database.component').then(m => m.DataDatabaseComponent) },
       { path: 'empresas', loadComponent: () => import('./pages/empresas/empresas.component').then(m => m.EmpresasComponent) },
       { path: 'ativos', loadComponent: () => import('./pages/assets/assets.component').then(m => m.AssetsComponent) },
       { path: 'dominios', loadComponent: () => import('./pages/domains/domains.component').then(m => m.DomainsComponent) },

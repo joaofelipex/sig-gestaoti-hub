@@ -10,13 +10,13 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
   standalone: true,
   imports: [CommonModule, FormsModule, ModalComponent, ConfirmComponent],
   template: `
-    <div class="p-6">
-      <div class="flex items-center justify-between mb-6">
+    <div class="p-3 p-md-4">
+      <div class="app-page-header">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Empresas da Holding</h1>
-          <p class="text-sm text-gray-500 mt-1">Gerencie as empresas que compõem a IMTS — cada registro de TI pode ser segmentado por empresa.</p>
+          <h1 class="app-page-title">Empresas da Holding</h1>
+          <p class="app-page-sub">Gerencie as empresas que compõem a IMTS — cada registro de TI pode ser segmentado por empresa.</p>
         </div>
-        <button (click)="openNew()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">+ Nova Empresa</button>
+        <button type="button" (click)="openNew()" class="btn btn-primary btn-sm">+ Nova Empresa</button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

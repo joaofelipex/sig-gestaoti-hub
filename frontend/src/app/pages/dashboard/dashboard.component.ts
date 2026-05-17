@@ -10,13 +10,13 @@ import { KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComp
   standalone: true,
   imports: [CommonModule, KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComponent],
   template: `
-    <div class="min-h-full space-y-6 p-5 md:p-8">
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div class="min-h-full space-y-6 p-3 p-md-4">
+      <div class="app-page-header">
         <div>
           <h1 class="app-page-title">Dashboard</h1>
           <p class="app-page-sub">Bem-vindo, <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
         </div>
-        <button type="button" (click)="logout()" class="app-btn-ghost self-start text-red-600 hover:bg-red-50 hover:text-red-700 sm:self-auto">
+        <button type="button" (click)="logout()" class="btn btn-outline-danger btn-sm">
           Sair
         </button>
       </div>

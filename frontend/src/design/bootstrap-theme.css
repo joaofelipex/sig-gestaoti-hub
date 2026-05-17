@@ -1,0 +1,41 @@
+/* Bootstrap 5 alinhado à paleta Lara Light Blue */
+
+.btn-primary {
+  --bs-btn-bg: var(--wl-primary-color);
+  --bs-btn-border-color: var(--wl-primary-color);
+  --bs-btn-hover-bg: var(--wl-primary-hover);
+  --bs-btn-hover-border-color: var(--wl-primary-hover);
+  --bs-btn-active-bg: var(--wl-primary-dark);
+  --bs-btn-active-border-color: var(--wl-primary-dark);
+  --bs-btn-focus-shadow-rgb: 59, 130, 246;
+}
+
+.btn-outline-primary {
+  --bs-btn-color: var(--wl-primary-color);
+  --bs-btn-border-color: var(--wl-primary-color);
+  --bs-btn-hover-bg: var(--wl-primary-color);
+  --bs-btn-hover-border-color: var(--wl-primary-color);
+  --bs-btn-active-bg: var(--wl-primary-dark);
+  --bs-btn-active-border-color: var(--wl-primary-dark);
+}
+
+.btn-link {
+  --bs-btn-color: var(--wl-primary-color);
+  --bs-btn-hover-color: var(--wl-primary-hover);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--wl-primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.card {
+  border-color: var(--wl-border-color);
+}
+
+.alert-secondary {
+  background-color: var(--wl-primary-subtle);
+  border-color: var(--wl-border-color);
+  color: var(--wl-text-color);
+}
