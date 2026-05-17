@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { pool } from '../db';
 import { signToken } from '../jwt';
@@ -84,7 +83,14 @@ r.post('/signup', async (req, res) => {
     );
     const orgId = org.rows[0].id as string;
     const userId = randomUUID();
-    const hash = await bcrypt.hash(password, 10);
+    const hashRow = await client.query<{ hash: string }>(
+      `SELECT crypt($1::text, gen_salt('bf')) AS hash`,
+      [password]
+    );
+    const hash = hashRow.rows[0]?.hash;
+    if (!hash) {
+      throw new Error('Falha ao gerar hash da palavra-passe');
+    }
     await client.query(
       `INSERT INTO auth.users (id, email, encrypted_password, created_at) VALUES ($1, $2, $3, now())`,
       [userId, email, hash]
@@ -102,7 +108,14 @@ r.post('/signup', async (req, res) => {
     res.status(201).json({ token, user: { id: userId, email } });
   } catch (e) {
     await client.query('ROLLBACK');
-    console.error(e);
+    console.error('signup:', e);
+    const msg = e instanceof Error ? e.message : '';
+    if (/encrypted_password|pgcrypto|crypt/i.test(msg)) {
+      res.status(500).json({
+        error: 'Base desatualizada. Na raiz do projeto: npm run db:apply-migrations e reinicie a API.',
+      });
+      return;
+    }
     res.status(500).json({ error: 'Erro ao criar conta' });
   } finally {
     client.release();

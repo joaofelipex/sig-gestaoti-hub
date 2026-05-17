@@ -84,10 +84,26 @@ export class AuthComponent {
     }
     this.form.get('nome')?.updateValueAndValidity();
     this.form.get('organizacao')?.updateValueAndValidity();
+    this.form.markAsUntouched();
   }
 
   async onSubmit() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      const missing: string[] = [];
+      if (this.form.get('email')?.invalid) missing.push('e-mail válido');
+      if (this.form.get('password')?.invalid) missing.push('senha com pelo menos 6 caracteres');
+      if (this.tab === 'signup') {
+        if (this.form.get('nome')?.invalid) missing.push('nome');
+        if (this.form.get('organizacao')?.invalid) missing.push('organização');
+      }
+      this.toastService.show({
+        title: 'Verifique os campos',
+        description: missing.length ? `Preencha: ${missing.join(', ')}.` : 'Alguns campos estão incorretos.',
+        variant: 'destructive',
+      });
+      return;
+    }
     this.loading = true;
     try {
       if (this.tab === 'signin') {

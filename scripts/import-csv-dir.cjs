@@ -748,7 +748,14 @@ async function main() {
           [uid, (email && String(email).trim()) || `user+${uid.slice(0, 8)}@imported.local`]
         );
       }
-      console.log(`>> auth.users (Docker / minimal): ${users.size} linhas`);
+      await client.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
+      await client.query(
+        `UPDATE auth.users SET encrypted_password = crypt($1::text, gen_salt('bf')) WHERE encrypted_password IS NULL`,
+        [IMPORTED_PASSWORD]
+      );
+      console.log(
+        `>> auth.users (Docker / minimal): ${users.size} linhas (login: palavra-passe ${IMPORTED_PASSWORD})`
+      );
     } else {
       console.log('>> Auth: ignorado (AUTH_MODE=none ou base sem auth)');
     }

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 
 export interface Empresa {
@@ -43,14 +44,21 @@ export class EmpresaService {
 
   constructor(
     private api: ApiService,
+    private auth: AuthService,
     private toast: ToastService,
   ) {
-    this.api.authChanged$.subscribe(() => {
+    const onAuth = () => {
       if (!this.api.getToken()) {
         this._list.next([]);
         return;
       }
       void this.load();
+    };
+    this.api.authChanged$.subscribe(onAuth);
+    this.auth.loading$.subscribe((loading) => {
+      if (!loading && this.api.getToken()) {
+        void this.load();
+      }
     });
   }
 
@@ -120,8 +128,8 @@ export class EmpresaService {
     if (!orgId) return false;
     const row: Record<string, unknown> = { ...payload, org_id: orgId };
     try {
-      if (row.id) {
-        await firstValueFrom(this.api.patchTable('empresas', String(row.id), row));
+      if (row['id']) {
+        await firstValueFrom(this.api.patchTable('empresas', String(row['id']), row));
       } else {
         await firstValueFrom(this.api.postTable('empresas', row));
       }

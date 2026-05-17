@@ -1,10 +1,32 @@
 import { HttpInterceptorFn } from '@angular/common/http';
-import { API_TOKEN_STORAGE_KEY } from '../core/api.constants';
+import { environment } from '../../environments/environment';
+import { AUTH_TOKEN_STORAGE_KEY } from '../services/auth-storage';
+
+function isApiRequest(url: string, apiUrl: string): boolean {
+  const base = apiUrl.replace(/\/$/, '');
+  if (base.startsWith('http://') || base.startsWith('https://')) {
+    return url.startsWith(base);
+  }
+  try {
+    const pathname = new URL(url).pathname.replace(/\/$/, '') || '/';
+    const prefix = base.startsWith('/') ? base : `/${base}`;
+    return pathname === prefix || pathname.startsWith(`${prefix}/`);
+  } catch {
+    return url.startsWith(base);
+  }
+}
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem(API_TOKEN_STORAGE_KEY) : null;
-  if (token && !req.headers.has('Authorization')) {
-    return next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
+  if (!isApiRequest(req.url, environment.apiUrl)) {
+    return next(req);
   }
-  return next(req);
+  const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  if (!token) {
+    return next(req);
+  }
+  return next(
+    req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` },
+    }),
+  );
 };

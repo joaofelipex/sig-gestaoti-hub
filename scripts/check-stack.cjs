@@ -1,13 +1,29 @@
 /**
- * Verifica Postgres (5433) e API (3000 /health). Uso: npm run check:stack
+ * Verifica Postgres e API (/health) usando portas em config/stack.runtime.json
+ * (gerado por npm run sync:stack).
  */
+const fs = require('fs');
+const path = require('path');
 const net = require('net');
 const http = require('http');
+const { spawnSync } = require('child_process');
 
-const PG_HOST = process.env.DB_HOST || '127.0.0.1';
-const PG_PORT = parseInt(process.env.DB_PORT || process.env.HOST_PG_PORT || '5433', 10);
-const API_HOST = '127.0.0.1';
-const API_PORT = parseInt(process.env.PORT || '3000', 10);
+const ROOT = path.join(__dirname, '..');
+const RT_PATH = path.join(ROOT, 'config', 'stack.runtime.json');
+
+function ensureRuntime() {
+  if (fs.existsSync(RT_PATH)) return;
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', 'sync-stack.cjs')], {
+    cwd: ROOT,
+    stdio: 'inherit',
+  });
+  if (r.status !== 0) process.exit(r.status || 1);
+}
+
+function loadRuntime() {
+  ensureRuntime();
+  return JSON.parse(fs.readFileSync(RT_PATH, 'utf8'));
+}
 
 function checkTcp(host, port, label) {
   return new Promise((resolve) => {
@@ -32,7 +48,8 @@ function checkHttp(port) {
       res.on('end', () => {
         try {
           const j = JSON.parse(body);
-          resolve({ ok: res.statusCode === 200 && j.ok === true, status: res.statusCode, body });
+          const dbOk = j.database === 'up' || j.database === undefined;
+          resolve({ ok: res.statusCode === 200 && j.ok === true && dbOk, status: res.statusCode, body });
         } catch {
           resolve({ ok: false, status: res.statusCode, body });
         }
@@ -48,6 +65,12 @@ function checkHttp(port) {
 }
 
 async function main() {
+  const rt = loadRuntime();
+  const PG_HOST = rt.DB_HOST || '127.0.0.1';
+  const PG_PORT = rt.DB_PORT || rt.HOST_PG_PORT || 5433;
+  const API_HOST = '127.0.0.1';
+  const API_PORT = rt.API_PORT || 3000;
+
   const pg = await checkTcp(PG_HOST, PG_PORT, 'Postgres');
   const api = await checkHttp(API_PORT);
 

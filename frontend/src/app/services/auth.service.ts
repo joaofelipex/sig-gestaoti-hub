@@ -51,6 +51,16 @@ export class AuthService {
       .subscribe();
   }
 
+  private httpErrorMessage(err: unknown, fallback: string): Error {
+    if (err instanceof HttpErrorResponse) {
+      if (err.status === 0) return new Error(fallback);
+      if (err.error && typeof err.error === 'object' && 'error' in err.error) {
+        return new Error(String((err.error as { error: string }).error));
+      }
+    }
+    return err instanceof Error ? err : new Error(fallback);
+  }
+
   signIn(email: string, password: string): Promise<void> {
     return new Promise((resolve, reject) => {
       this.api.login(email, password).subscribe({
@@ -59,13 +69,8 @@ export class AuthService {
           this._user.next({ id: res.user.id, email: res.user.email });
           resolve();
         },
-        error: (err: unknown) => {
-          if (err instanceof HttpErrorResponse && err.error && typeof err.error === 'object' && 'error' in err.error) {
-            reject(new Error(String((err.error as { error: string }).error)));
-            return;
-          }
-          reject(err instanceof Error ? err : new Error('Erro'));
-        },
+        error: (err: unknown) =>
+          reject(this.httpErrorMessage(err, 'Não foi possível contactar a API. Confirme que `npm run api:dev` está a correr.')),
       });
     });
   }
@@ -78,13 +83,8 @@ export class AuthService {
           this._user.next({ id: res.user.id, email: res.user.email });
           resolve();
         },
-        error: (err: unknown) => {
-          if (err instanceof HttpErrorResponse && err.error && typeof err.error === 'object' && 'error' in err.error) {
-            reject(new Error(String((err.error as { error: string }).error)));
-            return;
-          }
-          reject(err instanceof Error ? err : new Error('Erro'));
-        },
+        error: (err: unknown) =>
+          reject(this.httpErrorMessage(err, 'Não foi possível contactar a API. Confirme que `npm run api:dev` está a correr.')),
       });
     });
   }

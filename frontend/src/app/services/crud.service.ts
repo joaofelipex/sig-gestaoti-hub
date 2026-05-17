@@ -48,9 +48,9 @@ export class CrudService {
 
   private withEmpresa(table: string, row: Record<string, unknown>): Record<string, unknown> {
     if (!TABLES_WITH_EMPRESA.has(table)) return row;
-    if (row.empresa_id !== undefined && row.empresa_id !== '') return row;
+    if (row['empresa_id'] !== undefined && row['empresa_id'] !== '') return row;
     const sel = this.empresa.selectedId;
-    return sel ? { ...row, empresa_id: sel } : { ...row, empresa_id: row.empresa_id || null };
+    return sel ? { ...row, empresa_id: sel } : { ...row, empresa_id: row['empresa_id'] || null };
   }
 
   private errMsg(e: unknown): string {
@@ -69,14 +69,14 @@ export class CrudService {
       return false;
     }
     const row = this.withEmpresa(table, { ...payload, org_id: orgId }) as Record<string, unknown>;
-    if (row.empresa_id === '') row.empresa_id = null;
+    if (row['empresa_id'] === '') row['empresa_id'] = null;
     try {
-      if (row.id) {
-        await firstValueFrom(this.api.patchTable(table, String(row.id), row));
+      if (row['id']) {
+        await firstValueFrom(this.api.patchTable(table, String(row['id']), row));
       } else {
         await firstValueFrom(this.api.postTable(table, row));
       }
-      this.toast.show({ title: row.id ? 'Atualizado' : 'Criado', description: 'Registro salvo com sucesso' });
+      this.toast.show({ title: row['id'] ? 'Atualizado' : 'Criado', description: 'Registro salvo com sucesso' });
       await this.dashboard.loadData();
       return true;
     } catch (e: unknown) {

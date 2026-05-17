@@ -2,11 +2,14 @@
 -- Derivado de frontend/src/app/services/database.types.ts + tabela empresas / empresa_id.
 -- Auth mínima: schema auth.users para FKs de profiles / user_roles.
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE SCHEMA IF NOT EXISTS auth;
 
 CREATE TABLE auth.users (
   id uuid PRIMARY KEY,
   email text,
+  encrypted_password text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 

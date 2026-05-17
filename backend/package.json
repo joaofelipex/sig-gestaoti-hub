@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node start.js",
-    "start:local": "node dist/index.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "start": "ts-node-dev --respawn --transpile-only -r dotenv/config src/index.ts",
+    "start:prod": "npm run build && node -r dotenv/config dist/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only -r dotenv/config src/index.ts",
     "build": "tsc",
     "typeorm": "typeorm-ts-node-commonjs"
   },

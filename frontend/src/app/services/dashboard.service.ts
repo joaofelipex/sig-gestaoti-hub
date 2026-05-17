@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, combineLatest, firstValueFrom } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, timeout } from 'rxjs/operators';
 import { ApiService } from './api.service';
+import { AuthService } from './auth.service';
 import { EmpresaService } from './empresa.service';
+import { ToastService } from './toast.service';
 
 interface HasEmpresa { empresa_id?: string | null; }
 
@@ -213,13 +215,20 @@ export class DashboardService {
   }>({
     assets: [], domains: [], licenses: [], servers: [], contracts: [],
     maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
-    actions: [], accessRecords: [], risks: [], payments: [], loading: true
+    actions: [], accessRecords: [], risks: [], payments: [], loading: false
   });
+
+  private loadInFlight: Promise<void> | null = null;
 
   /** Populated in the constructor so `empresa` (a ctor parameter) exists before use. */
   public readonly data$: Observable<any>;
 
-  constructor(private api: ApiService, private empresa: EmpresaService) {
+  constructor(
+    private api: ApiService,
+    private empresa: EmpresaService,
+    private auth: AuthService,
+    private toast: ToastService,
+  ) {
     this.data$ = combineLatest([this._raw, this.empresa.selected$]).pipe(
       map(([raw, empId]) => {
         if (!empId) return raw;
@@ -234,7 +243,7 @@ export class DashboardService {
         };
       })
     );
-    this.api.authChanged$.subscribe(() => {
+    const onAuth = () => {
       if (!this.api.getToken()) {
         this._raw.next({
           assets: [], domains: [], licenses: [], servers: [], contracts: [],
@@ -244,30 +253,54 @@ export class DashboardService {
         return;
       }
       void this.loadData();
+    };
+    this.api.authChanged$.subscribe(onAuth);
+    this.auth.loading$.subscribe((loading) => {
+      if (!loading && this.api.getToken()) {
+        void this.loadData();
+      }
     });
   }
 
-  async loadData() {
+  loadData(): Promise<void> {
+    if (this.loadInFlight) {
+      return this.loadInFlight;
+    }
+    this.loadInFlight = this.fetchDashboard().finally(() => {
+      this.loadInFlight = null;
+    });
+    return this.loadInFlight;
+  }
+
+  private async fetchDashboard() {
+    if (!this.api.getToken()) {
+      this._raw.next({
+        assets: [], domains: [], licenses: [], servers: [], contracts: [],
+        maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
+        actions: [], accessRecords: [], risks: [], payments: [], loading: false
+      });
+      return;
+    }
     this._raw.next({ ...this._raw.value, loading: true });
 
     try {
-      const d = await firstValueFrom(this.api.getDashboard());
+      const d = await firstValueFrom(this.api.getDashboard().pipe(timeout(60_000)));
       const attach = <T>(rows: any[] | null | undefined, mapper: (r: any) => T): T[] =>
         (rows || []).map((r) => ({ ...mapper(r), empresa_id: r.empresa_id ?? null } as T));
-      const assets = attach(d.ativos, this.mapAsset);
-      const domains = attach(d.dominios, this.mapDomain);
-      const licenses = attach(d.licencas, this.mapLicense);
-      const servers = attach(d.servidores, this.mapServer);
-      const contracts = attach(d.contratos, this.mapContract);
-      const maintenance = attach(d.manutencoes, this.mapMaintenance);
-      const movements = attach(d.movimentacoes, this.mapMovement);
-      const inventory = attach(d.inventario, this.mapInventory);
-      const alerts = attach(d.alertas, this.mapAlert);
-      const budgets = attach(d.orcamentos, this.mapBudget);
-      const actions = attach(d.acoes_economista, this.mapAction);
-      const accessRecords = attach(d.registros_acesso, this.mapAccessRecord);
-      const risks = attach(d.riscos, this.mapRisk);
-      const payments = attach(d.pagamentos, this.mapPayment);
+      const assets = attach(d['ativos'], this.mapAsset);
+      const domains = attach(d['dominios'], this.mapDomain);
+      const licenses = attach(d['licencas'], this.mapLicense);
+      const servers = attach(d['servidores'], this.mapServer);
+      const contracts = attach(d['contratos'], this.mapContract);
+      const maintenance = attach(d['manutencoes'], this.mapMaintenance);
+      const movements = attach(d['movimentacoes'], this.mapMovement);
+      const inventory = attach(d['inventario'], this.mapInventory);
+      const alerts = attach(d['alertas'], this.mapAlert);
+      const budgets = attach(d['orcamentos'], this.mapBudget);
+      const actions = attach(d['acoes_economista'], this.mapAction);
+      const accessRecords = attach(d['registros_acesso'], this.mapAccessRecord);
+      const risks = attach(d['riscos'], this.mapRisk);
+      const payments = attach(d['pagamentos'], this.mapPayment);
 
       this._raw.next({
         assets,
@@ -289,6 +322,18 @@ export class DashboardService {
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       this._raw.next({ ...this._raw.value, loading: false });
+      const msg =
+        error && typeof error === 'object' && 'message' in error
+          ? String((error as { message: string }).message)
+          : 'Erro ao carregar dados';
+      this.toast.show({
+        title: 'Não foi possível carregar os dados',
+        description:
+          msg.includes('Timeout') || msg.includes('timeout')
+            ? 'A API não respondeu a tempo. Confirme `npm run api:dev` na raiz do projeto.'
+            : 'Confirme que a API está a correr (`npm run dev:stack`) e que entrou com sessão válida.',
+        variant: 'destructive',
+      });
     }
   }
 
