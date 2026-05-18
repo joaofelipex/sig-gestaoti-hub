@@ -35,6 +35,23 @@
   }
 }
 
+/* Campos dentro de modais (markup legado label.text-sm > input) */
+.app-modal-body label.text-sm > input:not([type="checkbox"]):not([type="hidden"]),
+.app-modal-body label.text-sm > select,
+.app-modal-body label.text-sm > textarea,
+.app-modal-body .sig-modal-form .app-field {
+  @apply w-full rounded-md border bg-white px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-2;
+  border-color: var(--sig-table-border);
+  color: var(--sig-text);
+}
+
+.app-modal-body label.text-sm > input:focus,
+.app-modal-body label.text-sm > select:focus,
+.app-modal-body label.text-sm > textarea:focus {
+  border-color: rgb(var(--wl-background-color));
+  --tw-ring-color: rgba(var(--wl-background-color), 0.25);
+}
+
 .auth-page {
   min-height: 100vh;
   display: flex;

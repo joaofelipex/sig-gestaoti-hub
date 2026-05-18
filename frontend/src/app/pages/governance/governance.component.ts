@@ -23,7 +23,7 @@ import { SigIcons } from '../../core/sig-icons';
         </div>
       </header>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="sig-kpi-grid">
         <app-kpi-card label="IT Health Score" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor"></app-kpi-card>
         <app-kpi-card label="Acessos Ativos" [value]="activeAccess" [icon]="icons.access" color="#10b981"></app-kpi-card>
         <app-kpi-card label="Riscos Críticos" [value]="criticalRisks" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
@@ -51,32 +51,34 @@ import { SigIcons } from '../../core/sig-icons';
           [filters]="[{key:'nivel',label:'Nível',options:[{value:'Administrador',label:'Admin'},{value:'Escrita',label:'Escrita'},{value:'Leitura',label:'Leitura'}]}]"
           [filterValues]="filterA" (searchChange)="searchA=$event" (filterChange)="filterA[$event.key]=$event.value"
           (newClick)="openNewAccess()" (exportClick)="exportAccess()" (importFile)="importAccess($event)"></app-data-toolbar>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usuário</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Recurso</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nível</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Último Acesso</th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+        <div class="sig-list-card">
+          <div class="sig-table-wrap">
+          <table class="sig-table">
+            <thead><tr>
+              <th>Usuário</th>
+              <th>Recurso</th>
+              <th>Tipo</th>
+              <th>Nível</th>
+              <th>Status</th>
+              <th>Último Acesso</th>
+              <th class="text-end">Ações</th>
             </tr></thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
               <tr *ngFor="let r of filteredAccess">
-                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ r.user }}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ r.resource }}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ r.resourceType }}</td>
-                <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full font-semibold" [class]="accessClass(r.accessLevel)">{{ r.accessLevel }}</span></td>
-                <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full" [class]="r.ativo ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">{{ r.ativo ? 'Ativo' : 'Inativo' }}</span></td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ r.lastAccess | date:'dd/MM/yyyy' }}</td>
-                <td class="px-4 py-3 text-right text-sm">
-                  <button (click)="openEditAccess(r)" class="text-blue-600 hover:underline mr-3">Editar</button>
-                  <button (click)="askDelete('access', r.id)" class="text-red-600 hover:underline">Excluir</button>
+                <td class="fw-medium">{{ r.user }}</td>
+                <td>{{ r.resource }}</td>
+                <td>{{ r.resourceType }}</td>
+                <td><span [class]="accessClass(r.accessLevel)">{{ r.accessLevel }}</span></td>
+                <td><span [class]="r.ativo ? 'sig-badge sig-badge--success' : 'sig-badge sig-badge--danger'">{{ r.ativo ? 'Ativo' : 'Inativo' }}</span></td>
+                <td>{{ r.lastAccess | date:'dd/MM/yyyy' }}</td>
+                <td class="text-end">
+                  <button type="button" (click)="openEditAccess(r)" class="sig-link-action me-3">Editar</button>
+                  <button type="button" (click)="askDelete('access', r.id)" class="sig-link-action sig-link-action--danger">Excluir</button>
                 </td>
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </ng-container>
 
@@ -85,28 +87,30 @@ import { SigIcons } from '../../core/sig-icons';
           [filters]="[{key:'sev',label:'Severidade',options:[{value:'Crítico',label:'Crítico'},{value:'Alto',label:'Alto'},{value:'Médio',label:'Médio'},{value:'Baixo',label:'Baixo'}]}]"
           [filterValues]="filterR" (searchChange)="searchR=$event" (filterChange)="filterR[$event.key]=$event.value"
           (newClick)="openNewRisk()" (exportClick)="exportRisks()" (importFile)="importRisks($event)"></app-data-toolbar>
-        <div class="bg-white rounded-lg shadow overflow-hidden">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50"><tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Severidade</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsável</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mitigação</th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+        <div class="sig-list-card">
+          <div class="sig-table-wrap">
+          <table class="sig-table">
+            <thead><tr>
+              <th>Título</th>
+              <th>Severidade</th>
+              <th>Responsável</th>
+              <th>Mitigação</th>
+              <th class="text-end">Ações</th>
             </tr></thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
               <tr *ngFor="let r of filteredRisks">
-                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ r.title }}</td>
-                <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full font-semibold" [class]="sevClass(r.severity)">{{ r.severity }}</span></td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ r.owner || '—' }}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ r.mitigation || '—' }}</td>
-                <td class="px-4 py-3 text-right text-sm">
-                  <button (click)="openEditRisk(r)" class="text-blue-600 hover:underline mr-3">Editar</button>
-                  <button (click)="askDelete('risk', r.id)" class="text-red-600 hover:underline">Excluir</button>
+                <td class="fw-medium">{{ r.title }}</td>
+                <td><span [class]="sevClass(r.severity)">{{ r.severity }}</span></td>
+                <td>{{ r.owner || '—' }}</td>
+                <td>{{ r.mitigation || '—' }}</td>
+                <td class="text-end">
+                  <button type="button" (click)="openEditRisk(r)" class="sig-link-action me-3">Editar</button>
+                  <button type="button" (click)="askDelete('risk', r.id)" class="sig-link-action sig-link-action--danger">Excluir</button>
                 </td>
               </tr>
             </tbody>
           </table>
+          </div>
         </div>
       </ng-container>
     </section>

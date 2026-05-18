@@ -7,6 +7,7 @@ import { CrudService } from '../../services/crud.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { SigBadge } from '../../utils/status-badge';
 
 @Component({
   selector: 'app-assets',
@@ -46,7 +47,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
               <td class="fw-medium">{{ a.type }}</td>
               <td>{{ a.brand }} {{ a.model }}</td>
               <td>{{ a.serialNumber || '—' }}</td>
-              <td><span class="px-2 py-1 text-xs rounded-full font-semibold" [class]="statusClass(a.status)">{{ a.status }}</span></td>
+              <td><span [class]="statusClass(a.status)">{{ a.status }}</span></td>
               <td>{{ a.assignedTo || 'Não atribuído' }}</td>
               <td>R$ {{ a.purchaseValue.toLocaleString('pt-BR') }}</td>
               <td class="text-end">
@@ -106,7 +107,9 @@ export class AssetsComponent implements OnInit, OnDestroy {
       (!this.filterValues['type'] || a.type === this.filterValues['type'])
     );
   }
-  statusClass(s: string) { return s === 'Em uso' ? 'bg-green-100 text-green-800' : s === 'Estoque' ? 'bg-blue-100 text-blue-800' : s === 'Manutenção' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'; }
+  statusClass(s: string) {
+    return s === 'Em uso' ? SigBadge.success : s === 'Estoque' ? SigBadge.info : s === 'Manutenção' ? SigBadge.warning : SigBadge.neutral;
+  }
   openNew() { this.form = { tipo: 'Notebook', status: 'ativo', valor_aquisicao: 0, vida_util_meses: 60 }; this.modalOpen = true; }
   openEdit(a: Asset) {
     const statusMap: any = { 'Em uso':'ativo','Estoque':'estoque','Manutenção':'manutencao','Aposentado':'aposentado' };

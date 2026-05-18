@@ -23,7 +23,7 @@ import { SigIcons } from '../../core/sig-icons';
         </div>
       </header>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="sig-kpi-grid">
         <app-kpi-card label="Pendente" [value]="brl(totals.pendente)" [icon]="icons.pending" color="#f59e0b"></app-kpi-card>
         <app-kpi-card label="Atrasado" [value]="brl(totals.atrasado)" [icon]="icons.overdue" color="#ef4444"></app-kpi-card>
         <app-kpi-card label="Pago no mês" [value]="brl(totals.pago)" [icon]="icons.success" color="#10b981"></app-kpi-card>
@@ -35,35 +35,32 @@ import { SigIcons } from '../../core/sig-icons';
         [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
         (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"></app-data-toolbar>
 
-      <div *ngIf="loading" class="text-center py-8 text-gray-500">Carregando...</div>
-      <div *ngIf="!loading" class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50"><tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Competência</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vencimento</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+      <div *ngIf="!loading" class="sig-list-card">
+        <div class="sig-table-wrap">
+        <table class="sig-table">
+          <thead><tr>
+            <th>Nome</th><th>Categoria</th><th>Competência</th><th>Vencimento</th><th>Valor</th><th>Status</th>
+            <th class="text-end">Ações</th>
           </tr></thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let p of filtered" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ p.nome }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ p.categoria }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ p.competencia | date:'MM/yyyy' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ p.vencimento ? (p.vencimento | date:'dd/MM/yyyy') : '—' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-700 font-medium">{{ brl(p.valor) }}</td>
-              <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full font-semibold" [class]="statusClass(p.status)">{{ p.status }}</span></td>
-              <td class="px-4 py-3 text-right text-sm">
-                <button *ngIf="p.status !== 'pago'" (click)="markPaid(p)" class="text-green-600 hover:underline mr-3">Pagar</button>
-                <button (click)="openEdit(p)" class="text-blue-600 hover:underline mr-3">Editar</button>
-                <button (click)="askDelete(p)" class="text-red-600 hover:underline">Excluir</button>
+          <tbody>
+            <tr *ngFor="let p of filtered">
+              <td class="fw-medium">{{ p.nome }}</td>
+              <td>{{ p.categoria }}</td>
+              <td>{{ p.competencia | date:'MM/yyyy' }}</td>
+              <td>{{ p.vencimento ? (p.vencimento | date:'dd/MM/yyyy') : '—' }}</td>
+              <td class="fw-medium">{{ brl(p.valor) }}</td>
+              <td><span [class]="statusClass(p.status)">{{ p.status }}</span></td>
+              <td class="text-end">
+                <button *ngIf="p.status !== 'pago'" type="button" (click)="markPaid(p)" class="sig-link-action sig-link-action--success me-3">Pagar</button>
+                <button type="button" (click)="openEdit(p)" class="sig-link-action me-3">Editar</button>
+                <button type="button" (click)="askDelete(p)" class="sig-link-action sig-link-action--danger">Excluir</button>
               </td>
             </tr>
-            <tr *ngIf="!filtered.length"><td colspan="7" class="text-center py-8 text-sm text-gray-400">Nenhum pagamento</td></tr>
+            <tr *ngIf="!filtered.length"><td colspan="7" class="sig-table-empty">Nenhum pagamento</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </section>
 

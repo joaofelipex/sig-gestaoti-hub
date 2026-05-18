@@ -22,7 +22,7 @@ import { SigIcons } from '../../core/sig-icons';
         </div>
         <div class="d-flex flex-wrap gap-2">
           <button type="button" (click)="generate()" [disabled]="generating" class="btn btn-primary btn-sm">
-            <i class="fas fa-arrows-rotate" [class.fa-spin]="generating" aria-hidden="true"></i>
+            <i class="fas fa-sync-alt" [class.fa-spin]="generating" aria-hidden="true"></i>
             {{ generating ? 'Atualizando…' : 'Atualizar alertas' }}
           </button>
           <button type="button" (click)="markAllRead()" class="btn btn-outline-secondary btn-sm">
@@ -31,7 +31,7 @@ import { SigIcons } from '../../core/sig-icons';
         </div>
       </header>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="sig-kpi-grid">
         <app-kpi-card label="Não lidos" [value]="unreadCount" [icon]="icons.alert" color="#3b82f6"></app-kpi-card>
         <app-kpi-card label="Críticos" [value]="counts.critico" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
         <app-kpi-card label="Avisos" [value]="counts.aviso" [icon]="icons.warning" color="#f59e0b"></app-kpi-card>

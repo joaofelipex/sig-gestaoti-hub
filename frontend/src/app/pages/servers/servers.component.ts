@@ -7,6 +7,7 @@ import { CrudService } from '../../services/crud.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { SigBadge } from '../../utils/status-badge';
 
 @Component({
   selector: 'app-servers',
@@ -24,34 +25,31 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         [filters]="[{key:'status',label:'Status',options:[{value:'Online',label:'Online'},{value:'Offline',label:'Offline'},{value:'Manutenção',label:'Manutenção'}]}]"
         [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
         (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"></app-data-toolbar>
-      <div *ngIf="loading" class="text-center py-8 text-gray-500">Carregando...</div>
-      <div *ngIf="!loading" class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50"><tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Provedor</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Uptime</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Custo Mensal</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+      <div *ngIf="!loading" class="sig-list-card">
+        <div class="sig-table-wrap">
+        <table class="sig-table">
+          <thead><tr>
+            <th>Nome</th><th>Provedor</th><th>Tipo</th><th>Status</th><th>Uptime</th><th>Custo Mensal</th>
+            <th class="text-end">Ações</th>
           </tr></thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let s of filtered" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ s.name }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ s.provider }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ s.type }}</td>
-              <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full font-semibold" [class]="statusClass(s.status)">{{ s.status }}</span></td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ s.uptime }}%</td>
-              <td class="px-4 py-3 text-sm text-gray-500">R$ {{ s.monthlyCost.toLocaleString('pt-BR') }}</td>
-              <td class="px-4 py-3 text-right text-sm">
-                <button (click)="openEdit(s)" class="text-blue-600 hover:underline mr-3">Editar</button>
-                <button (click)="askDelete(s)" class="text-red-600 hover:underline">Excluir</button>
+          <tbody>
+            <tr *ngFor="let s of filtered">
+              <td class="fw-medium">{{ s.name }}</td>
+              <td>{{ s.provider }}</td>
+              <td>{{ s.type }}</td>
+              <td><span [class]="statusClass(s.status)">{{ s.status }}</span></td>
+              <td>{{ s.uptime }}%</td>
+              <td>R$ {{ s.monthlyCost.toLocaleString('pt-BR') }}</td>
+              <td class="text-end">
+                <button type="button" (click)="openEdit(s)" class="sig-link-action me-3">Editar</button>
+                <button type="button" (click)="askDelete(s)" class="sig-link-action sig-link-action--danger">Excluir</button>
               </td>
             </tr>
-            <tr *ngIf="!filtered.length"><td colspan="7" class="text-center py-8 text-sm text-gray-400">Nenhum servidor</td></tr>
+            <tr *ngIf="!filtered.length"><td colspan="7" class="sig-table-empty">Nenhum servidor</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </section>
 
@@ -92,7 +90,9 @@ export class ServersComponent implements OnInit, OnDestroy {
       (!this.filterValues['status'] || s.status === this.filterValues['status'])
     );
   }
-  statusClass(s: string) { return s === 'Online' ? 'bg-green-100 text-green-800' : s === 'Offline' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'; }
+  statusClass(s: string) {
+    return s === 'Online' ? SigBadge.success : s === 'Offline' ? SigBadge.danger : SigBadge.warning;
+  }
   openNew() { this.form = { status: 'Online', ambiente: 'producao', uptime_pct: 99.9, custo_mensal: 0 }; this.modalOpen = true; }
   openEdit(s: Server) { this.form = { id: s.id, nome: s.name, provedor: s.provider, tipo: s.type, status: s.status, ip_publico: s.ip, regiao: s.region, sistema_operacional: s.os, cpu: s.cpu, ram: s.ram, armazenamento: s.storage, uptime_pct: s.uptime, custo_mensal: s.monthlyCost, ssl_vencimento: s.sslExpiration, contrato_fim: s.contractEnd, finalidade: s.purpose }; this.modalOpen = true; }
   async save() { if (!this.form.nome) return; this.saving = true; const o = { ...this.form }; ['ssl_vencimento','contrato_fim'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('servidores', o); this.saving = false; if (ok) this.modalOpen = false; }

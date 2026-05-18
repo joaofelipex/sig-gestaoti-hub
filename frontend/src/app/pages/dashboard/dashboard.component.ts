@@ -13,14 +13,14 @@ import { EmpresaService } from '../../services/empresa.service';
   standalone: true,
   imports: [CommonModule, KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComponent],
   template: `
-    <section class="sig-page p-3 p-md-4">
+    <section class="sig-page">
       <div class="app-page-header">
         <div>
           <h1 class="app-page-title">Dashboard</h1>
           <p class="app-page-sub">Bem-vindo, <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
         </div>
         <button type="button" (click)="logout()" class="btn btn-outline-danger btn-sm">
-          <i class="fas fa-right-from-bracket me-1" aria-hidden="true"></i> Sair
+          <i class="fas fa-sign-out-alt me-1" aria-hidden="true"></i> Sair
         </button>
       </div>
 
@@ -29,24 +29,24 @@ import { EmpresaService } from '../../services/empresa.service';
       <ng-container *ngIf="!loading">
         <div
           *ngIf="isEmpty"
-          class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+          class="sig-notice-panel"
           role="status"
         >
-          <p class="mb-1 font-semibold">
+          <p class="sig-notice-panel__title">
             <i class="fas fa-database me-2" aria-hidden="true"></i>
             Sem registos para a sua organização
           </p>
-          <p class="mb-2 text-slate-600" *ngIf="orgNome">
+          <p class="mb-2" *ngIf="orgNome">
             Organização da sua conta: <strong>{{ orgNome }}</strong>
             <span *ngIf="orgAtivos !== null"> · {{ orgAtivos }} ativo(s) nesta organização</span>.
           </p>
-          <p class="mb-2 text-slate-600" *ngIf="wrongOrgHint">
+          <p class="mb-2" *ngIf="wrongOrgHint">
             {{ wrongOrgHint }}
           </p>
-          <p class="mb-2 text-slate-600" *ngIf="!wrongOrgHint && postgresLabel">
+          <p class="mb-2" *ngIf="!wrongOrgHint && postgresLabel">
             PostgreSQL · <strong>{{ postgresLabel }}</strong>
           </p>
-          <ul class="mb-0 ps-4 space-y-1 text-slate-600">
+          <ul>
             <li *ngIf="empresaFilterActive">No header, escolha <strong>Todas as empresas</strong> — o filtro pode ocultar registos.</li>
             <li *ngIf="wrongOrgHint">{{ wrongOrgHint }}</li>
             <li *ngIf="!wrongOrgHint && orgAtivos === 0">Crie registos no menu ou importe CSV nas listagens.</li>
@@ -54,7 +54,7 @@ import { EmpresaService } from '../../services/empresa.service';
           </ul>
         </div>
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 md:gap-4">
+        <div class="sig-kpi-grid sig-kpi-grid--6">
           <app-kpi-card label="Health Score" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" hint="Saúde geral"></app-kpi-card>
           <app-kpi-card label="Ativos em uso" [value]="assetsInUse" [icon]="icons.assets" color="#3b82f6"></app-kpi-card>
           <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" [icon]="icons.cost" color="#10b981"></app-kpi-card>
@@ -65,22 +65,22 @@ import { EmpresaService } from '../../services/empresa.service';
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div class="app-card lg:col-span-2">
-            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Custos por categoria (mensal)</h3>
+            <h3 class="sig-chart-title">Custos por categoria (mensal)</h3>
             <app-bar-chart [data]="costByCategory" prefix="R$ "></app-bar-chart>
           </div>
           <div class="app-card">
-            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Status dos ativos</h3>
+            <h3 class="sig-chart-title">Status dos ativos</h3>
             <app-donut-chart [data]="assetStatus"></app-donut-chart>
           </div>
         </div>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div class="app-card">
-            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Pagamentos últimos 6 meses</h3>
+            <h3 class="sig-chart-title">Pagamentos últimos 6 meses</h3>
             <app-line-chart [data]="paymentTrend"></app-line-chart>
           </div>
           <div class="app-card">
-            <h3 class="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">Domínios por status</h3>
+            <h3 class="sig-chart-title">Domínios por status</h3>
             <app-donut-chart [data]="domainStatus"></app-donut-chart>
           </div>
         </div>

@@ -38,31 +38,24 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
       <div *ngIf="!loading" class="sig-list-card">
         <div class="sig-table-wrap">
         <table class="sig-table">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Domínio</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Registrador</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vencimento</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SSL</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Custo</th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let d of filtered" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ d.url }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ d.registrar }}</td>
-              <td class="px-4 py-3"><span class="px-2 py-1 text-xs font-semibold rounded-full" [class]="statusClass(d.status)">{{ d.status }}</span></td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ d.expirationDate | date:'dd/MM/yyyy' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ d.sslExpiration ? (d.sslExpiration | date:'dd/MM/yyyy') : '—' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">R$ {{ d.renewalCost.toLocaleString('pt-BR') }}</td>
-              <td class="px-4 py-3 text-right text-sm">
+          <thead><tr>
+              <th>Domínio</th><th>Registrador</th><th>Status</th><th>Vencimento</th><th>SSL</th><th>Custo</th>
+              <th class="text-end">Ações</th>
+            </tr></thead>
+          <tbody>
+            <tr *ngFor="let d of filtered">
+              <td class="fw-medium">{{ d.url }}</td>
+              <td>{{ d.registrar }}</td>
+              <td><span [class]="statusClass(d.status)">{{ d.status }}</span></td>
+              <td>{{ d.expirationDate | date:'dd/MM/yyyy' }}</td>
+              <td>{{ d.sslExpiration ? (d.sslExpiration | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>R$ {{ d.renewalCost.toLocaleString('pt-BR') }}</td>
+              <td class="text-end">
                 <button type="button" (click)="openEdit(d)" class="sig-link-action me-3">Editar</button>
                 <button type="button" (click)="askDelete(d)" class="sig-link-action sig-link-action--danger">Excluir</button>
               </td>
             </tr>
-            <tr *ngIf="!filtered.length"><td colspan="7" class="text-center py-8 text-sm text-gray-400">Nenhum domínio encontrado</td></tr>
+            <tr *ngIf="!filtered.length"><td colspan="7" class="sig-table-empty">Nenhum domínio encontrado</td></tr>
           </tbody>
         </table>
         </div>

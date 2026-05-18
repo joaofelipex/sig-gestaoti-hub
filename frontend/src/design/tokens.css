@@ -40,6 +40,9 @@
   --br-lg: 12px;
   --br-pill: 32px;
   --br-login-card: 28px;
+  --wl-radius: var(--br-lg);
+  --wl-primary-color: rgb(var(--wl-background-color));
+  --wl-primary-hover: rgba(var(--wl-background-color), 0.88);
 
   /* Layout */
   --header-height: 56px;

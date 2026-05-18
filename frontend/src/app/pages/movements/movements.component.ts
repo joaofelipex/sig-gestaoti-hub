@@ -24,34 +24,36 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         [filters]="[{key:'tipo',label:'Tipo',options:tipoOpts}]"
         [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
         (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"></app-data-toolbar>
-      <div *ngIf="loading" class="text-center py-8 text-gray-500">Carregando...</div>
-      <div *ngIf="!loading" class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50"><tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ativo</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">De</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Para</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Responsável</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+      <div *ngIf="!loading" class="sig-list-card">
+        <div class="sig-table-wrap">
+        <table class="sig-table">
+          <thead><tr>
+            <th>Ativo</th>
+            <th>Tipo</th>
+            <th>Data</th>
+            <th>De</th>
+            <th>Para</th>
+            <th>Responsável</th>
+            <th class="text-end">Ações</th>
           </tr></thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let m of filtered" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ m.ativo_label || assetLabel(m.ativo_id) }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ m.tipo }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ m.data | date:'dd/MM/yyyy' }}</td>
-              <td class="px-4 py-3 text-xs text-gray-500"><div *ngIf="m.from_user">{{ m.from_user }}</div><div *ngIf="m.from_department" class="text-gray-400">{{ m.from_department }}</div></td>
-              <td class="px-4 py-3 text-xs text-gray-500"><div *ngIf="m.to_user">{{ m.to_user }}</div><div *ngIf="m.to_department" class="text-gray-400">{{ m.to_department }}</div><div *ngIf="m.recipient">{{ m.recipient }}</div></td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ m.responsible || '—' }}</td>
-              <td class="px-4 py-3 text-right text-sm">
-                <button (click)="openEdit(m)" class="text-blue-600 hover:underline mr-3">Editar</button>
-                <button (click)="askDelete(m)" class="text-red-600 hover:underline">Excluir</button>
+          <tbody>
+            <tr *ngFor="let m of filtered">
+              <td class="fw-medium">{{ m.ativo_label || assetLabel(m.ativo_id) }}</td>
+              <td>{{ m.tipo }}</td>
+              <td>{{ m.data | date:'dd/MM/yyyy' }}</td>
+              <td class="small text-muted"><div *ngIf="m.from_user">{{ m.from_user }}</div><div *ngIf="m.from_department" class="text-gray-400">{{ m.from_department }}</div></td>
+              <td class="small text-muted"><div *ngIf="m.to_user">{{ m.to_user }}</div><div *ngIf="m.to_department" class="text-gray-400">{{ m.to_department }}</div><div *ngIf="m.recipient">{{ m.recipient }}</div></td>
+              <td>{{ m.responsible || '—' }}</td>
+              <td class="text-end">
+                <button type="button" (click)="openEdit(m)" class="sig-link-action me-3">Editar</button>
+                <button type="button" (click)="askDelete(m)" class="sig-link-action sig-link-action--danger">Excluir</button>
               </td>
             </tr>
-            <tr *ngIf="!filtered.length"><td colspan="7" class="text-center py-8 text-sm text-gray-400">Nenhuma movimentação</td></tr>
+            <tr *ngIf="!filtered.length"><td colspan="7" class="sig-table-empty">Nenhuma movimentação</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </section>
 

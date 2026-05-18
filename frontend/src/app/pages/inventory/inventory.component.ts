@@ -24,36 +24,32 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         [filters]="[{key:'categoria',label:'Categoria',options:catOpts},{key:'lowStock',label:'Estoque',options:[{value:'low',label:'Abaixo do mínimo'}]}]"
         [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
         (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"></app-data-toolbar>
-      <div *ngIf="loading" class="text-center py-8 text-gray-500">Carregando...</div>
-      <div *ngIf="!loading" class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50"><tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Quantidade</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mínimo</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Custo</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Local</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fornecedor</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+      <div *ngIf="!loading" class="sig-list-card">
+        <div class="sig-table-wrap">
+        <table class="sig-table">
+          <thead><tr>
+            <th>Nome</th><th>Categoria</th><th>Quantidade</th><th>Mínimo</th><th>Custo</th><th>Local</th><th>Fornecedor</th>
+            <th class="text-end">Ações</th>
           </tr></thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let i of filtered" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ i.nome }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ i.categoria }}</td>
-              <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full font-semibold" [class]="qtyClass(i)">{{ i.quantity }} {{ i.unit }}</span></td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ i.min_quantity }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">R$ {{ i.unit_cost.toLocaleString('pt-BR') }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ i.location || '—' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ i.supplier || '—' }}</td>
-              <td class="px-4 py-3 text-right text-sm">
-                <button (click)="openEdit(i)" class="text-blue-600 hover:underline mr-3">Editar</button>
-                <button (click)="askDelete(i)" class="text-red-600 hover:underline">Excluir</button>
+          <tbody>
+            <tr *ngFor="let i of filtered">
+              <td class="fw-medium">{{ i.nome }}</td>
+              <td>{{ i.categoria }}</td>
+              <td><span [class]="qtyClass(i)">{{ i.quantity }} {{ i.unit }}</span></td>
+              <td>{{ i.min_quantity }}</td>
+              <td>R$ {{ i.unit_cost.toLocaleString('pt-BR') }}</td>
+              <td>{{ i.location || '—' }}</td>
+              <td>{{ i.supplier || '—' }}</td>
+              <td class="text-end">
+                <button type="button" (click)="openEdit(i)" class="sig-link-action me-3">Editar</button>
+                <button type="button" (click)="askDelete(i)" class="sig-link-action sig-link-action--danger">Excluir</button>
               </td>
             </tr>
-            <tr *ngIf="!filtered.length"><td colspan="8" class="text-center py-8 text-sm text-gray-400">Nenhum item</td></tr>
+            <tr *ngIf="!filtered.length"><td colspan="8" class="sig-table-empty">Nenhum item</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
     </section>
 
