@@ -150,7 +150,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       },
       error: () => {},
     });
-    void this.dashboardService.loadData();
+    void this.dashboardService.loadData(true);
     this.sub = this.dashboardService.data$.subscribe((d) => {
       this.data = d;
       this.loading = d.loading;

@@ -57,7 +57,7 @@ export class ApiStatusBannerComponent implements OnInit, OnDestroy {
           this.apiOk = !!h?.ok;
           this.hasToken = !!this.api.getToken();
           if (this.apiOk && !wasOk && this.hasToken) {
-            void this.dashboard.loadData();
+            void this.dashboard.loadData(true);
           }
         },
         error: () => {
@@ -68,7 +68,7 @@ export class ApiStatusBannerComponent implements OnInit, OnDestroy {
     this.api.authChanged$.subscribe(() => {
       this.hasToken = !!this.api.getToken();
       if (this.hasToken && this.apiOk) {
-        void this.dashboard.loadData();
+        void this.dashboard.loadData(true);
       }
     });
   }

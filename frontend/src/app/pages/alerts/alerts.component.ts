@@ -108,7 +108,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
     const ids = this.alerts.filter((x) => !x.lida).map((x) => x.id);
     if (!ids.length) return;
     await Promise.all(ids.map((id) => firstValueFrom(this.api.patchTable('alertas', id, { lida: true }))));
-    this.dashboard.loadData();
+    void this.dashboard.loadData(true);
   }
   async remove(a: Alert) { await this.crud.remove('alertas', a.id); }
 

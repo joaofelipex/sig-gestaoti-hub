@@ -27,6 +27,27 @@ const DASHBOARD_TABLES = [
   'pagamentos',
 ] as const;
 
+type DashboardTable = (typeof DASHBOARD_TABLES)[number];
+
+/** Colunas usadas pelo frontend — evita transferir jsonb pesados no carregamento inicial. */
+const DASHBOARD_SELECT: Partial<Record<DashboardTable, string>> = {
+  ativos: `id, org_id, empresa_id, tipo, status, marca, modelo, numero_serie,
+    data_aquisicao, warranty_end, department_nome, assigned_to, valor_aquisicao`,
+};
+
+function parseDashboardTables(raw: unknown): DashboardTable[] {
+  if (typeof raw !== 'string' || !raw.trim()) {
+    return [...DASHBOARD_TABLES];
+  }
+  const wanted = new Set(
+    raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+  );
+  return DASHBOARD_TABLES.filter((t) => wanted.has(t));
+}
+
 r.use(requireAuth);
 
 r.get('/dashboard', async (req: AuthedRequest, res) => {
@@ -38,15 +59,21 @@ r.get('/dashboard', async (req: AuthedRequest, res) => {
   }
   const orgId = prof.org_id;
   const scope = getDataScope();
+  const tables = parseDashboardTables(req.query.tables);
   try {
-    const out: Record<string, unknown[]> = {};
     const where = sqlOrgReadScope('$1');
-    for (const t of DASHBOARD_TABLES) {
-      const q = isOrgScoped()
-        ? await pool.query(`SELECT * FROM public.${t} WHERE ${where}`, [orgId])
-        : await pool.query(`SELECT * FROM public.${t} WHERE ${where}`);
-      out[t] = q.rows;
-    }
+    const params = isOrgScoped() ? [orgId] : [];
+    const rows = await Promise.all(
+      tables.map(async (t) => {
+        const cols = DASHBOARD_SELECT[t];
+        const sql = cols
+          ? `SELECT ${cols} FROM public.${t} WHERE ${where}`
+          : `SELECT * FROM public.${t} WHERE ${where}`;
+        const q = await pool.query(sql, params);
+        return [t, q.rows] as const;
+      }),
+    );
+    const out = Object.fromEntries(rows) as Record<string, unknown[]>;
     res.setHeader('X-Data-Scope', scope);
     res.json(out);
   } catch (e) {

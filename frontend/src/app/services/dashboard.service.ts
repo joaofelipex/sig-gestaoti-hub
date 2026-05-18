@@ -220,6 +220,31 @@ export class DashboardService {
   });
 
   private loadInFlight: Promise<void> | null = null;
+  private lastFetchAt = 0;
+  /** Só true após as duas fases (prioridade + background) concluírem com sucesso. */
+  private fetchComplete = false;
+  private readonly cacheMs = 30_000;
+
+  /** Tabelas necessárias para o painel principal (carregadas primeiro). */
+  private static readonly PRIORITY_TABLES = [
+    'ativos',
+    'dominios',
+    'licencas',
+    'servidores',
+    'alertas',
+    'pagamentos',
+  ] as const;
+
+  private static readonly BACKGROUND_TABLES = [
+    'contratos',
+    'manutencoes',
+    'movimentacoes',
+    'inventario',
+    'orcamentos',
+    'acoes_economista',
+    'registros_acesso',
+    'riscos',
+  ] as const;
 
   /** Populated in the constructor so `empresa` (a ctor parameter) exists before use. */
   public readonly data$: Observable<any>;
@@ -277,19 +302,24 @@ export class DashboardService {
           maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
           actions: [], accessRecords: [], risks: [], payments: [], loading: false
         });
+        this.lastFetchAt = 0;
+        this.fetchComplete = false;
         return;
       }
-      void this.loadData();
+      void this.loadData(true);
     };
     this.api.authChanged$.subscribe(onAuth);
     this.auth.loading$.subscribe((loading) => {
       if (!loading && this.api.getToken()) {
-        void this.loadData();
+        void this.loadData(true);
       }
     });
   }
 
-  loadData(): Promise<void> {
+  loadData(force = false): Promise<void> {
+    if (!force && this.loadInFlight === null && this.isCacheFresh()) {
+      return Promise.resolve();
+    }
     if (this.loadInFlight) {
       return this.loadInFlight;
     }
@@ -299,6 +329,51 @@ export class DashboardService {
     return this.loadInFlight;
   }
 
+  private isCacheFresh(): boolean {
+    return (
+      this.fetchComplete &&
+      this.lastFetchAt > 0 &&
+      Date.now() - this.lastFetchAt < this.cacheMs &&
+      this.hasCachedRows()
+    );
+  }
+
+  private hasCachedRows(): boolean {
+    const v = this._raw.value;
+    return (
+      v.assets.length > 0 ||
+      v.domains.length > 0 ||
+      v.licenses.length > 0 ||
+      v.servers.length > 0 ||
+      v.payments.length > 0 ||
+      v.budgets.length > 0 ||
+      v.actions.length > 0
+    );
+  }
+
+  private mapDashboardPayload(d: Record<string, unknown[]>) {
+    const attach = <T>(rows: any[] | null | undefined, mapper: (r: any) => T): T[] =>
+      (rows || []).map((r) => ({ ...mapper(r), empresa_id: r.empresa_id ?? null } as T));
+    const out: Record<string, unknown> = {};
+    if (d['ativos'] !== undefined) out.assets = attach(d['ativos'], this.mapAsset);
+    if (d['dominios'] !== undefined) out.domains = attach(d['dominios'], this.mapDomain);
+    if (d['licencas'] !== undefined) out.licenses = attach(d['licencas'], this.mapLicense);
+    if (d['servidores'] !== undefined) out.servers = attach(d['servidores'], this.mapServer);
+    if (d['contratos'] !== undefined) out.contracts = attach(d['contratos'], this.mapContract);
+    if (d['manutencoes'] !== undefined) out.maintenance = attach(d['manutencoes'], this.mapMaintenance);
+    if (d['movimentacoes'] !== undefined) out.movements = attach(d['movimentacoes'], this.mapMovement);
+    if (d['inventario'] !== undefined) out.inventory = attach(d['inventario'], this.mapInventory);
+    if (d['alertas'] !== undefined) out.alerts = attach(d['alertas'], this.mapAlert);
+    if (d['orcamentos'] !== undefined) out.budgets = attach(d['orcamentos'], this.mapBudget);
+    if (d['acoes_economista'] !== undefined) out.actions = attach(d['acoes_economista'], this.mapAction);
+    if (d['registros_acesso'] !== undefined) {
+      out.accessRecords = attach(d['registros_acesso'], this.mapAccessRecord);
+    }
+    if (d['riscos'] !== undefined) out.risks = attach(d['riscos'], this.mapRisk);
+    if (d['pagamentos'] !== undefined) out.payments = attach(d['pagamentos'], this.mapPayment);
+    return out as Partial<Omit<typeof this._raw.value, 'loading'>>;
+  }
+
   private async fetchDashboard() {
     if (!this.api.getToken()) {
       this._raw.next({
@@ -306,76 +381,92 @@ export class DashboardService {
         maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
         actions: [], accessRecords: [], risks: [], payments: [], loading: false
       });
+      this.lastFetchAt = 0;
+      this.fetchComplete = false;
       return;
     }
-    this._raw.next({ ...this._raw.value, loading: true });
+    const showSpinner = !this.hasCachedRows();
+    if (showSpinner) {
+      this._raw.next({ ...this._raw.value, loading: true });
+    }
+    this.fetchComplete = false;
 
     try {
-      const d = await firstValueFrom(this.api.getDashboard().pipe(timeout(60_000)));
-      const attach = <T>(rows: any[] | null | undefined, mapper: (r: any) => T): T[] =>
-        (rows || []).map((r) => ({ ...mapper(r), empresa_id: r.empresa_id ?? null } as T));
-      const assets = attach(d['ativos'], this.mapAsset);
-      const domains = attach(d['dominios'], this.mapDomain);
-      const licenses = attach(d['licencas'], this.mapLicense);
-      const servers = attach(d['servidores'], this.mapServer);
-      const contracts = attach(d['contratos'], this.mapContract);
-      const maintenance = attach(d['manutencoes'], this.mapMaintenance);
-      const movements = attach(d['movimentacoes'], this.mapMovement);
-      const inventory = attach(d['inventario'], this.mapInventory);
-      const alerts = attach(d['alertas'], this.mapAlert);
-      const budgets = attach(d['orcamentos'], this.mapBudget);
-      const actions = attach(d['acoes_economista'], this.mapAction);
-      const accessRecords = attach(d['registros_acesso'], this.mapAccessRecord);
-      const risks = attach(d['riscos'], this.mapRisk);
-      const payments = attach(d['pagamentos'], this.mapPayment);
-
+      const priority = await firstValueFrom(
+        this.api
+          .getDashboard([...DashboardService.PRIORITY_TABLES])
+          .pipe(timeout(60_000)),
+      );
       this._raw.next({
-        assets,
-        domains,
-        licenses,
-        servers,
-        contracts,
-        maintenance,
-        movements,
-        inventory,
-        alerts,
-        budgets,
-        actions,
-        accessRecords,
-        risks,
-        payments,
+        ...this._raw.value,
+        ...this.mapDashboardPayload(priority),
         loading: false,
       });
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('Error loading priority dashboard data:', error);
       this._raw.next({ ...this._raw.value, loading: false });
-      let msg = 'Erro ao carregar dados';
-      if (error instanceof HttpErrorResponse) {
-        if (error.status === 0) {
-          msg = 'API inacessível (porta 3000)';
-        } else if (error.error && typeof error.error === 'object' && 'error' in error.error) {
-          msg = `${error.status}: ${String((error.error as { error: string }).error)}`;
-        } else {
-          msg = `HTTP ${error.status}`;
-        }
-      } else if (error && typeof error === 'object' && 'message' in error) {
-        msg = String((error as { message: string }).message);
-      }
-      const offline =
-        msg.includes('Timeout') ||
-        msg.includes('timeout') ||
-        msg.includes('Unknown Error') ||
-        msg.includes('0 Unknown');
-      this.toast.show({
-        title: 'Não foi possível carregar os dados',
-        description: offline
-          ? 'A API não respondeu. Noutro terminal: cd backend && npm run dev (porta 3000). Depois recarregue a página.'
-          : msg.includes('401') || msg.includes('403')
-            ? 'Sessão inválida ou sem perfil — saia e entre de novo (ex.: dev@local.imts / demo123456).'
-            : `Confirme backend/.env (mesmo Postgres do DBeaver). Detalhe: ${msg}`,
-        variant: 'destructive',
-      });
+      this.lastFetchAt = 0;
+      this.fetchComplete = false;
+      this.showFetchError(error, 'priority');
+      return;
     }
+
+    try {
+      const background = await firstValueFrom(
+        this.api
+          .getDashboard([...DashboardService.BACKGROUND_TABLES])
+          .pipe(timeout(60_000)),
+      );
+      this._raw.next({
+        ...this._raw.value,
+        ...this.mapDashboardPayload(background),
+        loading: false,
+      });
+      this.lastFetchAt = Date.now();
+      this.fetchComplete = true;
+    } catch (error) {
+      console.error('Error loading background dashboard data:', error);
+      this._raw.next({ ...this._raw.value, loading: false });
+      this.lastFetchAt = 0;
+      this.fetchComplete = false;
+      this.showFetchError(error, 'background');
+    }
+  }
+
+  private showFetchError(error: unknown, phase: 'priority' | 'background') {
+    let msg = 'Erro ao carregar dados';
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 0) {
+        msg = 'API inacessível (porta 3000)';
+      } else if (error.error && typeof error.error === 'object' && 'error' in error.error) {
+        msg = `${error.status}: ${String((error.error as { error: string }).error)}`;
+      } else {
+        msg = `HTTP ${error.status}`;
+      }
+    } else if (error && typeof error === 'object' && 'message' in error) {
+      msg = String((error as { message: string }).message);
+    }
+    const offline =
+      msg.includes('Timeout') ||
+      msg.includes('timeout') ||
+      msg.includes('Unknown Error') ||
+      msg.includes('0 Unknown');
+    const partialHint =
+      phase === 'background'
+        ? ' O painel principal foi carregado, mas contratos, inventário e outros módulos podem estar incompletos — tente recarregar a página.'
+        : '';
+    this.toast.show({
+      title:
+        phase === 'background'
+          ? 'Não foi possível carregar todos os módulos'
+          : 'Não foi possível carregar os dados',
+      description: offline
+        ? 'A API não respondeu. Noutro terminal: cd backend && npm run dev (porta 3000). Depois recarregue a página.'
+        : msg.includes('401') || msg.includes('403')
+          ? 'Sessão inválida ou sem perfil — saia e entre de novo (ex.: dev@local.imts / demo123456).'
+          : `Confirme backend/.env (mesmo Postgres do DBeaver). Detalhe: ${msg}${partialHint}`,
+      variant: 'destructive',
+    });
   }
 
   private mapAsset(r: any): Asset {

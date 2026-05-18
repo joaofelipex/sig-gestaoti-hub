@@ -68,8 +68,9 @@ export class ApiService {
     return this.http.post<{ ok: boolean }>(this.api('/auth/logout'), {});
   }
 
-  getDashboard(): Observable<Record<string, unknown[]>> {
-    return this.http.get<Record<string, unknown[]>>(this.api('/data/dashboard'));
+  getDashboard(tables?: string[]): Observable<Record<string, unknown[]>> {
+    const params = tables?.length ? { tables: tables.join(',') } : undefined;
+    return this.http.get<Record<string, unknown[]>>(this.api('/data/dashboard'), { params });
   }
 
   getHealth(): Observable<{

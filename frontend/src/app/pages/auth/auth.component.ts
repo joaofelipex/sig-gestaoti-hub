@@ -139,7 +139,7 @@ export class AuthComponent {
         });
       }
       this.empresa.setSelected(null);
-      await this.dashboard.loadData();
+      await this.dashboard.loadData(true);
       this.router.navigate(['/dashboard']);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';
