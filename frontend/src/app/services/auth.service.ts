@@ -38,9 +38,12 @@ export class AuthService {
       .me()
       .pipe(
         tap((res) => this._user.next({ id: res.user.id, email: res.user.email })),
-        catchError(() => {
-          this.api.setToken(null);
-          this._user.next(null);
+        catchError((err: unknown) => {
+          const status = err instanceof HttpErrorResponse ? err.status : 0;
+          if (status === 401 || status === 403 || status === 404) {
+            this.api.setToken(null);
+            this._user.next(null);
+          }
           return of(null);
         }),
         finalize(() => {
@@ -67,10 +70,17 @@ export class AuthService {
         next: (res) => {
           this.api.setToken(res.token);
           this._user.next({ id: res.user.id, email: res.user.email });
+          this._loading.next(false);
+          this.api.emitAuthChange();
           resolve();
         },
         error: (err: unknown) =>
-          reject(this.httpErrorMessage(err, 'Não foi possível contactar a API. Confirme que `npm run api:dev` está a correr.')),
+          reject(
+            this.httpErrorMessage(
+              err,
+              'Não foi possível contactar a API. Confirme: cd backend && npm run dev',
+            ),
+          ),
       });
     });
   }
@@ -81,10 +91,17 @@ export class AuthService {
         next: (res) => {
           this.api.setToken(res.token);
           this._user.next({ id: res.user.id, email: res.user.email });
+          this._loading.next(false);
+          this.api.emitAuthChange();
           resolve();
         },
         error: (err: unknown) =>
-          reject(this.httpErrorMessage(err, 'Não foi possível contactar a API. Confirme que `npm run api:dev` está a correr.')),
+          reject(
+            this.httpErrorMessage(
+              err,
+              'Não foi possível contactar a API. Confirme: cd backend && npm run dev',
+            ),
+          ),
       });
     });
   }

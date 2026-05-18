@@ -1,14 +1,16 @@
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
+import { ApiStatusBannerComponent } from '../components/api-status-banner.component';
 import { AppShellHeaderComponent } from './app-shell-header.component';
 import { AppShellSidebarComponent } from './app-shell-sidebar.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, AppShellHeaderComponent, AppShellSidebarComponent],
+  imports: [CommonModule, RouterOutlet, ApiStatusBannerComponent, AppShellHeaderComponent, AppShellSidebarComponent],
   template: `
+    <app-api-status-banner />
     <div
       class="sig-app"
       [class.is-sidebar-collapsed]="sidebarCollapsed"

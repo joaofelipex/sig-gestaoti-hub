@@ -6,6 +6,7 @@ import { pickRowColumns } from '../columns';
 import type { AuthedRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
 import { getProfileOrg } from './auth';
+import { getDataScope, isOrgScoped, sqlOrgReadScope, sqlOrgWriteScope } from '../org-scope';
 
 const r = Router();
 
@@ -36,12 +37,17 @@ r.get('/dashboard', async (req: AuthedRequest, res) => {
     return;
   }
   const orgId = prof.org_id;
+  const scope = getDataScope();
   try {
     const out: Record<string, unknown[]> = {};
+    const where = sqlOrgReadScope('$1');
     for (const t of DASHBOARD_TABLES) {
-      const q = await pool.query(`SELECT * FROM public.${t} WHERE org_id = $1`, [orgId]);
+      const q = isOrgScoped()
+        ? await pool.query(`SELECT * FROM public.${t} WHERE ${where}`, [orgId])
+        : await pool.query(`SELECT * FROM public.${t} WHERE ${where}`);
       out[t] = q.rows;
     }
+    res.setHeader('X-Data-Scope', scope);
     res.json(out);
   } catch (e) {
     console.error(e);
@@ -56,7 +62,10 @@ r.get('/empresas', async (req: AuthedRequest, res) => {
     res.status(403).json({ error: 'Sem perfil' });
     return;
   }
-  const q = await pool.query(`SELECT * FROM public.empresas WHERE org_id = $1 ORDER BY nome`, [prof.org_id]);
+  const where = sqlOrgReadScope('$1');
+  const q = isOrgScoped()
+    ? await pool.query(`SELECT * FROM public.empresas WHERE ${where} ORDER BY nome`, [prof.org_id])
+    : await pool.query(`SELECT * FROM public.empresas WHERE ${where} ORDER BY nome`);
   res.json(q.rows);
 });
 
@@ -79,6 +88,7 @@ r.post('/:table', async (req: AuthedRequest, res) => {
 
   const insertOne = async (client: Pool | PoolClient, item: Record<string, unknown>) => {
     const row = await pickRowColumns(pool, table, item, { stripOrgId: true });
+    // org_id é NOT NULL no schema — novos registos usam a org do perfil
     row.org_id = prof!.org_id;
     const keys = Object.keys(row);
     if (!keys.length) throw new Error('Corpo vazio');
@@ -148,8 +158,13 @@ r.patch('/:table/:id', async (req: AuthedRequest, res) => {
     return;
   }
   const sets = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
-  const vals = [...keys.map((k) => row[k]), id, prof.org_id];
-  const sql = `UPDATE public.${table} SET ${sets} WHERE id = $${keys.length + 1}::uuid AND org_id = $${keys.length + 2}::uuid RETURNING *`;
+  const idPh = keys.length + 1;
+  const orgPh = keys.length + 2;
+  const vals = isOrgScoped()
+    ? [...keys.map((k) => row[k]), id, prof.org_id]
+    : [...keys.map((k) => row[k]), id];
+  const where = sqlOrgWriteScope(`$${orgPh}`, `$${idPh}`);
+  const sql = `UPDATE public.${table} SET ${sets} WHERE ${where} RETURNING *`;
   try {
     const q = await pool.query(sql, vals);
     if (!q.rowCount) {
@@ -181,10 +196,9 @@ r.delete('/:table/:id', async (req: AuthedRequest, res) => {
     return;
   }
   try {
-    const q = await pool.query(`DELETE FROM public.${table} WHERE id = $1::uuid AND org_id = $2::uuid`, [
-      id,
-      prof.org_id,
-    ]);
+    const where = sqlOrgWriteScope('$2', '$1');
+    const params = isOrgScoped() ? [id, prof.org_id] : [id];
+    const q = await pool.query(`DELETE FROM public.${table} WHERE ${where}`, params);
     if (!q.rowCount) {
       res.status(404).json({ error: 'Registo não encontrado' });
       return;

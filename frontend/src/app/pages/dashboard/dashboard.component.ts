@@ -36,16 +36,21 @@ import { EmpresaService } from '../../services/empresa.service';
             <i class="fas fa-database me-2" aria-hidden="true"></i>
             Sem registos para a sua organização
           </p>
-          <p class="mb-2 text-slate-600">
-            PostgreSQL
-            <span *ngIf="postgresLabel"> · <strong>{{ postgresLabel }}</strong></span>
-            <span *ngIf="orgAtivos !== null"> · {{ orgAtivos }} ativo(s) na sua organização</span>.
+          <p class="mb-2 text-slate-600" *ngIf="orgNome">
+            Organização da sua conta: <strong>{{ orgNome }}</strong>
+            <span *ngIf="orgAtivos !== null"> · {{ orgAtivos }} ativo(s) nesta organização</span>.
+          </p>
+          <p class="mb-2 text-slate-600" *ngIf="wrongOrgHint">
+            {{ wrongOrgHint }}
+          </p>
+          <p class="mb-2 text-slate-600" *ngIf="!wrongOrgHint && postgresLabel">
+            PostgreSQL · <strong>{{ postgresLabel }}</strong>
           </p>
           <ul class="mb-0 ps-4 space-y-1 text-slate-600">
             <li *ngIf="empresaFilterActive">No header, escolha <strong>Todas as empresas</strong> — o filtro pode ocultar registos.</li>
-            <li *ngIf="orgAtivos === 0">Confira <code class="text-xs">backend/.env</code> (mesma ligação do DBeaver) ou crie registos no menu.</li>
-            <li *ngIf="orgAtivos && orgAtivos > 0">Há dados na base; confirme o filtro de empresa e recarregue a página.</li>
-            <li>Conta criada por registo começa vazia — os dados ficam na mesma base PostgreSQL, ligados ao seu <code class="text-xs">org_id</code>.</li>
+            <li *ngIf="wrongOrgHint">{{ wrongOrgHint }}</li>
+            <li *ngIf="!wrongOrgHint && orgAtivos === 0">Crie registos no menu ou importe CSV nas listagens.</li>
+            <li *ngIf="orgAtivos && orgAtivos > 0">Há dados na sua org; confirme o filtro de empresa no header.</li>
           </ul>
         </div>
 
@@ -86,7 +91,9 @@ import { EmpresaService } from '../../services/empresa.service';
 export class DashboardComponent implements OnInit, OnDestroy {
   readonly icons = SigIcons;
   postgresLabel = '';
+  orgNome = '';
   orgAtivos: number | null = null;
+  wrongOrgHint = '';
   empresaFilterActive = false;
   get user() { return this.authService.user; }
   get isEmpty(): boolean {
@@ -130,9 +137,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
         if (me.postgres?.configured && !this.postgresLabel) {
           this.postgresLabel = me.postgres.configured;
         }
+        this.orgNome = me.profile.org_nome || '';
         if (me.dataCounts) {
           this.orgAtivos = me.dataCounts.ativos;
         }
+        this.wrongOrgHint =
+          me.dataScope === 'org' &&
+          me.dataCounts?.ativos === 0 &&
+          (me.databaseSummary?.totalAtivos ?? 0) > 0
+            ? `Modo org ativo: os dados na base não estão na sua organização. Em backend/.env use DATA_SCOPE=all e reinicie a API.`
+            : '';
       },
       error: () => {},
     });

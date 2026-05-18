@@ -37,16 +37,16 @@ export interface FilterDef {
         <option *ngFor="let o of f.options" [value]="o.value">{{ o.label }}</option>
       </select>
       <div class="sig-toolbar-actions ms-auto flex flex-wrap items-center gap-2">
-        <label class="app-btn-ghost mb-0 cursor-pointer gap-1.5">
+        <label class="app-btn-ghost cursor-pointer">
           <i [class]="icons.import" aria-hidden="true"></i>
           Importar
           <input type="file" accept=".csv" class="hidden" (change)="onFileSelected($event)" />
         </label>
-        <button type="button" class="app-btn-ghost gap-1.5" (click)="exportClick.emit()">
+        <button type="button" class="app-btn-ghost" (click)="exportClick.emit()">
           <i [class]="icons.export" aria-hidden="true"></i>
           Exportar
         </button>
-        <button *ngIf="showNew" type="button" class="btn btn-primary btn-sm gap-1.5" (click)="newClick.emit()">
+        <button *ngIf="showNew" type="button" class="app-btn-toolbar-primary" (click)="newClick.emit()">
           <i [class]="icons.plus" aria-hidden="true"></i>
           Novo
         </button>

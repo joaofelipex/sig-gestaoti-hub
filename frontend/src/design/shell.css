@@ -1,5 +1,32 @@
 /* Shell SIG — header glass, sidebar, conteúdo */
 
+.sig-api-banner {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  border-bottom: 1px solid transparent;
+}
+
+.sig-api-banner code {
+  font-size: 0.75rem;
+}
+
+.sig-api-banner--danger {
+  background: #fef2f2;
+  color: #991b1b;
+  border-bottom-color: #fecaca;
+}
+
+.sig-api-banner--warn {
+  background: #fffbeb;
+  color: #92400e;
+  border-bottom-color: #fde68a;
+}
+
+.sig-api-banner a {
+  color: inherit;
+  font-weight: 600;
+}
+
 .sig-app {
   min-height: 100vh;
   display: flex;

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import { getPostgresTargetLabel, pool, verifyConnection } from '../db';
+import { isOrgScoped } from '../org-scope';
 import { signToken } from '../jwt';
 import type { AuthedRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
@@ -9,10 +10,14 @@ const r = Router();
 
 export async function getProfileOrg(userId: string) {
   const q = await pool.query(
-    `SELECT p.org_id, p.email, p.nome FROM public.profiles p WHERE p.user_id = $1 LIMIT 1`,
-    [userId]
+    `SELECT p.org_id, p.email, p.nome, o.nome AS org_nome
+     FROM public.profiles p
+     JOIN public.organizations o ON o.id = p.org_id
+     WHERE p.user_id = $1
+     LIMIT 1`,
+    [userId],
   );
-  return q.rows[0] as { org_id: string; email: string; nome: string } | undefined;
+  return q.rows[0] as { org_id: string; email: string; nome: string; org_nome: string } | undefined;
 }
 
 r.post('/login', async (req, res) => {
@@ -48,20 +53,41 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
     return;
   }
   const orgId = prof.org_id;
-  const [pg, countsQ] = await Promise.all([
+  const [pg, countsQ, globalQ, topOrgQ] = await Promise.all([
     verifyConnection().catch(() => null),
     pool.query<{ ativos: number; empresas: number; alertas: number }>(
-      `SELECT
-         (SELECT count(*)::int FROM public.ativos WHERE org_id = $1::uuid) AS ativos,
-         (SELECT count(*)::int FROM public.empresas WHERE org_id = $1::uuid) AS empresas,
-         (SELECT count(*)::int FROM public.alertas WHERE org_id = $1::uuid) AS alertas`,
-      [orgId],
+      isOrgScoped()
+        ? `SELECT
+             (SELECT count(*)::int FROM public.ativos WHERE org_id = $1::uuid) AS ativos,
+             (SELECT count(*)::int FROM public.empresas WHERE org_id = $1::uuid) AS empresas,
+             (SELECT count(*)::int FROM public.alertas WHERE org_id = $1::uuid) AS alertas`
+        : `SELECT
+             (SELECT count(*)::int FROM public.ativos) AS ativos,
+             (SELECT count(*)::int FROM public.empresas) AS empresas,
+             (SELECT count(*)::int FROM public.alertas) AS alertas`,
+      isOrgScoped() ? [orgId] : [],
+    ),
+    pool.query<{ ativos: number }>(`SELECT count(*)::int AS ativos FROM public.ativos`),
+    pool.query<{ org_id: string; org_nome: string; ativos: number }>(
+      `SELECT o.id AS org_id, o.nome AS org_nome, count(a.id)::int AS ativos
+       FROM public.organizations o
+       LEFT JOIN public.ativos a ON a.org_id = o.id
+       GROUP BY o.id, o.nome
+       ORDER BY count(a.id) DESC
+       LIMIT 1`,
     ),
   ]);
   const counts = countsQ.rows[0] ?? { ativos: 0, empresas: 0, alertas: 0 };
+  const globalAtivos = globalQ.rows[0]?.ativos ?? 0;
+  const topOrg = topOrgQ.rows[0];
   res.json({
     user: { id: uid, email: prof.email },
-    profile: { org_id: orgId, nome: prof.nome, email: prof.email },
+    profile: {
+      org_id: orgId,
+      org_nome: prof.org_nome,
+      nome: prof.nome,
+      email: prof.email,
+    },
     postgres: {
       configured: getPostgresTargetLabel(),
       database: pg?.database ?? null,
@@ -69,6 +95,14 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
       port: pg?.port ?? null,
     },
     dataCounts: counts,
+    dataScope: isOrgScoped() ? 'org' : 'all',
+    databaseSummary: {
+      totalAtivos: globalAtivos,
+      topOrg:
+        topOrg && topOrg.ativos > 0
+          ? { org_id: topOrg.org_id, org_nome: topOrg.org_nome, ativos: topOrg.ativos }
+          : null,
+    },
   });
 });
 

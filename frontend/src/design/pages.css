@@ -286,6 +286,42 @@
   margin-bottom: 0;
 }
 
+/* Importar / Exportar / Novo — mesma altura e largura mínima */
+.sig-toolbar-actions .app-btn-ghost,
+.sig-toolbar-actions .app-btn-toolbar-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  box-sizing: border-box;
+  min-height: 2.375rem;
+  min-width: 6.75rem;
+  margin: 0;
+  padding: 0.4375rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.sig-toolbar-actions label.app-btn-ghost {
+  margin-bottom: 0;
+}
+
+.sig-toolbar-actions .app-btn-toolbar-primary {
+  border: 1px solid rgb(var(--wl-background-color));
+  border-radius: var(--br-md);
+  background-color: rgb(var(--wl-background-color));
+  color: rgb(var(--wl-text-color));
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.sig-toolbar-actions .app-btn-toolbar-primary:hover {
+  background-color: rgba(var(--wl-background-color), 0.88);
+  border-color: rgba(var(--wl-background-color), 0.88);
+}
+
 .sig-modal-form label {
   display: block;
   font-size: 0.8125rem;

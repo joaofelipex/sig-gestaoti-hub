@@ -16,6 +16,8 @@
     "api:internal": "cd backend && (test -d node_modules || npm install --no-audit --no-fund) && npm start",
     "web:internal": "cd frontend && (test -d node_modules || npm install --no-audit --no-fund) && npm run dev",
     "doctor": "node scripts/doctor.cjs",
+    "check:data": "node scripts/check-data.cjs",
+    "user:attach-demo": "node scripts/attach-user-org.cjs",
     "build": "cd frontend && (test -d node_modules || npm install --no-audit --no-fund) && npx ng build",
     "db:up": "node scripts/strip-db-sh.cjs && node scripts/run-with-stack.cjs bash scripts/db.sh up",
     "db:down": "node scripts/strip-db-sh.cjs && node scripts/run-with-stack.cjs bash scripts/db.sh down",

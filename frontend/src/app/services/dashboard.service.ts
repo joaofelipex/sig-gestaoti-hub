@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, Observable, combineLatest, firstValueFrom } from 'rxjs';
 import { map, timeout } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -232,16 +233,42 @@ export class DashboardService {
     this.data$ = combineLatest([this._raw, this.empresa.selected$]).pipe(
       map(([raw, empId]) => {
         if (!empId) return raw;
-        const f = (arr: any[]) => arr.filter(i => !i.empresa_id || i.empresa_id === empId);
-        return {
+        const f = (arr: any[]) => arr.filter((i) => !i.empresa_id || i.empresa_id === empId);
+        const filtered = {
           ...raw,
-          assets: f(raw.assets), domains: f(raw.domains), licenses: f(raw.licenses),
-          servers: f(raw.servers), contracts: f(raw.contracts), maintenance: f(raw.maintenance),
-          movements: f(raw.movements), inventory: f(raw.inventory), alerts: f(raw.alerts),
-          budgets: f(raw.budgets), actions: f(raw.actions), accessRecords: f(raw.accessRecords),
-          risks: f(raw.risks), payments: f(raw.payments)
+          assets: f(raw.assets),
+          domains: f(raw.domains),
+          licenses: f(raw.licenses),
+          servers: f(raw.servers),
+          contracts: f(raw.contracts),
+          maintenance: f(raw.maintenance),
+          movements: f(raw.movements),
+          inventory: f(raw.inventory),
+          alerts: f(raw.alerts),
+          budgets: f(raw.budgets),
+          actions: f(raw.actions),
+          accessRecords: f(raw.accessRecords),
+          risks: f(raw.risks),
+          payments: f(raw.payments),
         };
-      })
+        const rawTotal =
+          raw.assets.length +
+          raw.domains.length +
+          raw.licenses.length +
+          raw.servers.length +
+          raw.payments.length;
+        const filteredTotal =
+          filtered.assets.length +
+          filtered.domains.length +
+          filtered.licenses.length +
+          filtered.servers.length +
+          filtered.payments.length;
+        if (rawTotal > 0 && filteredTotal === 0) {
+          queueMicrotask(() => this.empresa.setSelected(null));
+          return raw;
+        }
+        return filtered;
+      }),
     );
     const onAuth = () => {
       if (!this.api.getToken()) {
@@ -322,16 +349,30 @@ export class DashboardService {
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       this._raw.next({ ...this._raw.value, loading: false });
-      const msg =
-        error && typeof error === 'object' && 'message' in error
-          ? String((error as { message: string }).message)
-          : 'Erro ao carregar dados';
+      let msg = 'Erro ao carregar dados';
+      if (error instanceof HttpErrorResponse) {
+        if (error.status === 0) {
+          msg = 'API inacessível (porta 3000)';
+        } else if (error.error && typeof error.error === 'object' && 'error' in error.error) {
+          msg = `${error.status}: ${String((error.error as { error: string }).error)}`;
+        } else {
+          msg = `HTTP ${error.status}`;
+        }
+      } else if (error && typeof error === 'object' && 'message' in error) {
+        msg = String((error as { message: string }).message);
+      }
+      const offline =
+        msg.includes('Timeout') ||
+        msg.includes('timeout') ||
+        msg.includes('Unknown Error') ||
+        msg.includes('0 Unknown');
       this.toast.show({
         title: 'Não foi possível carregar os dados',
-        description:
-          msg.includes('Timeout') || msg.includes('timeout')
-            ? 'A API não respondeu a tempo. Confirme `npm run api:dev` na raiz do projeto.'
-            : 'Confirme que a API está a correr (`cd backend && npm start`) e que entrou com sessão válida.',
+        description: offline
+          ? 'A API não respondeu. Noutro terminal: cd backend && npm run dev (porta 3000). Depois recarregue a página.'
+          : msg.includes('401') || msg.includes('403')
+            ? 'Sessão inválida ou sem perfil — saia e entre de novo (ex.: dev@local.imts / demo123456).'
+            : `Confirme backend/.env (mesmo Postgres do DBeaver). Detalhe: ${msg}`,
         variant: 'destructive',
       });
     }

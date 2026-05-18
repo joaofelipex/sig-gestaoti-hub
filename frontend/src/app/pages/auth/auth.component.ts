@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { DashboardService } from '../../services/dashboard.service';
+import { EmpresaService } from '../../services/empresa.service';
 import { ToastService } from '../../services/toast.service';
 import { WhiteLabelService } from '../../services/white-label.service';
 
@@ -75,8 +77,10 @@ export class AuthComponent {
     readonly wl: WhiteLabelService,
     private fb: FormBuilder,
     private authService: AuthService,
+    private dashboard: DashboardService,
+    private empresa: EmpresaService,
     private router: Router,
-    private toastService: ToastService
+    private toastService: ToastService,
   ) {
     this.form = this.fb.group({
       nome: [''],
@@ -131,9 +135,11 @@ export class AuthComponent {
         );
         this.toastService.show({
           title: 'Conta criada',
-          description: 'Sua organização foi provisionada. Você já está logado.',
+          description: 'Organização nova começa sem registos — importe ou crie dados no menu.',
         });
       }
+      this.empresa.setSelected(null);
+      await this.dashboard.loadData();
       this.router.navigate(['/dashboard']);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';

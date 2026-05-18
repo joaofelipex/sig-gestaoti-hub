@@ -6,9 +6,14 @@ import { AUTH_TOKEN_STORAGE_KEY } from './auth-storage';
 
 export interface MeResponse {
   user: { id: string; email?: string };
-  profile: { org_id: string; nome: string; email: string };
+  profile: { org_id: string; org_nome?: string; nome: string; email: string };
   postgres?: { configured: string; database: string | null; host: string | null; port: number | null };
   dataCounts?: { ativos: number; empresas: number; alertas: number };
+  dataScope?: 'all' | 'org';
+  databaseSummary?: {
+    totalAtivos: number;
+    topOrg: { org_id: string; org_nome: string; ativos: number } | null;
+  };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -74,14 +79,13 @@ export class ApiService {
     error?: string;
     configured?: string;
   }> {
-    const base = environment.apiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
     return this.http.get<{
       ok: boolean;
       database?: string;
       postgres?: { database: string; host: string; port: number; configured: string };
       error?: string;
       configured?: string;
-    }>(`${base}/health`);
+    }>('/health');
   }
 
   getEmpresas(): Observable<unknown[]> {

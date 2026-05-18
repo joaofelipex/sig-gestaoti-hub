@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth';
 import dataRoutes from './routes/data';
 import { ensureAuthSchema, getPostgresTargetLabel, pool, verifyConnection } from './db';
+import { logStartupDataSummary } from './startup-log';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -62,6 +63,7 @@ async function start() {
   await pool.query('SELECT 1');
   postgresTarget = await verifyConnection();
   await ensureAuthSchema();
+  await logStartupDataSummary();
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(
