@@ -20,12 +20,12 @@ import { DashboardService } from '../services/dashboard.service';
     >
       <ng-container *ngIf="!apiOk">
         <strong>API offline.</strong>
-        Noutro terminal: <code>cd backend && npm run dev</code> (porta 3000). Depois recarregue.
+        Em outro terminal: <code>cd backend && npm run dev</code> (porta 3000). Depois recarregue a página.
       </ng-container>
       <ng-container *ngIf="apiOk && !hasToken">
-        <strong>Sessão em falta.</strong>
+        <strong>Sessão não iniciada.</strong>
         <a routerLink="/auth">Entrar</a>
-        — demo: <code>dev@local.imts</code> / <code>demo123456</code> (se existir seed na base).
+        — demonstração: <code>dev@local.imts</code> / <code>demo123456</code> (se existir seed no banco).
       </ng-container>
     </div>
   `,

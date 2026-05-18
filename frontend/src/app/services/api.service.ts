@@ -10,6 +10,7 @@ export interface MeResponse {
   postgres?: { configured: string; database: string | null; host: string | null; port: number | null };
   dataCounts?: { ativos: number; empresas: number; alertas: number };
   dataScope?: 'all' | 'org';
+  writeScope?: 'all' | 'org';
   databaseSummary?: {
     totalAtivos: number;
     topOrg: { org_id: string; org_nome: string; ativos: number } | null;

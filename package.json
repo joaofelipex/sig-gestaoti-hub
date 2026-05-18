@@ -26,6 +26,7 @@
     "db:seed": "node scripts/strip-db-sh.cjs && node scripts/run-with-stack.cjs bash scripts/seed-local-docker.sh",
     "db:import-csv": "node scripts/run-with-stack.cjs node scripts/import-csv-dir.cjs",
     "db:apply-migrations": "node scripts/run-with-stack.cjs node scripts/apply-repo-migrations.cjs",
+    "db:dedupe-empresas": "node scripts/dedupe-empresas.cjs",
     "db:gen-baseline": "node scripts/gen-baseline-migration.cjs"
   }
 }

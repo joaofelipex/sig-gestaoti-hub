@@ -306,11 +306,13 @@ export class DashboardService {
         this.fetchComplete = false;
         return;
       }
+      void this.empresa.load();
       void this.loadData(true);
     };
     this.api.authChanged$.subscribe(onAuth);
     this.auth.loading$.subscribe((loading) => {
       if (!loading && this.api.getToken()) {
+        void this.empresa.load();
         void this.loadData(true);
       }
     });
@@ -354,7 +356,7 @@ export class DashboardService {
   private mapDashboardPayload(d: Record<string, unknown[]>) {
     const attach = <T>(rows: any[] | null | undefined, mapper: (r: any) => T): T[] =>
       (rows || []).map((r) => ({ ...mapper(r), empresa_id: r.empresa_id ?? null } as T));
-    const out: Record<string, unknown> = {};
+    const out: Partial<Omit<typeof this._raw.value, 'loading'>> = {};
     if (d['ativos'] !== undefined) out.assets = attach(d['ativos'], this.mapAsset);
     if (d['dominios'] !== undefined) out.domains = attach(d['dominios'], this.mapDomain);
     if (d['licencas'] !== undefined) out.licenses = attach(d['licencas'], this.mapLicense);
@@ -371,7 +373,7 @@ export class DashboardService {
     }
     if (d['riscos'] !== undefined) out.risks = attach(d['riscos'], this.mapRisk);
     if (d['pagamentos'] !== undefined) out.payments = attach(d['pagamentos'], this.mapPayment);
-    return out as Partial<Omit<typeof this._raw.value, 'loading'>>;
+    return out;
   }
 
   private async fetchDashboard() {
@@ -403,7 +405,7 @@ export class DashboardService {
         loading: false,
       });
     } catch (error) {
-      console.error('Error loading priority dashboard data:', error);
+      console.error('Erro ao carregar dados prioritários do painel:', error);
       this._raw.next({ ...this._raw.value, loading: false });
       this.lastFetchAt = 0;
       this.fetchComplete = false;
@@ -425,7 +427,7 @@ export class DashboardService {
       this.lastFetchAt = Date.now();
       this.fetchComplete = true;
     } catch (error) {
-      console.error('Error loading background dashboard data:', error);
+      console.error('Erro ao carregar dados em segundo plano do painel:', error);
       this._raw.next({ ...this._raw.value, loading: false });
       this.lastFetchAt = 0;
       this.fetchComplete = false;
@@ -461,9 +463,9 @@ export class DashboardService {
           ? 'Não foi possível carregar todos os módulos'
           : 'Não foi possível carregar os dados',
       description: offline
-        ? 'A API não respondeu. Noutro terminal: cd backend && npm run dev (porta 3000). Depois recarregue a página.'
+        ? 'A API não respondeu. Em outro terminal: cd backend && npm run dev (porta 3000). Depois recarregue a página.'
         : msg.includes('401') || msg.includes('403')
-          ? 'Sessão inválida ou sem perfil — saia e entre de novo (ex.: dev@local.imts / demo123456).'
+          ? 'Sessão inválida ou sem perfil — saia e entre novamente (ex.: dev@local.imts / demo123456).'
           : `Confirme backend/.env (mesmo Postgres do DBeaver). Detalhe: ${msg}${partialHint}`,
       variant: 'destructive',
     });

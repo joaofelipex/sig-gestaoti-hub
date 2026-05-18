@@ -16,8 +16,8 @@ import { EmpresaService } from '../../services/empresa.service';
     <section class="sig-page">
       <div class="app-page-header">
         <div>
-          <h1 class="app-page-title">Dashboard</h1>
-          <p class="app-page-sub">Bem-vindo, <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
+          <h1 class="app-page-title">Painel</h1>
+          <p class="app-page-sub">Bem-vindo(a), <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
         </div>
         <button type="button" (click)="logout()" class="btn btn-outline-danger btn-sm">
           <i class="fas fa-sign-out-alt me-1" aria-hidden="true"></i> Sair
@@ -34,7 +34,7 @@ import { EmpresaService } from '../../services/empresa.service';
         >
           <p class="sig-notice-panel__title">
             <i class="fas fa-database me-2" aria-hidden="true"></i>
-            Sem registos para a sua organização
+            Sem registros para a sua organização
           </p>
           <p class="mb-2" *ngIf="orgNome">
             Organização da sua conta: <strong>{{ orgNome }}</strong>
@@ -47,15 +47,15 @@ import { EmpresaService } from '../../services/empresa.service';
             PostgreSQL · <strong>{{ postgresLabel }}</strong>
           </p>
           <ul>
-            <li *ngIf="empresaFilterActive">No header, escolha <strong>Todas as empresas</strong> — o filtro pode ocultar registos.</li>
+            <li *ngIf="empresaFilterActive">No topo da página, escolha <strong>Todas as empresas</strong> — o filtro pode ocultar registros.</li>
             <li *ngIf="wrongOrgHint">{{ wrongOrgHint }}</li>
-            <li *ngIf="!wrongOrgHint && orgAtivos === 0">Crie registos no menu ou importe CSV nas listagens.</li>
-            <li *ngIf="orgAtivos && orgAtivos > 0">Há dados na sua org; confirme o filtro de empresa no header.</li>
+            <li *ngIf="!wrongOrgHint && orgAtivos === 0">Crie registros no menu ou importe CSV nas listagens.</li>
+            <li *ngIf="orgAtivos && orgAtivos > 0">Há dados na sua organização; confirme o filtro de empresa no topo.</li>
           </ul>
         </div>
 
         <div class="sig-kpi-grid sig-kpi-grid--6">
-          <app-kpi-card label="Health Score" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" hint="Saúde geral"></app-kpi-card>
+          <app-kpi-card label="Índice de saúde" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" hint="Saúde geral da TI"></app-kpi-card>
           <app-kpi-card label="Ativos em uso" [value]="assetsInUse" [icon]="icons.assets" color="#3b82f6"></app-kpi-card>
           <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" [icon]="icons.cost" color="#10b981"></app-kpi-card>
           <app-kpi-card label="Domínios ≤30d" [value]="domainsExpiring" [icon]="icons.domain" color="#f59e0b"></app-kpi-card>
@@ -63,25 +63,54 @@ import { EmpresaService } from '../../services/empresa.service';
           <app-kpi-card label="Alertas críticos" [value]="criticalAlerts" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div class="app-card lg:col-span-2">
-            <h3 class="sig-chart-title">Custos por categoria (mensal)</h3>
+        <div *ngIf="!isEmpty" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div class="sig-chart-panel lg:col-span-2">
+            <div class="sig-chart-panel__head">
+              <h3 class="sig-chart-title">Custos por categoria</h3>
+              <span class="sig-chart-panel__meta">Estimativa mensal · {{ brl(monthlyCost) }} total</span>
+            </div>
             <app-bar-chart [data]="costByCategory" prefix="R$ "></app-bar-chart>
           </div>
-          <div class="app-card">
-            <h3 class="sig-chart-title">Status dos ativos</h3>
-            <app-donut-chart [data]="assetStatus"></app-donut-chart>
+          <div class="sig-chart-panel">
+            <div class="sig-chart-panel__head">
+              <h3 class="sig-chart-title">Status dos ativos</h3>
+              <span class="sig-chart-panel__meta">{{ data.assets.length }} cadastrado(s)</span>
+            </div>
+            <app-donut-chart [data]="assetStatus" centerLabel="Ativos"></app-donut-chart>
           </div>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div class="app-card">
-            <h3 class="sig-chart-title">Pagamentos últimos 6 meses</h3>
-            <app-line-chart [data]="paymentTrend"></app-line-chart>
+        <div *ngIf="!isEmpty" class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="sig-chart-panel">
+            <div class="sig-chart-panel__head">
+              <h3 class="sig-chart-title">Pagamentos</h3>
+              <span class="sig-chart-panel__meta">Últimos 6 meses · {{ brl(paymentTrendTotal) }}</span>
+            </div>
+            <app-line-chart [data]="paymentTrend" prefix="R$ "></app-line-chart>
           </div>
-          <div class="app-card">
-            <h3 class="sig-chart-title">Domínios por status</h3>
-            <app-donut-chart [data]="domainStatus"></app-donut-chart>
+          <div class="sig-chart-panel">
+            <div class="sig-chart-panel__head">
+              <h3 class="sig-chart-title">Domínios por status</h3>
+              <span class="sig-chart-panel__meta">{{ data.domains.length }} domínio(s)</span>
+            </div>
+            <app-donut-chart [data]="domainStatus" centerLabel="Domínios"></app-donut-chart>
+          </div>
+        </div>
+
+        <div *ngIf="!isEmpty && (alertsBySeverity.length || licenseUtilization.length)" class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div class="sig-chart-panel" *ngIf="alertsBySeverity.length">
+            <div class="sig-chart-panel__head">
+              <h3 class="sig-chart-title">Alertas por severidade</h3>
+              <span class="sig-chart-panel__meta">{{ unreadAlerts }} não lido(s) · {{ data.alerts.length }} no total</span>
+            </div>
+            <app-donut-chart [data]="alertsBySeverity" centerLabel="Alertas"></app-donut-chart>
+          </div>
+          <div class="sig-chart-panel" *ngIf="licenseUtilization.length">
+            <div class="sig-chart-panel__head">
+              <h3 class="sig-chart-title">Utilização de licenças</h3>
+              <span class="sig-chart-panel__meta">{{ licenseUsagePct }}% em uso</span>
+            </div>
+            <app-donut-chart [data]="licenseUtilization" centerLabel="Licenças" [centerValue]="licenseUsagePct + '%'"></app-donut-chart>
           </div>
         </div>
       </ng-container>
@@ -111,7 +140,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
   data: any = { assets: [], domains: [], licenses: [], servers: [], alerts: [], payments: [], loading: true };
   loading = true;
   healthScore = 0; assetsInUse = 0; domainsExpiring = 0; unusedLicenses = 0; monthlyCost = 0; criticalAlerts = 0;
-  costByCategory: ChartDatum[] = []; assetStatus: ChartDatum[] = []; paymentTrend: ChartDatum[] = []; domainStatus: ChartDatum[] = [];
+  costByCategory: ChartDatum[] = [];
+  assetStatus: ChartDatum[] = [];
+  paymentTrend: ChartDatum[] = [];
+  domainStatus: ChartDatum[] = [];
+  alertsBySeverity: ChartDatum[] = [];
+  licenseUtilization: ChartDatum[] = [];
+  paymentTrendTotal = 0;
+  licenseUsagePct = 0;
+  unreadAlerts = 0;
   private sub!: Subscription;
 
   constructor(
@@ -141,12 +178,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         if (me.dataCounts) {
           this.orgAtivos = me.dataCounts.ativos;
         }
-        this.wrongOrgHint =
-          me.dataScope === 'org' &&
-          me.dataCounts?.ativos === 0 &&
-          (me.databaseSummary?.totalAtivos ?? 0) > 0
-            ? `Modo org ativo: os dados na base não estão na sua organização. Em backend/.env use DATA_SCOPE=all e reinicie a API.`
-            : '';
+        this.wrongOrgHint = '';
       },
       error: () => {},
     });
@@ -177,10 +209,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.monthlyCost = Math.round(serverCost + licCost + domCost);
 
     this.costByCategory = [
-      { label: 'Servidores', value: Math.round(serverCost) },
-      { label: 'Licenças', value: Math.round(licCost) },
-      { label: 'Domínios', value: Math.round(domCost) },
-    ];
+      { label: 'Servidores', value: Math.round(serverCost), color: '#023ed8' },
+      { label: 'Licenças', value: Math.round(licCost), color: '#8b5cf6' },
+      { label: 'Domínios', value: Math.round(domCost), color: '#06b6d4' },
+    ].filter((d) => d.value > 0);
 
     const statusMap: any = {}; assets.forEach((a: any) => statusMap[a.status] = (statusMap[a.status]||0)+1);
     const statusColors: any = { 'Em uso':'#10b981','Estoque':'#3b82f6','Manutenção':'#f59e0b','Aposentado':'#9ca3af' };
@@ -197,6 +229,43 @@ export class DashboardComponent implements OnInit, OnDestroy {
       months.push({ label: dt.toLocaleDateString('pt-BR', { month: 'short' }), value: Math.round(total) });
     }
     this.paymentTrend = months;
+    this.paymentTrendTotal = months.reduce((s, m) => s + m.value, 0);
+
+    const severityLabels: Record<string, string> = {
+      critico: 'Crítico',
+      alto: 'Alto',
+      medio: 'Médio',
+      baixo: 'Baixo',
+    };
+    const severityColors: Record<string, string> = {
+      critico: '#ef4444',
+      alto: '#f59e0b',
+      medio: '#3b82f6',
+      baixo: '#94a3b8',
+    };
+    const alertMap: Record<string, number> = {};
+    alerts.forEach((a: any) => {
+      const k = a.severidade || 'baixo';
+      alertMap[k] = (alertMap[k] || 0) + 1;
+    });
+    this.alertsBySeverity = Object.entries(alertMap).map(([k, v]) => ({
+      label: severityLabels[k] || k,
+      value: v as number,
+      color: severityColors[k] || '#6b7280',
+    }));
+    this.unreadAlerts = alerts.filter((a: any) => !a.lida).length;
+
+    const licUsed = licenses.reduce((s: number, l: any) => s + (l.usedLicenses || 0), 0);
+    const licTotal = licenses.reduce((s: number, l: any) => s + (l.totalLicenses || 0), 0);
+    const licIdle = Math.max(0, licTotal - licUsed);
+    this.licenseUsagePct = licTotal ? Math.round((licUsed / licTotal) * 100) : 0;
+    this.licenseUtilization =
+      licTotal > 0
+        ? [
+            { label: 'Em uso', value: licUsed, color: '#10b981' },
+            { label: 'Ociosas', value: licIdle, color: '#c4b5fd' },
+          ].filter((d) => d.value > 0)
+        : [];
 
     let score = 100;
     score -= this.criticalAlerts * 8;

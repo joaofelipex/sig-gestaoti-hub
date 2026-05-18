@@ -9,7 +9,7 @@ export function requireAuth(req: AuthedRequest, res: Response, next: NextFunctio
   const h = req.headers.authorization;
   const tok = h?.startsWith('Bearer ') ? h.slice(7) : null;
   if (!tok) {
-    res.status(401).json({ error: 'Token em falta' });
+    res.status(401).json({ error: 'Token não informado' });
     return;
   }
   try {

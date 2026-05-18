@@ -24,19 +24,19 @@ import { SigIcons } from '../../core/sig-icons';
       </header>
 
       <div class="sig-kpi-grid">
-        <app-kpi-card label="IT Health Score" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor"></app-kpi-card>
-        <app-kpi-card label="Acessos Ativos" [value]="activeAccess" [icon]="icons.access" color="#10b981"></app-kpi-card>
-        <app-kpi-card label="Riscos Críticos" [value]="criticalRisks" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
-        <app-kpi-card label="Riscos Totais" [value]="risks.length" [icon]="icons.warning" color="#f59e0b"></app-kpi-card>
+        <app-kpi-card label="Índice de saúde de TI" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor"></app-kpi-card>
+        <app-kpi-card label="Acessos ativos" [value]="activeAccess" [icon]="icons.access" color="#10b981"></app-kpi-card>
+        <app-kpi-card label="Riscos críticos" [value]="criticalRisks" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
+        <app-kpi-card label="Riscos totais" [value]="risks.length" [icon]="icons.warning" color="#f59e0b"></app-kpi-card>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="sig-chart-panel">
-          <h3>Distribuição de Riscos por Severidade</h3>
+          <h3 class="sig-chart-title">Riscos por severidade</h3>
           <app-donut-chart [data]="riskDistribution"></app-donut-chart>
         </div>
         <div class="sig-chart-panel">
-          <h3>Acessos por Nível</h3>
+          <h3 class="sig-chart-title">Acessos por nível</h3>
           <app-donut-chart [data]="accessDistribution"></app-donut-chart>
         </div>
       </div>

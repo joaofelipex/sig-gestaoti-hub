@@ -103,7 +103,7 @@ export class AppTopNavComponent {
       ],
     },
     {
-      label: 'Controlo',
+      label: 'Controle',
       items: [
         { to: '/governanca', label: 'Governança', icon: 'fas fa-shield-alt' },
         { to: '/pagamentos', label: 'Pagamentos', icon: 'fas fa-wallet' },

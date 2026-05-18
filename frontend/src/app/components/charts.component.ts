@@ -2,36 +2,71 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface ChartDatum { label: string; value: number; color?: string }
-const PALETTE = ['#2563eb', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#6b7280'];
+
+const PALETTE = ['#023ed8', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b'];
+
+let lineChartSeq = 0;
 
 @Component({
   selector: 'app-bar-chart',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-2">
-      <div *ngFor="let d of data; let i = index" class="group">
-        <div class="mb-1 flex justify-between text-xs text-gray-500">
-          <span class="font-medium text-gray-700">{{ d.label }}</span>
-          <span>{{ formatValue(d.value) }}</span>
+    <div class="sig-chart-bars" *ngIf="data.length; else empty">
+      <div class="sig-chart-bar" *ngFor="let d of data; let i = index">
+        <div class="sig-chart-bar__head">
+          <span class="sig-chart-bar__label">{{ d.label }}</span>
+          <span class="sig-chart-bar__values">
+            <strong>{{ formatValue(d.value) }}</strong>
+            <span *ngIf="showShare" class="sig-chart-bar__pct">{{ share(d.value) }}%</span>
+          </span>
         </div>
-        <div class="h-3 overflow-hidden rounded-full bg-gray-100 ring-1 ring-gray-200/80">
-          <div class="h-full rounded-full transition-all duration-500"
-               [style.width.%]="pct(d.value)"
-               [style.background]="d.color || color(i)"></div>
+        <div class="sig-chart-bar__track" role="presentation">
+          <div
+            class="sig-chart-bar__fill"
+            [style.width.%]="pct(d.value)"
+            [style.background]="barFill(d.color || color(i))"
+          ></div>
         </div>
       </div>
-      <div *ngIf="!data.length" class="py-6 text-center text-sm text-gray-400">Sem dados</div>
     </div>
-  `
+    <ng-template #empty>
+      <div class="sig-chart-empty">Sem dados para exibir</div>
+    </ng-template>
+  `,
 })
 export class BarChartComponent {
   @Input() data: ChartDatum[] = [];
   @Input() prefix = '';
-  get max() { return Math.max(1, ...this.data.map(d => d.value)); }
-  pct(v: number) { return (v / this.max) * 100; }
-  color(i: number) { return PALETTE[i % PALETTE.length]; }
-  formatValue(v: number) { return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 }); }
+  @Input() showShare = true;
+
+  get max() {
+    return Math.max(1, ...this.data.map((d) => d.value));
+  }
+
+  get total() {
+    return this.data.reduce((s, d) => s + d.value, 0);
+  }
+
+  pct(v: number) {
+    return (v / this.max) * 100;
+  }
+
+  share(v: number) {
+    return this.total ? Math.round((v / this.total) * 100) : 0;
+  }
+
+  color(i: number) {
+    return PALETTE[i % PALETTE.length];
+  }
+
+  barFill(hex: string) {
+    return `linear-gradient(90deg, ${hex} 0%, ${hex}cc 100%)`;
+  }
+
+  formatValue(v: number) {
+    return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
 }
 
 @Component({
@@ -39,38 +74,75 @@ export class BarChartComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="sig-chart-donut flex items-center gap-6">
-      <svg viewBox="0 0 42 42" class="h-32 w-32 shrink-0 -rotate-90">
-        <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f3f4f6" stroke-width="6"></circle>
-        <circle *ngFor="let s of segments"
-                cx="21" cy="21" r="15.915" fill="transparent"
-                [attr.stroke]="s.color" stroke-width="6"
-                [attr.stroke-dasharray]="s.dash"
-                [attr.stroke-dashoffset]="s.offset"></circle>
-      </svg>
-      <div class="sig-chart-donut__legend min-w-0 flex-1 space-y-1">
-        <div *ngFor="let d of data; let i = index" class="flex items-center justify-between gap-2 text-sm">
-          <div class="flex items-center gap-2">
-            <span class="w-3 h-3 rounded-sm" [style.background]="d.color || color(i)"></span>
-            <span class="text-gray-600">{{ d.label }}</span>
-          </div>
-          <span class="font-semibold text-gray-900">{{ d.value }}</span>
+    <div class="sig-chart-donut" *ngIf="data.length; else empty">
+      <div class="sig-chart-donut__ring">
+        <svg viewBox="0 0 42 42" class="sig-chart-donut__svg sig-chart-donut__svg--ring" aria-hidden="true">
+          <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--sig-chart-track)" stroke-width="5.5"></circle>
+          <circle
+            *ngFor="let s of segments"
+            cx="21"
+            cy="21"
+            r="15.915"
+            fill="transparent"
+            [attr.stroke]="s.color"
+            stroke-width="5.5"
+            [attr.stroke-dasharray]="s.dash"
+            [attr.stroke-dashoffset]="s.offset"
+            class="sig-chart-donut__segment"
+          ></circle>
+        </svg>
+        <div class="sig-chart-donut__center">
+          <strong class="sig-chart-donut__total">{{ centerValue ?? total }}</strong>
+          <span class="sig-chart-donut__center-label">{{ centerLabel }}</span>
         </div>
-        <div *ngIf="!data.length" class="text-sm text-gray-400">Sem dados</div>
+      </div>
+      <div class="sig-chart-donut__legend">
+        <div *ngFor="let d of data; let i = index" class="sig-chart-donut__row">
+          <span class="sig-chart-donut__swatch" [style.background]="d.color || color(i)"></span>
+          <span class="sig-chart-donut__name">{{ d.label }}</span>
+          <span class="sig-chart-donut__stat">
+            <strong>{{ d.value }}</strong>
+            <span class="sig-chart-donut__pct">{{ share(d.value) }}%</span>
+          </span>
+        </div>
       </div>
     </div>
-  `
+    <ng-template #empty>
+      <div class="sig-chart-empty">Sem dados para exibir</div>
+    </ng-template>
+  `,
 })
 export class DonutChartComponent {
   @Input() data: ChartDatum[] = [];
-  get total() { return Math.max(1, this.data.reduce((s, d) => s + d.value, 0)); }
-  color(i: number) { return PALETTE[i % PALETTE.length]; }
+  @Input() centerLabel = 'Total';
+  @Input() centerValue: string | number | null = null;
+
+  get total() {
+    return this.data.reduce((s, d) => s + d.value, 0);
+  }
+
+  color(i: number) {
+    return PALETTE[i % PALETTE.length];
+  }
+
+  share(v: number) {
+    const t = Math.max(1, this.total);
+    return Math.round((v / t) * 100);
+  }
+
   get segments() {
-    let acc = 0; const C = 100;
+    const sum = Math.max(1, this.total);
+    let acc = 0;
+    const C = 100;
     return this.data.map((d, i) => {
-      const pct = (d.value / this.total) * C;
-      const s = { color: d.color || this.color(i), dash: `${pct} ${C - pct}`, offset: C - acc };
-      acc += pct; return s;
+      const pct = (d.value / sum) * C;
+      const seg = {
+        color: d.color || this.color(i),
+        dash: `${pct} ${C - pct}`,
+        offset: C - acc,
+      };
+      acc += pct;
+      return seg;
     });
   }
 }
@@ -80,41 +152,107 @@ export class DonutChartComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="sig-chart-line">
-    <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="h-40 w-full min-w-[280px]">
-      <polyline [attr.points]="path" fill="none" stroke="#3b82f6" stroke-width="2" />
-      <polygon [attr.points]="area" fill="url(#grad)" opacity="0.2" />
-      <defs>
-        <linearGradient id="grad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.6"/>
-          <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      <g *ngFor="let p of points; let i = index">
-        <circle [attr.cx]="p.x" [attr.cy]="p.y" r="3" fill="#3b82f6"/>
-        <text [attr.x]="p.x" [attr.y]="H - 4" font-size="9" text-anchor="middle" fill="#6b7280">{{ data[i]?.label }}</text>
-      </g>
-    </svg>
+    <div class="sig-chart-line" *ngIf="data.length; else empty">
+      <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="sig-chart-line__svg" role="img">
+        <defs>
+          <linearGradient [attr.id]="gradId" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" [attr.stop-color]="strokeColor" stop-opacity="0.35" />
+            <stop offset="100%" [attr.stop-color]="strokeColor" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <g class="sig-chart-line__grid">
+          <line
+            *ngFor="let t of yTicks"
+            [attr.x1]="padX"
+            [attr.x2]="W - padX"
+            [attr.y1]="yAt(t)"
+            [attr.y2]="yAt(t)"
+          />
+        </g>
+        <g class="sig-chart-line__ylabels">
+          <text
+            *ngFor="let t of yTicks"
+            [attr.x]="padX - 6"
+            [attr.y]="yAt(t) + 3"
+            text-anchor="end"
+          >{{ formatTick(t) }}</text>
+        </g>
+        <polygon [attr.points]="area" [attr.fill]="'url(#' + gradId + ')'" />
+        <polyline [attr.points]="path" fill="none" [attr.stroke]="strokeColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+        <g *ngFor="let p of points; let i = index" class="sig-chart-line__point">
+          <circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" [attr.fill]="strokeColor" stroke="#fff" stroke-width="2" />
+          <text [attr.x]="p.x" [attr.y]="p.y - 8" text-anchor="middle" class="sig-chart-line__value">{{ formatValue(data[i].value) }}</text>
+          <text [attr.x]="p.x" [attr.y]="H - 6" text-anchor="middle" class="sig-chart-line__month">{{ data[i].label }}</text>
+        </g>
+      </svg>
     </div>
-    <div *ngIf="!data.length" class="py-6 text-center text-sm text-gray-400">Sem dados</div>
-  `
+    <ng-template #empty>
+      <div class="sig-chart-empty">Sem dados para exibir</div>
+    </ng-template>
+  `,
 })
 export class LineChartComponent {
   @Input() data: ChartDatum[] = [];
-  W = 400; H = 160;
-  get max() { return Math.max(1, ...this.data.map(d => d.value)); }
+  @Input() prefix = '';
+  @Input() strokeColor = '#023ed8';
+
+  readonly gradId = `sig-line-grad-${++lineChartSeq}`;
+  W = 420;
+  H = 176;
+  padX = 44;
+  padTop = 22;
+  padBottom = 28;
+
+  get max() {
+    return Math.max(1, ...this.data.map((d) => d.value));
+  }
+
+  get yTicks(): number[] {
+    const m = this.max;
+    if (m <= 0) return [0];
+    const step = m <= 4 ? 1 : m <= 20 ? 5 : m <= 100 ? 25 : m <= 1000 ? 250 : Math.ceil(m / 4 / 1000) * 1000;
+    const ticks: number[] = [];
+    for (let v = 0; v <= m; v += step) ticks.push(v);
+    if (ticks[ticks.length - 1] !== m) ticks.push(m);
+    return ticks.slice(-5);
+  }
+
+  yAt(value: number) {
+    const h = this.H - this.padTop - this.padBottom;
+    return this.padTop + h - (value / this.max) * h;
+  }
+
   get points() {
     if (!this.data.length) return [];
-    const pad = 20, w = this.W - pad * 2, h = this.H - 30;
+    const w = this.W - this.padX * 2;
+    const h = this.H - this.padTop - this.padBottom;
     return this.data.map((d, i) => ({
-      x: pad + (i / Math.max(1, this.data.length - 1)) * w,
-      y: 10 + h - (d.value / this.max) * h
+      x: this.padX + (i / Math.max(1, this.data.length - 1)) * w,
+      y: this.padTop + h - (d.value / this.max) * h,
     }));
   }
-  get path() { return this.points.map(p => `${p.x},${p.y}`).join(' '); }
+
+  get path() {
+    return this.points.map((p) => `${p.x},${p.y}`).join(' ');
+  }
+
   get area() {
-    const pts = this.points; if (!pts.length) return '';
-    return `${pts[0].x},${this.H - 20} ${this.path} ${pts[pts.length - 1].x},${this.H - 20}`;
+    const pts = this.points;
+    if (!pts.length) return '';
+    const base = this.H - this.padBottom;
+    return `${pts[0].x},${base} ${this.path} ${pts[pts.length - 1].x},${base}`;
+  }
+
+  formatTick(v: number) {
+    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)} mi`;
+    if (v >= 1_000) return `${Math.round(v / 1_000)} mil`;
+    return String(v);
+  }
+
+  formatValue(v: number) {
+    if (v >= 1_000_000) return this.prefix + (v / 1_000_000).toFixed(1) + ' mi';
+    if (v >= 10_000) return this.prefix + Math.round(v / 1_000) + ' mil';
+    return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
   }
 }
 
@@ -140,7 +278,7 @@ export class LineChartComponent {
         </div>
       </div>
     </div>
-  `
+  `,
 })
 export class KpiCardComponent {
   @Input() label = '';

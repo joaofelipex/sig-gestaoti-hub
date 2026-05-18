@@ -70,7 +70,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
           <p class="mb-2">Cadastre orçamentos anuais e ações de economia para ver indicadores, gráficos e priorização.</p>
           <ul>
             <li>Use a aba <strong>Orçamentos</strong> para linhas por categoria e centro de custo.</li>
-            <li>Use <strong>Ações estratégicas</strong> para iniciativas FinOps com economia estimada.</li>
+            <li>Use <strong>Ações estratégicas</strong> para iniciativas de otimização de custos com economia estimada.</li>
           </ul>
         </div>
 
@@ -118,7 +118,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
               <p class="sig-metric-tile__hint">Ações concluídas</p>
             </div>
             <div class="sig-metric-tile">
-              <p class="sig-metric-tile__label">Pipeline (abertas)</p>
+              <p class="sig-metric-tile__label">Economia em aberto</p>
               <p class="sig-metric-tile__value">{{ brl(openSavings) }}</p>
               <p class="sig-metric-tile__hint">Economia ainda não capturada</p>
             </div>
@@ -191,7 +191,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
                   <strong>{{ budgetCategories }}</strong> categoria(s).
                 </li>
                 <li class="mb-2">
-                  O pipeline de economia totaliza <strong>{{ brl(totalSavings) }}</strong>
+                  O potencial de economia totaliza <strong>{{ brl(totalSavings) }}</strong>
                   ({{ savingsRateLabel }}).
                 </li>
                 <li class="mb-2" *ngIf="topCategory">
@@ -524,7 +524,7 @@ export class EconomistComponent implements OnInit, OnDestroy {
 
   readonly statusOptions = ['Aberto', 'Em andamento', 'Concluída', 'Cancelada', 'Pendente'];
   readonly categoryOptions = [
-    'FinOps',
+    'Otimização de custos',
     'Infraestrutura',
     'Licenciamento',
     'Cloud',
@@ -839,7 +839,7 @@ export class EconomistComponent implements OnInit, OnDestroy {
     this.actionForm = {
       title: '',
       description: '',
-      category: 'FinOps',
+      category: 'Otimização de custos',
       priority: 'Média',
       effort: 'M',
       status: 'Aberto',
@@ -913,7 +913,7 @@ export class EconomistComponent implements OnInit, OnDestroy {
       .map((r) => ({
         title: r['Titulo'] || r['title'],
         description: r['Descricao'] || r['description'] || '',
-        category: r['Categoria'] || r['category'] || 'FinOps',
+        category: r['Categoria'] || r['category'] || 'Otimização de custos',
         priority: r['Prioridade'] || r['priority'] || 'Média',
         effort: r['Esforco'] || r['effort'] || 'M',
         status: r['Status'] || r['status'] || 'Aberto',

@@ -1,10 +1,9 @@
 /**
- * Âmbito dos dados visíveis na API.
+ * Âmbito dos dados na API (schema public).
  *
- * DATA_SCOPE=all  → todos os registos (desenvolvimento; ignora org_id na leitura)
- * DATA_SCOPE=org  → só org_id do perfil (multi-tenant)
- *
- * Por defeito: all (até atribuir org_id/empresa_id aos registos).
+ * Leitura (SELECT): sempre todos os registos — org_id é metadado, não filtro de listagem.
+ * Escrita (UPDATE/DELETE): DATA_SCOPE=org limita à org do perfil; DATA_SCOPE=all só por id.
+ * INSERT: org_id do perfil é sempre atribuído nas rotas de dados.
  */
 export type DataScope = 'all' | 'org';
 
@@ -13,15 +12,13 @@ export function getDataScope(): DataScope {
   return v === 'org' ? 'org' : 'all';
 }
 
+/** Escopo de escrita (UPDATE/DELETE). Leituras ignoram org_id. */
 export function isOrgScoped(): boolean {
   return getDataScope() === 'org';
 }
 
-/** Cláusula WHERE para listagens (paramOrg ex.: $1). */
-export function sqlOrgReadScope(orgParam = '$1'): string {
-  if (isOrgScoped()) {
-    return `org_id = ${orgParam}`;
-  }
+/** Cláusula WHERE para listagens em public.* — sempre todos os registos. */
+export function sqlOrgReadScope(_orgParam = '$1'): string {
   return 'TRUE';
 }
 

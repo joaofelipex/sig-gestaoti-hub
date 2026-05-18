@@ -110,15 +110,18 @@
 .sig-chart-donut {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem 1.75rem;
   flex-wrap: wrap;
-  justify-content: center;
 }
 
 @media (max-width: 575.98px) {
   .sig-chart-donut {
     flex-direction: column;
-    text-align: center;
+    align-items: stretch;
+  }
+
+  .sig-chart-donut__ring {
+    margin: 0 auto;
   }
 
   .sig-chart-donut .sig-chart-donut__legend {
@@ -132,8 +135,8 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.sig-chart-line svg {
-  min-width: 280px;
+.sig-chart-line__svg {
+  min-width: 300px;
 }
 
 /* —— Modais —— */

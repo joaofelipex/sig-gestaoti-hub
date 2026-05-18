@@ -26,6 +26,7 @@ export class EmpresaSelectorComponent implements OnInit, OnDestroy {
   constructor(private svc: EmpresaService) {}
 
   ngOnInit(): void {
+    void this.svc.load();
     this.subs.push(this.svc.list$.subscribe((l) => (this.empresas = l)));
     this.subs.push(this.svc.selected$.subscribe((id) => (this.selectedId = id)));
   }

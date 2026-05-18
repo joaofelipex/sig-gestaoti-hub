@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth';
 import dataRoutes from './routes/data';
 import { ensureAuthSchema, getPostgresTargetLabel, pool, verifyConnection } from './db';
+import { ensureEmpresasUniqueOnStartup } from './ensure-empresas-unique';
 import { logStartupDataSummary } from './startup-log';
 
 const app = express();
@@ -63,6 +64,7 @@ async function start() {
   await pool.query('SELECT 1');
   postgresTarget = await verifyConnection();
   await ensureAuthSchema();
+  await ensureEmpresasUniqueOnStartup();
   await logStartupDataSummary();
 
   app.listen(PORT, '0.0.0.0', () => {

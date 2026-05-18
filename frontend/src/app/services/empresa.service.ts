@@ -2,46 +2,86 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
-import { AuthService } from './auth.service';
 import { ToastService } from './toast.service';
 
 export interface Empresa {
   id: string;
+  org_id?: string | null;
   nome: string;
   cnpj: string | null;
   segmento: string | null;
   responsavel: string | null;
   ativo: boolean;
   observacoes: string | null;
+  updated_at?: string | null;
+  created_at?: string | null;
 }
 
 const STORAGE_KEY = 'imts_selected_empresa';
 
+function normalizeCnpj(cnpj: string | null | undefined): string {
+  return String(cnpj ?? '').replace(/\D/g, '');
+}
+
+function normalizeNome(nome: string | null | undefined): string {
+  return String(nome ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/\s+/g, ' ');
+}
+
+function empresaKey(e: Empresa): string {
+  const cnpj = normalizeCnpj(e.cnpj);
+  if (cnpj.length >= 11) return `cnpj:${cnpj}`;
+  const nome = normalizeNome(e.nome);
+  if (nome) return `nome:${nome}`;
+  return `id:${e.id}`;
+}
+
+function empresaScore(e: Empresa): number {
+  for (const d of [e.updated_at, e.created_at]) {
+    if (!d) continue;
+    const t = new Date(d).getTime();
+    if (Number.isFinite(t)) return t;
+  }
+  return 0;
+}
+
+function dedupeEmpresas(rows: Empresa[]): Empresa[] {
+  const byKey = new Map<string, Empresa>();
+  for (const e of rows) {
+    if (!e?.id) continue;
+    const key = empresaKey(e);
+    const prev = byKey.get(key);
+    if (!prev || empresaScore(e) > empresaScore(prev)) byKey.set(key, e);
+  }
+  return [...byKey.values()].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
 @Injectable({ providedIn: 'root' })
 export class EmpresaService {
   private _list = new BehaviorSubject<Empresa[]>([]);
+  private _loading = new BehaviorSubject<boolean>(false);
   private _selected = new BehaviorSubject<string | null>(localStorage.getItem(STORAGE_KEY));
+  private loadInFlight: Promise<void> | null = null;
 
   list$ = this._list.asObservable();
+  loading$ = this._loading.asObservable();
   selected$ = this._selected.asObservable();
 
   constructor(
     private api: ApiService,
-    private auth: AuthService,
     private toast: ToastService,
   ) {
-    const onAuth = () => {
+    this.api.authChanged$.subscribe(() => {
       if (!this.api.getToken()) {
         this._list.next([]);
+        this._loading.next(false);
         return;
       }
       void this.load();
-    };
-    this.api.authChanged$.subscribe(onAuth);
-    this.auth.loading$.subscribe((loading) => {
-      if (!loading && this.api.getToken()) {
-        void this.load();
-      }
     });
   }
 
@@ -58,16 +98,34 @@ export class EmpresaService {
     this._selected.next(id);
   }
 
-  async load() {
+  async load(): Promise<void> {
+    if (this.loadInFlight) {
+      return this.loadInFlight;
+    }
+    this.loadInFlight = this.fetchList().finally(() => {
+      this.loadInFlight = null;
+    });
+    return this.loadInFlight;
+  }
+
+  private async fetchList(): Promise<void> {
+    this._loading.next(true);
     try {
-      const data = (await firstValueFrom(this.api.getEmpresas())) as Empresa[];
-      const list = data ?? [];
+      const raw = await firstValueFrom(this.api.getEmpresas());
+      const list = dedupeEmpresas(Array.isArray(raw) ? (raw as Empresa[]) : []);
       this._list.next(list);
       if (this._selected.value && !list.find((e) => e.id === this._selected.value)) {
         this.setSelected(null);
       }
-    } catch {
+    } catch (e: unknown) {
       this._list.next([]);
+      const msg =
+        e instanceof HttpErrorResponse && e.error && typeof e.error === 'object' && 'error' in e.error
+          ? String((e.error as { error: string }).error)
+          : 'Não foi possível carregar empresas';
+      this.toast.show({ title: 'Erro', description: msg, variant: 'destructive' });
+    } finally {
+      this._loading.next(false);
     }
   }
 

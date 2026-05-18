@@ -26,7 +26,7 @@ r.post('/login', async (req, res) => {
     .toLowerCase();
   const password = String(req.body?.password || '');
   if (!email || !password) {
-    res.status(400).json({ error: 'Email e palavra-passe obrigatórios' });
+    res.status(400).json({ error: 'E-mail e senha são obrigatórios' });
     return;
   }
   const u = await pool.query(
@@ -56,16 +56,10 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
   const [pg, countsQ, globalQ, topOrgQ] = await Promise.all([
     verifyConnection().catch(() => null),
     pool.query<{ ativos: number; empresas: number; alertas: number }>(
-      isOrgScoped()
-        ? `SELECT
-             (SELECT count(*)::int FROM public.ativos WHERE org_id = $1::uuid) AS ativos,
-             (SELECT count(*)::int FROM public.empresas WHERE org_id = $1::uuid) AS empresas,
-             (SELECT count(*)::int FROM public.alertas WHERE org_id = $1::uuid) AS alertas`
-        : `SELECT
-             (SELECT count(*)::int FROM public.ativos) AS ativos,
-             (SELECT count(*)::int FROM public.empresas) AS empresas,
-             (SELECT count(*)::int FROM public.alertas) AS alertas`,
-      isOrgScoped() ? [orgId] : [],
+      `SELECT
+         (SELECT count(*)::int FROM public.ativos) AS ativos,
+         (SELECT count(*)::int FROM public.empresas) AS empresas,
+         (SELECT count(*)::int FROM public.alertas) AS alertas`,
     ),
     pool.query<{ ativos: number }>(`SELECT count(*)::int AS ativos FROM public.ativos`),
     pool.query<{ org_id: string; org_nome: string; ativos: number }>(
@@ -95,7 +89,8 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
       port: pg?.port ?? null,
     },
     dataCounts: counts,
-    dataScope: isOrgScoped() ? 'org' : 'all',
+    dataScope: 'all',
+    writeScope: isOrgScoped() ? 'org' : 'all',
     databaseSummary: {
       totalAtivos: globalAtivos,
       topOrg:
@@ -123,7 +118,7 @@ r.post('/signup', async (req, res) => {
   }
   const exists = await pool.query(`SELECT 1 FROM auth.users WHERE lower(coalesce(email,'')) = $1`, [email]);
   if (exists.rowCount) {
-    res.status(409).json({ error: 'Email já registado' });
+    res.status(409).json({ error: 'E-mail já cadastrado' });
     return;
   }
 
@@ -142,7 +137,7 @@ r.post('/signup', async (req, res) => {
     );
     const hash = hashRow.rows[0]?.hash;
     if (!hash) {
-      throw new Error('Falha ao gerar hash da palavra-passe');
+      throw new Error('Falha ao gerar hash da senha');
     }
     await client.query(
       `INSERT INTO auth.users (id, email, encrypted_password, created_at) VALUES ($1, $2, $3, now())`,

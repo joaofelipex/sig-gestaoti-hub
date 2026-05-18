@@ -27,7 +27,7 @@ import { SigIcons } from '../../core/sig-icons';
         <app-kpi-card label="Pendente" [value]="brl(totals.pendente)" [icon]="icons.pending" color="#f59e0b"></app-kpi-card>
         <app-kpi-card label="Atrasado" [value]="brl(totals.atrasado)" [icon]="icons.overdue" color="#ef4444"></app-kpi-card>
         <app-kpi-card label="Pago no mês" [value]="brl(totals.pago)" [icon]="icons.success" color="#10b981"></app-kpi-card>
-        <app-kpi-card label="Total Filtrado" [value]="brl(totals.total)" [icon]="icons.cost" color="#3b82f6"></app-kpi-card>
+        <app-kpi-card label="Total filtrado" [value]="brl(totals.total)" [icon]="icons.cost" color="#3b82f6"></app-kpi-card>
       </div>
 
       <app-data-toolbar searchPlaceholder="Buscar nome, fornecedor..." [search]="search"

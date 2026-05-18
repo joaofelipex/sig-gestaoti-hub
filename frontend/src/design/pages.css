@@ -547,6 +547,205 @@
   color: var(--sig-text-muted);
 }
 
+/* —— Componentes de gráfico (analytics) —— */
+:root {
+  --sig-chart-track: #e8ecf4;
+}
+
+.sig-chart-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-chart-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.sig-chart-bar__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.sig-chart-bar__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--sig-text);
+}
+
+.sig-chart-bar__values {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--sig-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-chart-bar__values strong {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--sig-text);
+}
+
+.sig-chart-bar__pct {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(var(--wl-background-color), 0.08);
+  color: rgb(var(--wl-background-color));
+}
+
+.sig-chart-bar__track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--sig-chart-track);
+  overflow: hidden;
+}
+
+.sig-chart-bar__fill {
+  height: 100%;
+  min-width: 2px;
+  border-radius: 999px;
+  transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sig-chart-donut__ring {
+  position: relative;
+  flex-shrink: 0;
+  width: 8.5rem;
+  height: 8.5rem;
+}
+
+.sig-chart-donut__svg--ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.sig-chart-donut__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+}
+
+.sig-chart-donut__total {
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--sig-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-chart-donut__center-label {
+  margin-top: 0.15rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sig-text-muted);
+}
+
+.sig-chart-donut__legend {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sig-chart-donut__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+
+.sig-chart-donut__swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.sig-chart-donut__name {
+  color: var(--sig-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sig-chart-donut__stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-chart-donut__stat strong {
+  color: var(--sig-text);
+  font-weight: 700;
+}
+
+.sig-chart-donut__pct {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--sig-text-muted);
+}
+
+.sig-chart-line__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 10.5rem;
+}
+
+.sig-chart-line__grid line {
+  stroke: var(--sig-chart-track);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+
+.sig-chart-line__ylabels text {
+  font-size: 8px;
+  fill: var(--sig-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-chart-line__value {
+  font-size: 8px;
+  font-weight: 700;
+  fill: var(--sig-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-chart-line__month {
+  font-size: 9px;
+  fill: var(--sig-text-muted);
+  text-transform: capitalize;
+}
+
+.sig-chart-line__point circle {
+  transition: r 0.15s ease;
+}
+
+.sig-chart-line:hover .sig-chart-line__point circle {
+  r: 5;
+}
+
 .sig-modal-form label {
   display: block;
   font-size: 0.8125rem;

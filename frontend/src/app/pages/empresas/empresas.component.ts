@@ -14,13 +14,15 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
       <div class="app-page-header">
         <div>
           <h1 class="app-page-title">Empresas da Holding</h1>
-          <p class="app-page-sub">Gerencie as empresas que compõem a IMTS — cada registro de TI pode ser segmentado por empresa.</p>
+          <p class="app-page-sub">{{ loading ? 'Carregando…' : empresas.length + ' empresa(s) únicas' }}</p>
         </div>
         <button type="button" (click)="openNew()" class="btn btn-primary btn-sm">+ Nova Empresa</button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <article *ngFor="let e of empresas"
+      <div *ngIf="loading" class="sig-page-loading">Carregando empresas…</div>
+
+      <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <article *ngFor="let e of empresas; trackBy: trackById"
           class="sig-empresa-card"
           [class.is-selected]="selectedId === e.id">
           <div class="flex items-start justify-between mb-2">
@@ -82,6 +84,7 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
 })
 export class EmpresasComponent implements OnInit, OnDestroy {
   empresas: Empresa[] = [];
+  loading = true;
   selectedId: string | null = null;
   modalOpen = false; confirmOpen = false; saving = false;
   form: any = {}; toDelete: Empresa | null = null;
@@ -89,9 +92,12 @@ export class EmpresasComponent implements OnInit, OnDestroy {
   constructor(private svc: EmpresaService) {}
   ngOnInit() {
     this.subs.push(this.svc.list$.subscribe(l => this.empresas = l));
+    this.subs.push(this.svc.loading$.subscribe(v => this.loading = v));
     this.subs.push(this.svc.selected$.subscribe(id => this.selectedId = id));
+    void this.svc.load();
   }
   ngOnDestroy() { this.subs.forEach(s => s.unsubscribe()); }
+  trackById(_: number, e: Empresa) { return e.id; }
   initials(n: string) { return n.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase(); }
   select(e: Empresa) { this.svc.setSelected(this.selectedId === e.id ? null : e.id); }
   openNew() { this.form = { ativo: true }; this.modalOpen = true; }

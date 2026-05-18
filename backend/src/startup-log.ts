@@ -14,7 +14,9 @@ export async function logStartupDataSummary(): Promise<void> {
   ] as const;
 
   try {
-    console.log(`[data] DATA_SCOPE=${getDataScope()} (all = sem filtro org_id na API)`);
+    console.log(
+      `[data] DATA_SCOPE=${getDataScope()} (leitura public.* = todos; escrita org só se DATA_SCOPE=org)`,
+    );
 
     await pool.query(`
       UPDATE auth.users
@@ -38,13 +40,13 @@ export async function logStartupDataSummary(): Promise<void> {
       console.log(
         demo.rows[0].ok
           ? '[data] login demo OK (dev@local.imts / demo123456)'
-          : '[data] utilizador demo existe mas palavra-passe não é demo123456',
+          : '[data] usuário demo existe mas a senha não é demo123456',
       );
       if (!demo.rows[0].has_profile) {
         console.log('[data] AVISO: demo sem perfil — dashboard ficará vazio (403). Aplique 02_seed.sql');
       }
     } else {
-      console.log('[data] sem dev@local.imts — registe-se na app ou: npm run db:seed (Docker)');
+      console.log('[data] sem dev@local.imts — cadastre-se na aplicação ou: npm run db:seed (Docker)');
     }
 
     for (const t of tables) {
@@ -53,8 +55,9 @@ export async function logStartupDataSummary(): Promise<void> {
       );
       console.log(`[data] ${t}: ${q.rows[0]?.c ?? 0}`);
     }
+
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.warn('[data] não foi possível contar registos:', msg);
+    console.warn('[data] não foi possível contar registros:', msg);
   }
 }

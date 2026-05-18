@@ -66,7 +66,7 @@ export class AppShellHeaderComponent {
     { to: '/dominios', title: 'Domínios', subtitle: 'DNS' },
     { to: '/licencas', title: 'Licenças', subtitle: 'SAM' },
     { to: '/servidores', title: 'Servidores', subtitle: 'Infra' },
-    { to: '/governanca', title: 'Governança', subtitle: 'Ctrl.' },
+    { to: '/governanca', title: 'Governança', subtitle: 'Gov.' },
     { to: '/pagamentos', title: 'Pagamentos', subtitle: 'Fin.' },
     { to: '/alertas', title: 'Alertas', subtitle: 'Avisos' },
     { to: '/economista', title: 'Economista', subtitle: 'BI' },

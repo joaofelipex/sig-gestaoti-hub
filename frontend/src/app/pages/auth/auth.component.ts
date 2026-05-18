@@ -135,7 +135,7 @@ export class AuthComponent {
         );
         this.toastService.show({
           title: 'Conta criada',
-          description: 'Organização nova começa sem registos — importe ou crie dados no menu.',
+          description: 'Organização nova começa sem registros — importe ou crie dados no menu.',
         });
       }
       this.empresa.setSelected(null);

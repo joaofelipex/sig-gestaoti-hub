@@ -78,7 +78,7 @@ export class AuthService {
           reject(
             this.httpErrorMessage(
               err,
-              'Não foi possível contactar a API. Confirme: cd backend && npm run dev',
+              'Não foi possível conectar à API. Confirme: cd backend && npm run dev',
             ),
           ),
       });
@@ -99,7 +99,7 @@ export class AuthService {
           reject(
             this.httpErrorMessage(
               err,
-              'Não foi possível contactar a API. Confirme: cd backend && npm run dev',
+              'Não foi possível conectar à API. Confirme: cd backend && npm run dev',
             ),
           ),
       });
