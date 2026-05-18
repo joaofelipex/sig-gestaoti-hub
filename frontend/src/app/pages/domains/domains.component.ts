@@ -13,8 +13,13 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
   standalone: true,
   imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
   template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4">Domínios & DNS</h1>
+    <section class="sig-page">
+      <header class="app-page-header">
+        <div>
+          <h1 class="app-page-title">Domínios & DNS</h1>
+          <p class="app-page-sub">Registros, SSL e renovações de domínios.</p>
+        </div>
+      </header>
 
       <app-data-toolbar
         searchPlaceholder="Buscar domínio, registrador..."
@@ -28,10 +33,11 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         (importFile)="importCSV($event)"
       ></app-data-toolbar>
 
-      <div *ngIf="loading" class="text-center py-8 text-gray-500">Carregando...</div>
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
 
-      <div *ngIf="!loading" class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
+      <div *ngIf="!loading" class="sig-list-card">
+        <div class="sig-table-wrap">
+        <table class="sig-table">
           <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Domínio</th>
@@ -52,15 +58,16 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
               <td class="px-4 py-3 text-sm text-gray-500">{{ d.sslExpiration ? (d.sslExpiration | date:'dd/MM/yyyy') : '—' }}</td>
               <td class="px-4 py-3 text-sm text-gray-500">R$ {{ d.renewalCost.toLocaleString('pt-BR') }}</td>
               <td class="px-4 py-3 text-right text-sm">
-                <button (click)="openEdit(d)" class="text-blue-600 hover:underline mr-3">Editar</button>
-                <button (click)="askDelete(d)" class="text-red-600 hover:underline">Excluir</button>
+                <button type="button" (click)="openEdit(d)" class="sig-link-action me-3">Editar</button>
+                <button type="button" (click)="askDelete(d)" class="sig-link-action sig-link-action--danger">Excluir</button>
               </td>
             </tr>
             <tr *ngIf="!filtered.length"><td colspan="7" class="text-center py-8 text-sm text-gray-400">Nenhum domínio encontrado</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
-    </div>
+    </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Domínio' : 'Novo Domínio'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
       <div class="grid grid-cols-2 gap-4">

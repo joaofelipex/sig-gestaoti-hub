@@ -8,20 +8,26 @@ import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent } from '../../components/charts.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-payments',
   standalone: true,
   imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent],
   template: `
-    <div class="p-6 space-y-4">
-      <h1 class="text-2xl font-bold">Pagamentos</h1>
+    <section class="sig-page">
+      <header class="app-page-header">
+        <div>
+          <h1 class="app-page-title">Pagamentos</h1>
+          <p class="app-page-sub">Despesas recorrentes e faturas de TI.</p>
+        </div>
+      </header>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <app-kpi-card label="Pendente" [value]="brl(totals.pendente)" icon="⏳" color="#f59e0b"></app-kpi-card>
-        <app-kpi-card label="Atrasado" [value]="brl(totals.atrasado)" icon="🚨" color="#ef4444"></app-kpi-card>
-        <app-kpi-card label="Pago no mês" [value]="brl(totals.pago)" icon="✅" color="#10b981"></app-kpi-card>
-        <app-kpi-card label="Total Filtrado" [value]="brl(totals.total)" icon="💰" color="#3b82f6"></app-kpi-card>
+        <app-kpi-card label="Pendente" [value]="brl(totals.pendente)" [icon]="icons.pending" color="#f59e0b"></app-kpi-card>
+        <app-kpi-card label="Atrasado" [value]="brl(totals.atrasado)" [icon]="icons.overdue" color="#ef4444"></app-kpi-card>
+        <app-kpi-card label="Pago no mês" [value]="brl(totals.pago)" [icon]="icons.success" color="#10b981"></app-kpi-card>
+        <app-kpi-card label="Total Filtrado" [value]="brl(totals.total)" [icon]="icons.cost" color="#3b82f6"></app-kpi-card>
       </div>
 
       <app-data-toolbar searchPlaceholder="Buscar nome, fornecedor..." [search]="search"
@@ -59,7 +65,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Pagamento' : 'Novo Pagamento'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
       <div class="grid grid-cols-2 gap-4">
@@ -78,6 +84,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
   `
 })
 export class PaymentsComponent implements OnInit, OnDestroy {
+  readonly icons = SigIcons;
   payments: Payment[] = []; loading = true; search = ''; filterValues: any = {};
   modalOpen = false; confirmOpen = false; saving = false; form: any = {}; toDelete: Payment | null = null;
   catOpts = [{value:'servidor',label:'Servidor'},{value:'licenca',label:'Licença'},{value:'dominio',label:'Domínio'},{value:'contrato',label:'Contrato'},{value:'outro',label:'Outro'}];

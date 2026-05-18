@@ -4,35 +4,58 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComponent, ChartDatum } from '../../components/charts.component';
+import { SigIcons } from '../../core/sig-icons';
+import { ApiService } from '../../services/api.service';
+import { EmpresaService } from '../../services/empresa.service';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [CommonModule, KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComponent],
   template: `
-    <div class="min-h-full space-y-6 p-3 p-md-4">
+    <section class="sig-page p-3 p-md-4">
       <div class="app-page-header">
         <div>
           <h1 class="app-page-title">Dashboard</h1>
           <p class="app-page-sub">Bem-vindo, <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
         </div>
         <button type="button" (click)="logout()" class="btn btn-outline-danger btn-sm">
-          Sair
+          <i class="fas fa-right-from-bracket me-1" aria-hidden="true"></i> Sair
         </button>
       </div>
 
-      <div *ngIf="loading" class="rounded-lg border border-gray-200 bg-white py-16 text-center text-sm text-gray-500 shadow-sm">
-        Carregando…
-      </div>
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
 
       <ng-container *ngIf="!loading">
-        <div class="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6">
-          <app-kpi-card label="Health Score" [value]="healthScore + '%'" icon="❤️" [color]="healthColor" hint="Saúde geral"></app-kpi-card>
-          <app-kpi-card label="Ativos em uso" [value]="assetsInUse" icon="💻" color="#3b82f6"></app-kpi-card>
-          <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" icon="💰" color="#10b981"></app-kpi-card>
-          <app-kpi-card label="Domínios ≤30d" [value]="domainsExpiring" icon="🌐" color="#f59e0b"></app-kpi-card>
-          <app-kpi-card label="Licenças ociosas" [value]="unusedLicenses" icon="🔑" color="#8b5cf6" hint="Não usadas"></app-kpi-card>
-          <app-kpi-card label="Alertas críticos" [value]="criticalAlerts" icon="🚨" color="#ef4444"></app-kpi-card>
+        <div
+          *ngIf="isEmpty"
+          class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+          role="status"
+        >
+          <p class="mb-1 font-semibold">
+            <i class="fas fa-database me-2" aria-hidden="true"></i>
+            Sem registos para a sua organização
+          </p>
+          <p class="mb-2 text-slate-600">
+            PostgreSQL
+            <span *ngIf="postgresLabel"> · <strong>{{ postgresLabel }}</strong></span>
+            <span *ngIf="orgAtivos !== null"> · {{ orgAtivos }} ativo(s) na sua organização</span>.
+          </p>
+          <ul class="mb-0 ps-4 space-y-1 text-slate-600">
+            <li *ngIf="empresaFilterActive">No header, escolha <strong>Todas as empresas</strong> — o filtro pode ocultar registos.</li>
+            <li *ngIf="orgAtivos === 0">Confira <code class="text-xs">backend/.env</code> (mesma ligação do DBeaver) ou crie registos no menu.</li>
+            <li *ngIf="orgAtivos && orgAtivos > 0">Há dados na base; confirme o filtro de empresa e recarregue a página.</li>
+            <li>Conta criada por registo começa vazia — os dados ficam na mesma base PostgreSQL, ligados ao seu <code class="text-xs">org_id</code>.</li>
+          </ul>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 md:gap-4">
+          <app-kpi-card label="Health Score" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" hint="Saúde geral"></app-kpi-card>
+          <app-kpi-card label="Ativos em uso" [value]="assetsInUse" [icon]="icons.assets" color="#3b82f6"></app-kpi-card>
+          <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" [icon]="icons.cost" color="#10b981"></app-kpi-card>
+          <app-kpi-card label="Domínios ≤30d" [value]="domainsExpiring" [icon]="icons.domain" color="#f59e0b"></app-kpi-card>
+          <app-kpi-card label="Licenças ociosas" [value]="unusedLicenses" [icon]="icons.license" color="#8b5cf6" hint="Não usadas"></app-kpi-card>
+          <app-kpi-card label="Alertas críticos" [value]="criticalAlerts" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
         </div>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -57,19 +80,69 @@ import { KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComp
           </div>
         </div>
       </ng-container>
-    </div>
+    </section>
   `
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  readonly icons = SigIcons;
+  postgresLabel = '';
+  orgAtivos: number | null = null;
+  empresaFilterActive = false;
   get user() { return this.authService.user; }
+  get isEmpty(): boolean {
+    const d = this.data;
+    return (
+      !d.loading &&
+      !d.assets?.length &&
+      !d.domains?.length &&
+      !d.licenses?.length &&
+      !d.servers?.length &&
+      !d.alerts?.length &&
+      !d.payments?.length
+    );
+  }
   data: any = { assets: [], domains: [], licenses: [], servers: [], alerts: [], payments: [], loading: true };
   loading = true;
   healthScore = 0; assetsInUse = 0; domainsExpiring = 0; unusedLicenses = 0; monthlyCost = 0; criticalAlerts = 0;
   costByCategory: ChartDatum[] = []; assetStatus: ChartDatum[] = []; paymentTrend: ChartDatum[] = []; domainStatus: ChartDatum[] = [];
   private sub!: Subscription;
 
-  constructor(private authService: AuthService, private dashboardService: DashboardService) {}
-  ngOnInit() { this.sub = this.dashboardService.data$.subscribe(d => { this.data = d; this.loading = d.loading; if (!d.loading) this.compute(); }); }
+  constructor(
+    private authService: AuthService,
+    private dashboardService: DashboardService,
+    private api: ApiService,
+    private empresaService: EmpresaService,
+  ) {}
+  ngOnInit() {
+    this.empresaFilterActive = !!this.empresaService.selectedId;
+    this.api.getHealth().subscribe({
+      next: (h) => {
+        if (h.ok && h.postgres) {
+          this.postgresLabel = `${h.postgres.host}:${h.postgres.port}/${h.postgres.database}`;
+        } else if (h.configured) {
+          this.postgresLabel = h.configured;
+        }
+      },
+      error: () => {},
+    });
+    this.api.me().subscribe({
+      next: (me) => {
+        if (me.postgres?.configured && !this.postgresLabel) {
+          this.postgresLabel = me.postgres.configured;
+        }
+        if (me.dataCounts) {
+          this.orgAtivos = me.dataCounts.ativos;
+        }
+      },
+      error: () => {},
+    });
+    void this.dashboardService.loadData();
+    this.sub = this.dashboardService.data$.subscribe((d) => {
+      this.data = d;
+      this.loading = d.loading;
+      if (!d.loading) this.compute();
+    });
+  }
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
   brl(v: number) { return 'R$ ' + (v||0).toLocaleString('pt-BR', { maximumFractionDigits: 0 }); }

@@ -13,8 +13,13 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
   standalone: true,
   imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
   template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4">Movimentações</h1>
+    <section class="sig-page">
+      <header class="app-page-header">
+        <div>
+          <h1 class="app-page-title">Movimentações</h1>
+          <p class="app-page-sub">Entradas, saídas e transferências de ativos.</p>
+        </div>
+      </header>
       <app-data-toolbar searchPlaceholder="Buscar ativo, responsável..." [search]="search"
         [filters]="[{key:'tipo',label:'Tipo',options:tipoOpts}]"
         [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
@@ -48,7 +53,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Movimentação' : 'Nova Movimentação'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
       <div class="grid grid-cols-2 gap-4">

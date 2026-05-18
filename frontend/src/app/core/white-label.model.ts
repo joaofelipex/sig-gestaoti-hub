@@ -1,51 +1,38 @@
-/** Paleta Lara Light Blue — só design / white-label */
+/**
+ * White-label da instância (SIG).
+ * --wl-background-color = RGB da marca, sem rgb(): "2, 62, 216"
+ * --wl-text-color = texto sobre fundo da marca: "255, 255, 255"
+ */
 export interface WhiteLabelConfig {
+  /** RGB primário (marca), ex: "2, 62, 216" */
   backgroundColor?: string;
-  surfaceColor?: string;
-  borderColor?: string;
-  primaryColor?: string;
-  primaryHover?: string;
-  primaryDark?: string;
-  primaryLight?: string;
-  primarySubtle?: string;
+  /** RGB texto sobre marca, ex: "255, 255, 255" */
   textColor?: string;
-  textMuted?: string;
+  /** Ficheiro ou URL do fundo do login */
+  backgroundImage?: string;
+  logoUrl?: string | null;
+  logoIconUrl?: string | null;
+  logoLoginUrl?: string | null;
   brandName?: string;
   brandSubtitle?: string;
-  logoUrl?: string | null;
-  logoMiniUrl?: string | null;
 }
 
-/** Valores padrão (stack: PrimeNG lara-light-blue) */
-export const LARA_LIGHT_BLUE: Required<
-  Pick<
-    WhiteLabelConfig,
-    | 'backgroundColor'
-    | 'surfaceColor'
-    | 'borderColor'
-    | 'primaryColor'
-    | 'primaryHover'
-    | 'primaryDark'
-    | 'primaryLight'
-    | 'primarySubtle'
-    | 'textColor'
-    | 'textMuted'
-    | 'brandName'
-    | 'brandSubtitle'
-  >
-> & { logoUrl: null; logoMiniUrl: null } = {
-  backgroundColor: '#eff6ff',
-  surfaceColor: '#ffffff',
-  borderColor: '#dbeafe',
-  primaryColor: '#3b82f6',
-  primaryHover: '#2563eb',
-  primaryDark: '#1d4ed8',
-  primaryLight: '#dbeafe',
-  primarySubtle: '#eff6ff',
-  textColor: '#0f172a',
-  textMuted: '#64748b',
+export const SIG_DEFAULT_WHITELABEL: Required<
+  Pick<WhiteLabelConfig, 'backgroundColor' | 'textColor' | 'backgroundImage' | 'brandName' | 'brandSubtitle'>
+> & {
+  logoUrl: null;
+  logoIconUrl: null;
+  logoLoginUrl: null;
+} = {
+  backgroundColor: '2, 62, 216',
+  textColor: '255, 255, 255',
+  backgroundImage: 'login-background.png',
   brandName: 'IMTS',
   brandSubtitle: 'Gestão TI',
   logoUrl: null,
-  logoMiniUrl: null,
+  logoIconUrl: null,
+  logoLoginUrl: null,
 };
+
+/** @deprecated use SIG_DEFAULT_WHITELABEL */
+export const LARA_LIGHT_BLUE = SIG_DEFAULT_WHITELABEL;

@@ -7,42 +7,48 @@ import { CrudService } from '../../services/crud.service';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { KpiCardComponent } from '../../components/charts.component';
+import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
   imports: [CommonModule, KpiCardComponent],
   template: `
-    <div class="p-6 space-y-4">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Alertas</h1>
-        <div class="flex gap-2">
-          <button (click)="generate()" [disabled]="generating" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-md text-sm font-medium">
-            {{ generating ? 'Atualizando...' : '🔄 Atualizar Alertas' }}
-          </button>
-          <button (click)="markAllRead()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-sm">Marcar todos como lidos</button>
+    <section class="sig-page">
+      <header class="app-page-header">
+        <div>
+          <h1 class="app-page-title">Alertas</h1>
+          <p class="app-page-sub">Notificações de domínios, licenças, pagamentos e infraestrutura.</p>
         </div>
-      </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" (click)="generate()" [disabled]="generating" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrows-rotate" [class.fa-spin]="generating" aria-hidden="true"></i>
+            {{ generating ? 'Atualizando…' : 'Atualizar alertas' }}
+          </button>
+          <button type="button" (click)="markAllRead()" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-check-double" aria-hidden="true"></i> Marcar todos como lidos
+          </button>
+        </div>
+      </header>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <app-kpi-card label="Não lidos" [value]="unreadCount" icon="🔔" color="#3b82f6"></app-kpi-card>
-        <app-kpi-card label="Críticos" [value]="counts.critico" icon="🚨" color="#ef4444"></app-kpi-card>
-        <app-kpi-card label="Avisos" [value]="counts.aviso" icon="⚠️" color="#f59e0b"></app-kpi-card>
-        <app-kpi-card label="Informações" [value]="counts.info" icon="ℹ️" color="#10b981"></app-kpi-card>
+        <app-kpi-card label="Não lidos" [value]="unreadCount" [icon]="icons.alert" color="#3b82f6"></app-kpi-card>
+        <app-kpi-card label="Críticos" [value]="counts.critico" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
+        <app-kpi-card label="Avisos" [value]="counts.aviso" [icon]="icons.warning" color="#f59e0b"></app-kpi-card>
+        <app-kpi-card label="Informações" [value]="counts.info" [icon]="icons.info" color="#10b981"></app-kpi-card>
       </div>
 
-      <div class="flex gap-2 border-b border-gray-200">
-        <button *ngFor="let f of ['todos','critico','aviso','info','nao_lidos']"
+      <div class="sig-filter-tabs">
+        <button type="button" *ngFor="let f of ['todos','critico','aviso','info','nao_lidos']"
                 (click)="filter=f"
-                class="px-4 py-2 text-sm font-medium border-b-2"
-                [class]="filter===f ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-900'">
+                [class.is-active]="filter===f">
           {{ filterLabel(f) }}
         </button>
       </div>
 
-      <div *ngIf="loading" class="text-center py-8 text-gray-500">Carregando...</div>
-      <div *ngIf="!loading" class="space-y-2">
-        <div *ngFor="let a of filtered" class="bg-white rounded-lg shadow-sm p-4 border-l-4" [class]="borderClass(a.severidade)" [class.opacity-60]="a.lida">
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+      <div *ngIf="!loading" class="d-flex flex-column gap-2">
+        <article *ngFor="let a of filtered" class="sig-alert-item" [class]="borderClass(a.severidade)" [class.is-read]="a.lida">
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
@@ -54,18 +60,25 @@ import { KpiCardComponent } from '../../components/charts.component';
               <div class="text-xs text-gray-400">{{ a.tipo }} · {{ a.created_at | date:'dd/MM/yyyy HH:mm' }}</div>
             </div>
             <div class="flex items-center gap-2 ml-4">
-              <a *ngIf="a.link" [href]="a.link" target="_blank" class="text-blue-600 hover:underline text-sm">Ver</a>
-              <button *ngIf="!a.lida" (click)="markRead(a)" class="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded">✓</button>
-              <button (click)="remove(a)" class="text-xs px-2 py-1 text-red-600 hover:bg-red-50 rounded">×</button>
+              <a *ngIf="a.link" [href]="a.link" target="_blank" class="sig-icon-btn text-blue-600" title="Abrir">
+                <i [class]="icons.external" aria-hidden="true"></i>
+              </a>
+              <button *ngIf="!a.lida" type="button" (click)="markRead(a)" class="sig-icon-btn sig-icon-btn--success" title="Marcar como lido">
+                <i [class]="icons.check" aria-hidden="true"></i>
+              </button>
+              <button type="button" (click)="remove(a)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir">
+                <i [class]="icons.trash" aria-hidden="true"></i>
+              </button>
             </div>
           </div>
-        </div>
-        <div *ngIf="!filtered.length" class="text-center text-sm text-gray-400 py-8">Nenhum alerta</div>
+        </article>
+        <div *ngIf="!filtered.length" class="sig-table-empty">Nenhum alerta</div>
       </div>
-    </div>
+    </section>
   `
 })
 export class AlertsComponent implements OnInit, OnDestroy {
+  readonly icons = SigIcons;
   alerts: Alert[] = []; loading = true; filter = 'todos'; generating = false;
   private sub!: Subscription;
   constructor(private dashboard: DashboardService, private crud: CrudService, private api: ApiService, private toast: ToastService) {}

@@ -4,6 +4,8 @@
 
 BEGIN;
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 DELETE FROM public.termos_responsabilidade WHERE org_id = '22222222-2222-2222-2222-222222222222';
 DELETE FROM public.inventario_movimentacoes WHERE org_id = '22222222-2222-2222-2222-222222222222';
 DELETE FROM public.pagamentos WHERE org_id = '22222222-2222-2222-2222-222222222222';
@@ -97,5 +99,11 @@ INSERT INTO public.riscos (id, org_id, empresa_id, title, severity, owner, mitig
 INSERT INTO public.pagamentos (id, org_id, empresa_id, nome, categoria, competencia, valor, status, vencimento, data_pagamento, fornecedor) VALUES
   ('50505050-5050-5050-5050-505050505050', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', 'Fatura AWS Nov/25', 'servidor', '2025-11', 1180.50, 'pago', '2025-11-10', '2025-11-08', 'AWS'),
   ('50505050-5050-5050-5050-505050505051', '22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333', 'Renovação domínio', 'dominio', '2026-01', 120, 'pendente', '2026-01-28', NULL, 'Registro.br');
+
+-- Palavra-passe demo (dev@local.imts / demo123456)
+UPDATE auth.users
+SET encrypted_password = crypt('demo123456', gen_salt('bf'))
+WHERE id = '11111111-1111-1111-1111-111111111111'
+  AND (encrypted_password IS NULL OR encrypted_password = '');
 
 COMMIT;

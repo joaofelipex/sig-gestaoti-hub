@@ -331,7 +331,7 @@ export class DashboardService {
         description:
           msg.includes('Timeout') || msg.includes('timeout')
             ? 'A API não respondeu a tempo. Confirme `npm run api:dev` na raiz do projeto.'
-            : 'Confirme que a API está a correr (`npm run dev:stack`) e que entrou com sessão válida.',
+            : 'Confirme que a API está a correr (`cd backend && npm start`) e que entrou com sessão válida.',
         variant: 'destructive',
       });
     }

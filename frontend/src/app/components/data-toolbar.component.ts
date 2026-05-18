@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SigIcons } from '../core/sig-icons';
 
 export interface FilterDef {
   key: string;
@@ -13,12 +14,10 @@ export interface FilterDef {
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-      <div class="relative min-w-[200px] flex-1">
+    <div class="sig-toolbar-standalone flex flex-wrap items-center gap-3" role="toolbar">
+      <div class="sig-toolbar-search relative min-w-[200px] flex-1">
         <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
-          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+          <i [class]="icons.search"></i>
         </span>
         <input
           type="text"
@@ -37,27 +36,27 @@ export interface FilterDef {
         <option value="">{{ f.label }}: Todos</option>
         <option *ngFor="let o of f.options" [value]="o.value">{{ o.label }}</option>
       </select>
-      <div class="ml-auto flex flex-wrap items-center gap-2">
-        <label class="app-btn-ghost cursor-pointer gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 hover:bg-gray-100">
+      <div class="sig-toolbar-actions ms-auto flex flex-wrap items-center gap-2">
+        <label class="app-btn-ghost mb-0 cursor-pointer gap-1.5">
+          <i [class]="icons.import" aria-hidden="true"></i>
           Importar
           <input type="file" accept=".csv" class="hidden" (change)="onFileSelected($event)" />
         </label>
-        <button type="button" (click)="exportClick.emit()" class="app-btn-ghost rounded-md border border-gray-200 bg-gray-50 px-3 py-2 hover:bg-gray-100">
+        <button type="button" class="app-btn-ghost gap-1.5" (click)="exportClick.emit()">
+          <i [class]="icons.export" aria-hidden="true"></i>
           Exportar
         </button>
-        <button
-          *ngIf="showNew"
-          type="button"
-          (click)="newClick.emit()"
-          class="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-        >
-          + Novo
+        <button *ngIf="showNew" type="button" class="btn btn-primary btn-sm gap-1.5" (click)="newClick.emit()">
+          <i [class]="icons.plus" aria-hidden="true"></i>
+          Novo
         </button>
       </div>
     </div>
-  `
+  `,
 })
 export class DataToolbarComponent {
+  readonly icons = SigIcons;
+
   @Input() search = '';
   @Input() searchPlaceholder = 'Buscar...';
   @Input() filters: FilterDef[] = [];

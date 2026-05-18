@@ -1,23 +1,53 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
 @import "tailwindcss";
 
 @import "./design/tokens.css";
+@import "./design/brand.css";
 @import "./design/bootstrap-theme.css";
-@import "./design/adminlte-overrides.css";
+@import "./design/login.css";
+@import "./design/shell.css";
+@import "./design/tables.css";
 @import "./design/legacy-forms.css";
 @import "./design/pages.css";
 @import "./design/modals.css";
 @import "./design/feedback.css";
 @import "./design/sweetalert-skin.css";
+@import "./design/responsive.css";
 
 @theme {
-  --font-sans: "Source Sans Pro", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
-@source "./**/*.{html,ts,css}";
 
 @layer base {
   html {
     @apply scroll-smooth;
   }
+
+  body {
+    font-family: var(--sig-font);
+    font-size: 1rem;
+    line-height: var(--sig-line-height);
+    color: var(--sig-text);
+    background: var(--sig-page-bg);
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #c8cfd8 transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: #c8cfd8;
+    border-radius: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: #9aa3b0;
+  }
 }
+
+@source "./**/*.{html,ts,css}";

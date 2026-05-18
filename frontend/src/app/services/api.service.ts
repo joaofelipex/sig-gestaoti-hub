@@ -7,6 +7,8 @@ import { AUTH_TOKEN_STORAGE_KEY } from './auth-storage';
 export interface MeResponse {
   user: { id: string; email?: string };
   profile: { org_id: string; nome: string; email: string };
+  postgres?: { configured: string; database: string | null; host: string | null; port: number | null };
+  dataCounts?: { ativos: number; empresas: number; alertas: number };
 }
 
 @Injectable({ providedIn: 'root' })
@@ -63,6 +65,23 @@ export class ApiService {
 
   getDashboard(): Observable<Record<string, unknown[]>> {
     return this.http.get<Record<string, unknown[]>>(this.api('/data/dashboard'));
+  }
+
+  getHealth(): Observable<{
+    ok: boolean;
+    database?: string;
+    postgres?: { database: string; host: string; port: number; configured: string };
+    error?: string;
+    configured?: string;
+  }> {
+    const base = environment.apiUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+    return this.http.get<{
+      ok: boolean;
+      database?: string;
+      postgres?: { database: string; host: string; port: number; configured: string };
+      error?: string;
+      configured?: string;
+    }>(`${base}/health`);
   }
 
   getEmpresas(): Observable<unknown[]> {

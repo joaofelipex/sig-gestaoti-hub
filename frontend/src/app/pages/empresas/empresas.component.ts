@@ -10,7 +10,7 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
   standalone: true,
   imports: [CommonModule, FormsModule, ModalComponent, ConfirmComponent],
   template: `
-    <div class="p-3 p-md-4">
+    <section class="sig-page p-3 p-md-4">
       <div class="app-page-header">
         <div>
           <h1 class="app-page-title">Empresas da Holding</h1>
@@ -20,12 +20,12 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div *ngFor="let e of empresas"
-          class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
-          [class.ring-2]="selectedId === e.id" [class.ring-blue-500]="selectedId === e.id">
+        <article *ngFor="let e of empresas"
+          class="sig-empresa-card"
+          [class.is-selected]="selectedId === e.id">
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2">
-              <div class="w-9 h-9 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+              <div class="sig-empresa-avatar">
                 {{ initials(e.nome) }}
               </div>
               <div>
@@ -42,20 +42,25 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
             <div *ngIf="e.responsavel"><span class="text-gray-400">Responsável:</span> {{ e.responsavel }}</div>
           </div>
           <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-            <button (click)="select(e)" class="text-xs font-medium text-blue-600 hover:underline">
-              {{ selectedId === e.id ? '✓ Selecionada' : 'Filtrar por esta' }}
+            <button type="button" (click)="select(e)" class="sig-link-action text-xs">
+              <i class="fas" [class.fa-check-circle]="selectedId === e.id" [class.fa-filter]="selectedId !== e.id" aria-hidden="true"></i>
+              {{ selectedId === e.id ? 'Selecionada' : 'Filtrar por esta' }}
             </button>
             <div class="flex gap-2">
-              <button (click)="openEdit(e)" class="text-xs text-gray-600 hover:text-gray-900">Editar</button>
-              <button (click)="askDelete(e)" class="text-xs text-red-600 hover:text-red-800">Excluir</button>
+              <button type="button" (click)="openEdit(e)" class="sig-icon-btn" title="Editar">
+                <i class="fas fa-pen" aria-hidden="true"></i>
+              </button>
+              <button type="button" (click)="askDelete(e)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir">
+                <i class="fas fa-trash-can" aria-hidden="true"></i>
+              </button>
             </div>
           </div>
-        </div>
-        <div *ngIf="!empresas.length" class="col-span-full text-center py-12 text-gray-400">
+        </article>
+        <div *ngIf="!empresas.length" class="col-span-full sig-table-empty">
           Nenhuma empresa cadastrada
         </div>
       </div>
-    </div>
+    </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Empresa' : 'Nova Empresa'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
       <div class="grid grid-cols-2 gap-4">

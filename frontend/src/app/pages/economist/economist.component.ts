@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { DashboardService, Budget, ActionItem } from '../../services/dashboard.service';
+import { KpiCardComponent } from '../../components/charts.component';
+import { SigIcons } from '../../core/sig-icons';
 
 interface SliceVM { label: string; value: number; color: string; pct: number; }
 interface BarVM { label: string; value: number; pct: number; color: string; }
@@ -9,47 +11,48 @@ interface BarVM { label: string; value: number; pct: number; color: string; }
 @Component({
   selector: 'app-economist',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, KpiCardComponent],
   template: `
-    <div class="p-6 space-y-6 bg-gray-50 min-h-full">
-      <div class="flex items-end justify-between">
+    <section class="sig-page">
+      <header class="app-page-header">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Visão Economista</h1>
-          <p class="text-sm text-gray-500">Análise financeira de TI — orçamentos, economia e ações estratégicas</p>
+          <h1 class="app-page-title">Visão Economista</h1>
+          <p class="app-page-sub">Análise financeira de TI — orçamentos, economia e ações estratégicas.</p>
         </div>
-      </div>
+      </header>
 
-      <div *ngIf="loading" class="text-center py-12 text-gray-500">Carregando...</div>
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
 
       <ng-container *ngIf="!loading">
         <!-- KPIs -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div class="text-xs uppercase tracking-wider text-gray-500">Orçamento Total</div>
+          <!-- legacy
+          <div class="sig-chart-panel hidden" aria-hidden="true">
+            <div class="text-xs uppercase tracking-wider text-gray-500">Orçamento Total</span>
             <div class="text-2xl font-bold text-gray-900 mt-1">R$ {{ totalBudget | number:'1.0-0' }}</div>
-            <div class="text-xs text-gray-400 mt-1">{{ budgets.length }} linhas orçamentárias</div>
+            <div class="text-xs text-gray-400 mt-1">{{ budgetKpiHint }}</div>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div class="text-xs uppercase tracking-wider text-emerald-600">Economia Estimada</div>
+          <div class="sig-chart-panel hidden" aria-hidden="true">
+            <div class="text-xs uppercase tracking-wider text-emerald-600">Economia Estimada</span>
             <div class="text-2xl font-bold text-emerald-600 mt-1">R$ {{ totalSavings | number:'1.0-0' }}</div>
             <div class="text-xs text-gray-400 mt-1">{{ savingsRate | number:'1.1-1' }}% do orçamento</div>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div class="sig-chart-panel hidden" aria-hidden="true">
             <div class="text-xs uppercase tracking-wider text-blue-600">Ações em Aberto</div>
             <div class="text-2xl font-bold text-blue-600 mt-1">{{ openActions }}</div>
             <div class="text-xs text-gray-400 mt-1">{{ actions.length }} ações no total</div>
           </div>
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-            <div class="text-xs uppercase tracking-wider text-violet-600">Ações Concluídas</div>
-            <div class="text-2xl font-bold text-violet-600 mt-1">{{ doneActions }}</div>
-            <div class="text-xs text-gray-400 mt-1">Taxa {{ doneRate | number:'1.0-0' }}%</div>
-          </div>
+          -->
+          <app-kpi-card label="Orçamento total" [value]="budgetKpiValue" [icon]="icons.budget" color="#475569" [hint]="budgetKpiHint"></app-kpi-card>
+          <app-kpi-card label="Economia estimada" [value]="savingsKpiValue" [icon]="icons.savings" color="#10b981" [hint]="savingsKpiHint"></app-kpi-card>
+          <app-kpi-card label="Ações em aberto" [value]="openActions" [icon]="icons.tasks" color="#3b82f6" [hint]="actionsKpiHint"></app-kpi-card>
+          <app-kpi-card label="Ações concluídas" [value]="doneActions" [icon]="icons.tasksDone" color="#8b5cf6" [hint]="doneKpiHint"></app-kpi-card>
         </div>
 
         <!-- Charts row 1 -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <!-- Budget by Category bar chart -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 lg:col-span-2">
+          <div class="sig-chart-panel lg:col-span-2">
             <div class="flex items-center justify-between mb-4">
               <h2 class="font-semibold text-gray-900">Orçamento por Categoria</h2>
               <span class="text-xs text-gray-400">R$ por ano</span>
@@ -71,7 +74,7 @@ interface BarVM { label: string; value: number; pct: number; color: string; }
           </div>
 
           <!-- Donut: Actions by Status -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div class="sig-chart-panel">
             <h2 class="font-semibold text-gray-900 mb-4">Ações por Status</h2>
             <div *ngIf="actionsByStatus.length === 0" class="text-sm text-gray-400 py-8 text-center">Sem dados</div>
             <div *ngIf="actionsByStatus.length > 0" class="flex flex-col items-center">
@@ -105,7 +108,7 @@ interface BarVM { label: string; value: number; pct: number; color: string; }
         <!-- Charts row 2 -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <!-- Savings by Category -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div class="sig-chart-panel">
             <h2 class="font-semibold text-gray-900 mb-4">Economia Estimada por Categoria</h2>
             <div *ngIf="savingsByCategory.length === 0" class="text-sm text-gray-400 py-8 text-center">Sem dados</div>
             <svg *ngIf="savingsByCategory.length > 0" [attr.viewBox]="'0 0 400 ' + (savingsByCategory.length * 38 + 10)"
@@ -120,7 +123,7 @@ interface BarVM { label: string; value: number; pct: number; color: string; }
           </div>
 
           <!-- Priority bars -->
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <div class="sig-chart-panel">
             <h2 class="font-semibold text-gray-900 mb-4">Ações por Prioridade</h2>
             <div *ngIf="actionsByPriority.length === 0" class="text-sm text-gray-400 py-8 text-center">Sem dados</div>
             <div *ngIf="actionsByPriority.length > 0" class="flex items-end justify-around h-56 px-2 gap-4">
@@ -137,7 +140,7 @@ interface BarVM { label: string; value: number; pct: number; color: string; }
         </div>
 
         <!-- Top Actions -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div class="sig-chart-panel">
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-semibold text-gray-900">Top 5 Ações por Economia Estimada</h2>
             <span class="text-xs text-gray-400">{{ actions.length }} ações</span>
@@ -171,10 +174,11 @@ interface BarVM { label: string; value: number; pct: number; color: string; }
           </div>
         </div>
       </ng-container>
-    </div>
+    </section>
   `,
 })
 export class EconomistComponent implements OnInit, OnDestroy {
+  readonly icons = SigIcons;
   budgets: Budget[] = [];
   actions: ActionItem[] = [];
   loading = true;
@@ -186,6 +190,30 @@ export class EconomistComponent implements OnInit, OnDestroy {
   openActions = 0;
   doneActions = 0;
   doneRate = 0;
+
+  get budgetKpiValue(): string {
+    return 'R$ ' + this.totalBudget.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
+
+  get budgetKpiHint(): string {
+    return `${this.budgets.length} linhas orçamentárias`;
+  }
+
+  get savingsKpiValue(): string {
+    return 'R$ ' + this.totalSavings.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
+
+  get savingsKpiHint(): string {
+    return `${this.savingsRate.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% do orçamento`;
+  }
+
+  get actionsKpiHint(): string {
+    return `${this.actions.length} ações no total`;
+  }
+
+  get doneKpiHint(): string {
+    return `Taxa ${this.doneRate.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%`;
+  }
 
   budgetByCategory: BarVM[] = [];
   savingsByCategory: BarVM[] = [];

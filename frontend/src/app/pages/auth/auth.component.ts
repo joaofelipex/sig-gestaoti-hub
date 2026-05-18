@@ -2,67 +2,77 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { environment } from '../../../environments/environment';
 import { AuthService } from '../../services/auth.service';
 import { ToastService } from '../../services/toast.service';
+import { WhiteLabelService } from '../../services/white-label.service';
 
 @Component({
   selector: 'app-auth',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="auth-page">
-      <div class="card auth-card shadow-sm">
-        <div class="card-body p-4 p-md-5">
-          <div class="text-center mb-4">
-          <h1 class="h3 fw-bold text-dark mb-1">
-            {{ tab === 'signin' ? 'Entrar na sua conta' : 'Criar nova conta' }}
+    <div class="sig-login">
+      <div class="sig-login__visual" aria-hidden="true">
+        <div class="sig-login__visual-bg"></div>
+        <div class="sig-login__energy"></div>
+      </div>
+
+      <div class="sig-login__panel">
+        <div class="sig-login__card">
+          <img *ngIf="wl.logoLogin" [src]="wl.logoLogin" [alt]="wl.brandName" class="sig-login__logo" />
+          <span *ngIf="!wl.logoLogin" class="sig-login__logo-fallback">{{ wl.brandName }}</span>
+
+          <h1 class="sig-login__title">
+            <span class="sig-login__title-accent">{{ tab === 'signin' ? 'Entrar' : 'Criar conta' }}</span>
           </h1>
-          <p class="text-muted small mb-0">SIG Heartbeat Hub · Holding IMTS</p>
-          <p *ngIf="showLocalDemoHint" class="alert alert-secondary small text-start mt-3 mb-0 py-2">
-            Stack local: <strong>dev@local.imts</strong> · <strong>demo123456</strong>
-          </p>
-          </div>
+          <p class="sig-login__sub">{{ wl.brandName }} · {{ wl.brandSubtitle }}</p>
+
           <form [formGroup]="form" (ngSubmit)="onSubmit()">
-          <div *ngIf="tab === 'signup'" class="mb-3 d-flex flex-column gap-2">
-            <input formControlName="nome" type="text" placeholder="Nome" class="form-control" />
-            <input formControlName="organizacao" type="text" placeholder="Organização" class="form-control" />
-          </div>
-          <div class="mb-3">
-            <input formControlName="email" type="email" placeholder="E-mail" class="form-control" autocomplete="email" />
-          </div>
-          <div class="mb-3">
-          <input
-            formControlName="password"
-            type="password"
-            placeholder="Senha"
-            class="form-control"
-            autocomplete="current-password"
-          />
-          </div>
-          <button type="submit" [disabled]="loading" class="btn btn-primary w-100">
-            {{ tab === 'signin' ? 'Entrar' : 'Cadastrar' }}
-          </button>
-        </form>
-        <div class="text-center mt-3">
-          <button type="button" (click)="toggleTab()" class="btn btn-link btn-sm p-0">
+            <div *ngIf="tab === 'signup'" class="sig-login__field">
+              <label class="sig-login__label" for="nome">Nome</label>
+              <input id="nome" formControlName="nome" type="text" class="sig-login__input" autocomplete="name" />
+            </div>
+            <div *ngIf="tab === 'signup'" class="sig-login__field">
+              <label class="sig-login__label" for="organizacao">Organização</label>
+              <input id="organizacao" formControlName="organizacao" type="text" class="sig-login__input" />
+            </div>
+
+            <div class="sig-login__field">
+              <label class="sig-login__label" for="email">E-mail</label>
+              <input id="email" formControlName="email" type="email" class="sig-login__input" autocomplete="email" />
+            </div>
+
+            <div class="sig-login__field">
+              <label class="sig-login__label" for="password">Senha</label>
+              <input
+                id="password"
+                formControlName="password"
+                type="password"
+                class="sig-login__input"
+                autocomplete="current-password"
+              />
+            </div>
+
+            <button type="submit" class="sig-login__submit" [disabled]="loading">
+              {{ tab === 'signin' ? 'Entrar' : 'Cadastrar' }}
+            </button>
+          </form>
+
+          <button type="button" class="sig-login__toggle" (click)="toggleTab()">
             {{ tab === 'signin' ? 'Não tem conta? Criar' : 'Já tem conta? Entrar' }}
           </button>
-        </div>
         </div>
       </div>
     </div>
   `,
-  styles: []
+  styles: [],
 })
 export class AuthComponent {
   tab: 'signin' | 'signup' = 'signin';
   form: FormGroup;
   loading = false;
-  /** Mostrar credenciais demo quando corres contra a stack local (Postgres + API). */
-  readonly showLocalDemoHint = environment.showLocalDemoHint;
-
   constructor(
+    readonly wl: WhiteLabelService,
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
@@ -72,7 +82,7 @@ export class AuthComponent {
       nome: [''],
       organizacao: [''],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(6)]],
     });
   }
 
@@ -119,14 +129,18 @@ export class AuthComponent {
           this.form.value.nome,
           this.form.value.organizacao
         );
-        this.toastService.show({ title: 'Conta criada', description: 'Sua organização foi provisionada. Você já está logado.' });
+        this.toastService.show({
+          title: 'Conta criada',
+          description: 'Sua organização foi provisionada. Você já está logado.',
+        });
       }
       this.router.navigate(['/dashboard']);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Erro desconhecido';
       this.toastService.show({
         title: this.tab === 'signin' ? 'Não foi possível entrar' : 'Não foi possível cadastrar',
-        description: error.message,
-        variant: 'destructive'
+        description: message,
+        variant: 'destructive',
       });
     } finally {
       this.loading = false;

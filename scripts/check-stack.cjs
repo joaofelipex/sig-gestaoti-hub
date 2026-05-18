@@ -75,7 +75,7 @@ async function main() {
   const api = await checkHttp(API_PORT);
 
   if (pg.ok) console.log(`OK  Postgres em ${PG_HOST}:${PG_PORT}`);
-  else console.log(`FALHA Postgres (${PG_HOST}:${PG_PORT}): ${pg.err || 'sem ligação'} — corre na raiz: npm run db:up`);
+  else console.log(`FALHA Postgres (${PG_HOST}:${PG_PORT}): ${pg.err || 'sem ligação'} — ligue o Postgres do DBeaver e confira config/stack.env`);
 
   if (api.ok) console.log(`OK  API em http://${API_HOST}:${API_PORT}/health`);
   else
@@ -84,7 +84,7 @@ async function main() {
     );
 
   if (!pg.ok || !api.ok) process.exit(1);
-  console.log('Stack pronto: abre o Angular (ex.: npm run dev:ui ou npm run dev:stack) em http://127.0.0.1:8080');
+  console.log('Stack pronto: cd frontend && npm run dev → http://127.0.0.1:8080');
 }
 
 main().catch((e) => {

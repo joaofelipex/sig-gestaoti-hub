@@ -1,41 +1,32 @@
-/* Bootstrap 5 alinhado à paleta Lara Light Blue */
-
 .btn-primary {
-  --bs-btn-bg: var(--wl-primary-color);
-  --bs-btn-border-color: var(--wl-primary-color);
-  --bs-btn-hover-bg: var(--wl-primary-hover);
-  --bs-btn-hover-border-color: var(--wl-primary-hover);
-  --bs-btn-active-bg: var(--wl-primary-dark);
-  --bs-btn-active-border-color: var(--wl-primary-dark);
-  --bs-btn-focus-shadow-rgb: 59, 130, 246;
+  --bs-btn-bg: rgb(var(--wl-background-color));
+  --bs-btn-border-color: rgb(var(--wl-background-color));
+  --bs-btn-color: rgb(var(--wl-text-color));
+  --bs-btn-hover-bg: rgba(var(--wl-background-color), 0.88);
+  --bs-btn-hover-border-color: rgba(var(--wl-background-color), 0.88);
+  --bs-btn-active-bg: rgba(var(--wl-background-color), 0.95);
 }
 
 .btn-outline-primary {
-  --bs-btn-color: var(--wl-primary-color);
-  --bs-btn-border-color: var(--wl-primary-color);
-  --bs-btn-hover-bg: var(--wl-primary-color);
-  --bs-btn-hover-border-color: var(--wl-primary-color);
-  --bs-btn-active-bg: var(--wl-primary-dark);
-  --bs-btn-active-border-color: var(--wl-primary-dark);
-}
-
-.btn-link {
-  --bs-btn-color: var(--wl-primary-color);
-  --bs-btn-hover-color: var(--wl-primary-hover);
+  --bs-btn-color: rgb(var(--wl-background-color));
+  --bs-btn-border-color: rgba(var(--wl-background-color), 0.45);
+  --bs-btn-hover-bg: rgba(var(--wl-background-color), 0.08);
 }
 
 .form-control:focus,
 .form-select:focus {
-  border-color: var(--wl-primary-color);
-  box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+  border-color: rgb(var(--wl-background-color));
+  box-shadow: 0 0 0 0.2rem rgba(var(--wl-background-color), 0.2);
 }
 
-.card {
-  border-color: var(--wl-border-color);
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-.alert-secondary {
-  background-color: var(--wl-primary-subtle);
-  border-color: var(--wl-border-color);
-  color: var(--wl-text-color);
+::-webkit-scrollbar-thumb {
+  background: #c8cfd8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9aa3b0;
 }

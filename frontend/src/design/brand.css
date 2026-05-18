@@ -1,0 +1,11 @@
+/* Utilitários de marca (tint, não blocos sólidos) */
+.bg-brand-3 { background-color: rgba(var(--wl-background-color), 0.03) !important; }
+.bg-brand-5 { background-color: rgba(var(--wl-background-color), 0.05) !important; }
+.bg-brand-8 { background-color: rgba(var(--wl-background-color), 0.08) !important; }
+.bg-brand-10 { background-color: rgba(var(--wl-background-color), 0.1) !important; }
+.border-brand { border-color: rgba(var(--wl-background-color), 0.35) !important; }
+.text-brand { color: rgb(var(--wl-background-color)) !important; }
+.ring-brand:focus {
+  border-color: rgb(var(--wl-background-color)) !important;
+  box-shadow: 0 0 0 0.2rem rgba(var(--wl-background-color), 0.25) !important;
+}

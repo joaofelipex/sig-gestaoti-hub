@@ -13,8 +13,13 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
   standalone: true,
   imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
   template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4">Estoque</h1>
+    <section class="sig-page">
+      <header class="app-page-header">
+        <div>
+          <h1 class="app-page-title">Estoque</h1>
+          <p class="app-page-sub">Itens em estoque e reposição.</p>
+        </div>
+      </header>
       <app-data-toolbar searchPlaceholder="Buscar item, SKU, fornecedor..." [search]="search"
         [filters]="[{key:'categoria',label:'Categoria',options:catOpts},{key:'lowStock',label:'Estoque',options:[{value:'low',label:'Abaixo do mínimo'}]}]"
         [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
@@ -50,7 +55,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Item' : 'Novo Item'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
       <div class="grid grid-cols-2 gap-4">

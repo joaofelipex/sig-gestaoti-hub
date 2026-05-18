@@ -45,7 +45,16 @@ function buildDatabaseUrl(cfg) {
   return `postgresql://${u}:${p}@${h}:${port}/${db}`;
 }
 
+function ensureStackEnvFile() {
+  if (fs.existsSync(OVERRIDE)) return;
+  fs.mkdirSync(path.dirname(OVERRIDE), { recursive: true });
+  fs.copyFileSync(EXAMPLE, OVERRIDE);
+  console.log('>> Criado config/stack.env a partir do exemplo — ajuste DB_PORT à sua instância Postgres.');
+  console.log('>> Ajuste DATABASE_URL se usar outro servidor e volte a correr: npm run sync:stack');
+}
+
 function mergeStack() {
+  ensureStackEnvFile();
   const defaults = parseEnvFile(EXAMPLE);
   const over = fs.existsSync(OVERRIDE) ? parseEnvFile(OVERRIDE) : {};
   const cfg = { ...defaults, ...over };
@@ -94,11 +103,15 @@ function mergeStack() {
     ' * Gerado por `npm run sync:stack` a partir de config/stack.env.example (+ config/stack.env se existir).\n' +
     ' * Não editar à mão: altere a stack e volte a correr sync.\n' +
     ' */\n' +
+    "import { SIG_DEFAULT_WHITELABEL, type WhiteLabelConfig } from '../app/core/white-label.model';\n\n" +
     'export const environment = {\n' +
     '  production: false,\n' +
     `  apiUrl: ${apiUrlEsc},\n` +
     `  showLocalDemoHint: ${showHint ? 'true' : 'false'},\n` +
     `  stack: ${stackEsc},\n` +
+    '  whiteLabel: {\n' +
+    '    ...SIG_DEFAULT_WHITELABEL,\n' +
+    '  } satisfies WhiteLabelConfig,\n' +
     '};\n';
   fs.mkdirSync(path.dirname(FE_ENV), { recursive: true });
   fs.writeFileSync(FE_ENV, feBody, 'utf8');
@@ -157,9 +170,15 @@ function mergeStack() {
   fs.mkdirSync(path.dirname(BE_ENV), { recursive: true });
   fs.writeFileSync(BE_ENV, [...beLines, ...extra].join('\n'), 'utf8');
 
-  console.log(
-    `sync:stack OK — STACK=${rt.STACK} · Postgres ${rt.DB_HOST}:${rt.DB_PORT} · API :${rt.API_PORT} · Angular apiUrl=${rt.PUBLIC_API_URL}`
-  );
+  if (!process.env.STACK_SYNC_QUIET && !process.argv.includes('--quiet')) {
+    console.log(
+      `sync:stack OK — STACK=${rt.STACK} · Postgres ${rt.DATABASE_URL.replace(/:[^:@/]+@/, ':***@')} · API :${rt.API_PORT} · Angular apiUrl=${rt.PUBLIC_API_URL}`,
+    );
+  }
 }
 
-mergeStack();
+if (require.main === module) {
+  mergeStack();
+}
+
+module.exports = { mergeStack };

@@ -1,40 +1,58 @@
 /**
- * Paleta Lara Light Blue (stack visual do projeto)
- * PrimeNG lara-light-blue · Bootstrap 5 · AdminLTE
+ * Design SIG — tokens base (área logada + semântica)
+ * Marca: rgba(var(--wl-background-color), α)
  */
 :root {
-  /* Superfície / fundo da app */
-  --wl-background-color: #eff6ff;
-  --wl-surface-color: #ffffff;
-  --wl-border-color: #dbeafe;
+  /* White-label (defaults IMTS — sobrescritos por instância) */
+  --wl-background-color: 2, 62, 216;
+  --wl-text-color: 255, 255, 255;
+  --wl-brand-hex: #023ed8;
+  --wl-login-bg-image: none;
 
-  /* Primária (blue-500 → blue-700) */
-  --wl-primary-color: #3b82f6;
-  --wl-primary-hover: #2563eb;
-  --wl-primary-dark: #1d4ed8;
-  --wl-primary-light: #dbeafe;
-  --wl-primary-subtle: #eff6ff;
+  /* Superfícies */
+  --sig-page-bg: #ffffff;
+  --sig-surface-2: #f0f0f0;
+  --sig-surface-3: #d3d3d3;
+  --sig-hover-neutral: #dbdbdb;
 
   /* Texto */
-  --wl-text-color: #0f172a;
-  --wl-text-muted: #64748b;
+  --sig-text: #0e0e0e;
+  --sig-text-muted: #979797;
+  --sig-text-on-dark: #ffffff;
 
-  /* Marca */
-  --wl-brand-name: "IMTS";
-  --wl-brand-subtitle: "Gestão TI";
+  /* Semântica Bootstrap / PrimeNG */
+  --sig-primary: #0d6efd;
+  --sig-success: #198754;
+  --sig-danger: #dc3545;
+  --sig-warning: #ffc107;
+  --sig-critical: #db1818;
+
+  /* Tabelas */
+  --sig-table-head: #f0f4f8;
+  --sig-table-zebra: #f7f9fc;
+  --sig-table-border: #dde3ea;
+  --sig-table-toolbar: #f8fafc;
+  --sig-highlight: #e8f2ff;
+
+  /* Raios */
+  --br-sm: 6px;
+  --br-md: 8px;
+  --br-lg: 12px;
+  --br-pill: 32px;
+  --br-login-card: 28px;
 
   /* Layout */
-  --wl-header-height: 3.5rem;
-  --wl-sidebar-width: 250px;
-  --wl-content-padding: 1rem;
-  --wl-radius: 0.375rem;
-  --wl-shadow: 0 1px 3px rgba(59, 130, 246, 0.12);
+  --header-height: 56px;
+  --sidebar-width: 240px;
+  --sidebar-collapsed: 64px;
+  --tab-content-padding: 1.25rem;
 
-  /* Bootstrap 5 (override via variáveis) */
-  --bs-primary: var(--wl-primary-color);
-  --bs-primary-rgb: 59, 130, 246;
-  --bs-body-bg: var(--wl-background-color);
-  --bs-border-color: var(--wl-border-color);
-  --bs-link-color: var(--wl-primary-color);
-  --bs-link-hover-color: var(--wl-primary-hover);
+  /* Tipografia */
+  --sig-font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --sig-line-height: 1.5;
+
+  --bs-primary: var(--sig-primary);
+  --bs-body-bg: var(--sig-page-bg);
+  --bs-body-color: var(--sig-text);
+  --bs-border-color: var(--sig-table-border);
 }

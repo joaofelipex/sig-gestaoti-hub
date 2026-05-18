@@ -39,8 +39,8 @@ export class BarChartComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="flex items-center gap-6">
-      <svg viewBox="0 0 42 42" class="w-32 h-32 -rotate-90">
+    <div class="sig-chart-donut flex items-center gap-6">
+      <svg viewBox="0 0 42 42" class="h-32 w-32 shrink-0 -rotate-90">
         <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="#f3f4f6" stroke-width="6"></circle>
         <circle *ngFor="let s of segments"
                 cx="21" cy="21" r="15.915" fill="transparent"
@@ -48,8 +48,8 @@ export class BarChartComponent {
                 [attr.stroke-dasharray]="s.dash"
                 [attr.stroke-dashoffset]="s.offset"></circle>
       </svg>
-      <div class="flex-1 space-y-1">
-        <div *ngFor="let d of data; let i = index" class="flex items-center justify-between text-sm">
+      <div class="sig-chart-donut__legend min-w-0 flex-1 space-y-1">
+        <div *ngFor="let d of data; let i = index" class="flex items-center justify-between gap-2 text-sm">
           <div class="flex items-center gap-2">
             <span class="w-3 h-3 rounded-sm" [style.background]="d.color || color(i)"></span>
             <span class="text-gray-600">{{ d.label }}</span>
@@ -80,7 +80,8 @@ export class DonutChartComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="w-full h-40">
+    <div class="sig-chart-line">
+    <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="h-40 w-full min-w-[280px]">
       <polyline [attr.points]="path" fill="none" stroke="#3b82f6" stroke-width="2" />
       <polygon [attr.points]="area" fill="url(#grad)" opacity="0.2" />
       <defs>
@@ -94,7 +95,8 @@ export class DonutChartComponent {
         <text [attr.x]="p.x" [attr.y]="H - 4" font-size="9" text-anchor="middle" fill="#6b7280">{{ data[i]?.label }}</text>
       </g>
     </svg>
-    <div *ngIf="!data.length" class="text-center text-sm text-gray-400 py-6">Sem dados</div>
+    </div>
+    <div *ngIf="!data.length" class="py-6 text-center text-sm text-gray-400">Sem dados</div>
   `
 })
 export class LineChartComponent {
@@ -121,18 +123,20 @@ export class LineChartComponent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-      <div class="flex items-start justify-between gap-3">
-        <div class="min-w-0">
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-gray-500">{{ label }}</p>
-          <p class="mt-2 text-2xl font-bold tabular-nums tracking-tight" [style.color]="color">{{ value }}</p>
-          <p *ngIf="hint" class="mt-1 text-xs text-gray-500">{{ hint }}</p>
+    <div class="sig-kpi-card">
+      <div class="sig-kpi-card__body">
+        <div class="sig-kpi-card__text">
+          <p class="sig-kpi-card__label">{{ label }}</p>
+          <p class="sig-kpi-card__value" [style.color]="color">{{ value }}</p>
+          <p *ngIf="hint" class="sig-kpi-card__hint">{{ hint }}</p>
         </div>
         <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg ring-1 ring-black/5"
-          [style.background]="color + '18'"
+          class="sig-kpi-card__icon"
+          [style.color]="color"
+          [style.background]="tintBg"
+          [style.borderColor]="tintBorder"
         >
-          {{ icon }}
+          <i [class]="icon" aria-hidden="true"></i>
         </div>
       </div>
     </div>
@@ -141,7 +145,15 @@ export class LineChartComponent {
 export class KpiCardComponent {
   @Input() label = '';
   @Input() value: string | number = 0;
-  @Input() icon = '📊';
+  @Input() icon = 'fas fa-chart-line';
   @Input() color = '#3b82f6';
   @Input() hint = '';
+
+  get tintBg(): string {
+    return `${this.color}18`;
+  }
+
+  get tintBorder(): string {
+    return `${this.color}28`;
+  }
 }

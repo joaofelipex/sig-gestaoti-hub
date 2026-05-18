@@ -9,18 +9,13 @@ import { EmpresaService, Empresa } from '../services/empresa.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-1 gap-sm-2">
-      <label class="form-label mb-0 small text-muted text-uppercase">Empresa</label>
-      <select
-        [ngModel]="selectedId"
-        (ngModelChange)="onChange($event)"
-        class="form-select form-select-sm"
-        style="min-width: 12rem; max-width: 20rem;"
-      >
+    <label class="sig-empresa mb-0">
+      <span class="visually-hidden">Empresa</span>
+      <select [ngModel]="selectedId" (ngModelChange)="onChange($event)" class="form-select form-select-sm">
         <option [ngValue]="null">Todas as empresas</option>
         <option *ngFor="let e of empresas" [ngValue]="e.id">{{ e.nome }}</option>
       </select>
-    </div>
+    </label>
   `,
 })
 export class EmpresaSelectorComponent implements OnInit, OnDestroy {

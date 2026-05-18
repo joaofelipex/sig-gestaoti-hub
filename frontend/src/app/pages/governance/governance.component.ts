@@ -8,39 +8,43 @@ import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent, DonutChartComponent } from '../../components/charts.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-governance',
   standalone: true,
   imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent, DonutChartComponent],
   template: `
-    <div class="p-6 space-y-4">
-      <h1 class="text-2xl font-bold">Governança</h1>
+    <section class="sig-page">
+      <header class="app-page-header">
+        <div>
+          <h1 class="app-page-title">Governança</h1>
+          <p class="app-page-sub">Matriz de acessos, riscos e indicadores de conformidade.</p>
+        </div>
+      </header>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <app-kpi-card label="IT Health Score" [value]="healthScore + '%'" icon="❤️" [color]="healthColor"></app-kpi-card>
-        <app-kpi-card label="Acessos Ativos" [value]="activeAccess" icon="🔓" color="#10b981"></app-kpi-card>
-        <app-kpi-card label="Riscos Críticos" [value]="criticalRisks" icon="🚨" color="#ef4444"></app-kpi-card>
-        <app-kpi-card label="Riscos Totais" [value]="risks.length" icon="⚠️" color="#f59e0b"></app-kpi-card>
+        <app-kpi-card label="IT Health Score" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor"></app-kpi-card>
+        <app-kpi-card label="Acessos Ativos" [value]="activeAccess" [icon]="icons.access" color="#10b981"></app-kpi-card>
+        <app-kpi-card label="Riscos Críticos" [value]="criticalRisks" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
+        <app-kpi-card label="Riscos Totais" [value]="risks.length" [icon]="icons.warning" color="#f59e0b"></app-kpi-card>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <h3 class="font-semibold text-gray-900 mb-3">Distribuição de Riscos por Severidade</h3>
+        <div class="sig-chart-panel">
+          <h3>Distribuição de Riscos por Severidade</h3>
           <app-donut-chart [data]="riskDistribution"></app-donut-chart>
         </div>
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-          <h3 class="font-semibold text-gray-900 mb-3">Acessos por Nível</h3>
+        <div class="sig-chart-panel">
+          <h3>Acessos por Nível</h3>
           <app-donut-chart [data]="accessDistribution"></app-donut-chart>
         </div>
       </div>
 
-      <div class="border-b border-gray-200">
-        <nav class="flex gap-6">
-          <button (click)="tab='access'" class="py-2 px-1 border-b-2 text-sm font-medium" [class]="tab==='access' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'">Matriz de Acessos ({{ accessRecords.length }})</button>
-          <button (click)="tab='risks'" class="py-2 px-1 border-b-2 text-sm font-medium" [class]="tab==='risks' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500'">Riscos ({{ risks.length }})</button>
-        </nav>
-      </div>
+      <nav class="sig-tabs-nav" aria-label="Seções de governança">
+          <button type="button" (click)="tab='access'" [class.is-active]="tab==='access'">Matriz de Acessos ({{ accessRecords.length }})</button>
+          <button type="button" (click)="tab='risks'" [class.is-active]="tab==='risks'">Riscos ({{ risks.length }})</button>
+      </nav>
 
       <ng-container *ngIf="tab==='access'">
         <app-data-toolbar searchPlaceholder="Buscar usuário, recurso..." [search]="searchA"
@@ -105,7 +109,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
           </table>
         </div>
       </ng-container>
-    </div>
+    </section>
 
     <app-modal [open]="modalA" [title]="formA.id ? 'Editar Acesso' : 'Novo Acesso'" [saving]="saving" (close)="modalA=false" (save)="saveAccess()">
       <div class="grid grid-cols-2 gap-4">
@@ -133,6 +137,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
   `
 })
 export class GovernanceComponent implements OnInit, OnDestroy {
+  readonly icons = SigIcons;
   accessRecords: AccessRecord[] = []; risks: RiskItem[] = []; loading = true; tab: 'access'|'risks' = 'access';
   searchA = ''; filterA: any = {}; searchR = ''; filterR: any = {};
   modalA = false; modalR = false; confirmOpen = false; saving = false;

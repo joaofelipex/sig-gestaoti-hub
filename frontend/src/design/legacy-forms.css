@@ -1,46 +1,37 @@
-/* Formulários/cards das páginas (Tailwind) — cores via tokens */
+/* Formulários e login */
 
 @layer components {
   .app-field {
     @apply w-full rounded-md border bg-white px-3 py-2.5 text-sm shadow-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-2;
-    border-color: var(--wl-border-color);
-    color: var(--wl-text-color);
+    border-color: var(--sig-table-border);
+    color: var(--sig-text);
   }
   .app-field:focus {
-    border-color: var(--wl-primary-color);
-    --tw-ring-color: color-mix(in srgb, var(--wl-primary-color) 35%, transparent);
+    border-color: rgb(var(--wl-background-color));
+    --tw-ring-color: rgba(var(--wl-background-color), 0.25);
   }
   .app-btn-primary {
-    @apply inline-flex w-full items-center justify-center rounded-md px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
-    background-color: var(--wl-primary-color);
+    @apply inline-flex w-full items-center justify-center rounded-md px-4 py-2.5 text-sm font-semibold shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+    background-color: rgb(var(--wl-background-color));
+    color: rgb(var(--wl-text-color));
   }
   .app-btn-primary:hover {
-    background-color: var(--wl-primary-hover);
-  }
-  .app-btn-primary:focus {
-    --tw-ring-color: var(--wl-primary-color);
+    background-color: rgba(var(--wl-background-color), 0.88);
   }
   .app-btn-ghost {
-    @apply inline-flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium transition-colors;
-    color: var(--wl-text-muted);
+    @apply inline-flex items-center justify-center rounded-md border px-3 py-2 text-sm font-medium transition-colors;
+    border-color: var(--sig-table-border);
+    background: var(--sig-surface-2);
+    color: var(--sig-text);
   }
   .app-btn-ghost:hover {
-    background-color: var(--wl-primary-subtle);
-    color: var(--wl-text-color);
+    background: rgba(var(--wl-background-color), 0.06);
+    border-color: rgba(var(--wl-background-color), 0.25);
   }
   .app-card {
-    @apply rounded-lg border bg-white p-5 shadow-sm;
-    border-color: var(--wl-border-color);
-    box-shadow: var(--wl-shadow);
-  }
-  .app-page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--wl-text-color);
-  }
-  .app-page-sub {
-    font-size: 0.875rem;
-    color: var(--wl-text-muted);
+    @apply rounded-lg border bg-white p-5;
+    border-color: var(--sig-table-border);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   }
 }
 
@@ -50,13 +41,19 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: linear-gradient(160deg, var(--wl-primary-subtle) 0%, var(--wl-background-color) 45%, #f8fafc 100%);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(30, 77, 140, 0.12), transparent),
+    linear-gradient(180deg, #e2e6ed 0%, var(--wl-background-color) 40%);
 }
 
 .auth-card {
   width: 100%;
-  max-width: 28rem;
+  max-width: 26rem;
   border-radius: var(--wl-radius);
-  box-shadow: var(--wl-shadow);
-  border-color: var(--wl-border-color);
+  box-shadow: var(--wl-shadow-lg);
+  border: 1px solid var(--wl-border-color);
+}
+
+.auth-card .card-body {
+  padding: 2rem 1.75rem;
 }

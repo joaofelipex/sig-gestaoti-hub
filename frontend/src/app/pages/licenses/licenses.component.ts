@@ -13,8 +13,13 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
   standalone: true,
   imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
   template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4">Licenças (SAM)</h1>
+    <section class="sig-page">
+      <header class="app-page-header">
+        <div>
+          <h1 class="app-page-title">Licenças (SAM)</h1>
+          <p class="app-page-sub">Software, assentos e conformidade de licenciamento.</p>
+        </div>
+      </header>
 
       <app-data-toolbar
         searchPlaceholder="Buscar software, fornecedor..."
@@ -59,7 +64,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Licença' : 'Nova Licença'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
       <div class="grid grid-cols-2 gap-4">

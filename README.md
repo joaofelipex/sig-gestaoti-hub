@@ -33,19 +33,16 @@ npm run db:up
 
 Na primeira subida do volume, o Postgres aplica `database/init/01_schema.sql`, `02_seed.sql` e `03_api_auth.sql` (hash da conta demo).
 
-3. **API + Angular** (duas opções):
-
-**Uma só janela** (recomendado após `db:up`):
+3. **Dois terminais** (como nos outros projetos):
 
 ```bash
-npm run dev:stack
+cd backend && npm run dev
+cd frontend && npm run dev
 ```
 
-Isto sobe a API na porta **3000** e o `ng serve` na **8080** com `environment.local.ts` (URL da API `http://127.0.0.1:3000/api`).
+API em **3000**, app em **8080** (proxy `/api` → API). Opcional na raiz: `npm run dev` sobe os dois de uma vez.
 
-**Ou em terminais separados:** `npm run api:dev` e, à parte, `npm run dev:ui` (ou `cd frontend && npm run dev:local`).
-
-4. Confirma ligações: `npm run check:stack` (Postgres 5433 + `GET /health` na API).
+4. (Opcional) Confirma ligações: `npm run doctor` (Postgres + `GET /health`).
 
 Abre [http://localhost:8080](http://localhost:8080) → **Entrar** com **dev@local.imts** / **demo123456**.
 
@@ -57,11 +54,11 @@ Opcional: ficheiro `backend/.env` (ver `backend/.env.example`). Por defeito a AP
 
 | Comando | Descrição |
 |---------|-----------|
-| `npm run check:stack` | Verifica Postgres (5433) e `GET /health` da API (3000) |
-| `npm run dev:stack` | API (3000) + Angular (8080, config `local`) em paralelo |
-| `npm run dev` / `npm run dev:ui` | Só Angular com `environment.local.ts` |
-| `npm run db:up` / `db:down` / `db:reset` | Postgres Docker |
-| `npm run api:dev` | API Express em modo desenvolvimento |
+| `npm run dev` (raiz) | API + Angular em paralelo |
+| `cd backend && npm run dev` | Só API |
+| `cd frontend && npm run dev` | Só Angular |
+| `npm run doctor` | Verifica Postgres e `GET /health` da API |
+| `npm run db:up` / `db:down` / `db:reset` | Postgres Docker (opcional) |
 | `npm run db:seed` | Reaplicar dados demo no Docker (volume já existente) |
 | `npm run db:apply-migrations` | Aplica `database/migrations/*.sql` ao Postgres local (papéis RLS + registo em `_repo_migration_log`) |
 | `npm run db:gen-baseline` | Regenera `database/migrations/20260101000000_baseline_public_schema.sql` a partir de `database/init/01_schema.sql` |

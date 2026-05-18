@@ -1,35 +1,34 @@
 import { Injectable } from '@angular/core';
-import { LARA_LIGHT_BLUE, WhiteLabelConfig } from '../core/white-label.model';
+import { SIG_DEFAULT_WHITELABEL, WhiteLabelConfig } from '../core/white-label.model';
 
 @Injectable({ providedIn: 'root' })
 export class WhiteLabelService {
-  private config: WhiteLabelConfig = { ...LARA_LIGHT_BLUE };
+  private config: WhiteLabelConfig = { ...SIG_DEFAULT_WHITELABEL };
 
   apply(config: WhiteLabelConfig): void {
     this.config = { ...this.config, ...config };
     const root = document.documentElement;
-    const map: Record<string, string | undefined> = {
-      backgroundColor: '--wl-background-color',
-      surfaceColor: '--wl-surface-color',
-      borderColor: '--wl-border-color',
-      primaryColor: '--wl-primary-color',
-      primaryHover: '--wl-primary-hover',
-      primaryDark: '--wl-primary-dark',
-      primaryLight: '--wl-primary-light',
-      primarySubtle: '--wl-primary-subtle',
-      textColor: '--wl-text-color',
-      textMuted: '--wl-text-muted',
-    };
 
-    for (const [key, cssVar] of Object.entries(map) as [keyof WhiteLabelConfig, string][]) {
-      const val = config[key];
-      if (cssVar && typeof val === 'string') {
-        root.style.setProperty(cssVar, val);
+    if (config.backgroundColor) {
+      root.style.setProperty('--wl-background-color', config.backgroundColor);
+      const hex = this.rgbToHex(config.backgroundColor);
+      if (hex) {
+        root.style.setProperty('--wl-brand-hex', hex);
+        root.style.setProperty('--bs-primary', hex);
       }
     }
 
-    if (config.primaryColor) {
-      root.style.setProperty('--bs-primary', config.primaryColor);
+    if (config.textColor) {
+      root.style.setProperty('--wl-text-color', config.textColor);
+    }
+
+    if (config.backgroundImage) {
+      const url = config.backgroundImage.startsWith('url(')
+        ? config.backgroundImage
+        : config.backgroundImage.startsWith('http') || config.backgroundImage.startsWith('/')
+          ? `url('${config.backgroundImage}')`
+          : `url('/${config.backgroundImage}')`;
+      root.style.setProperty('--wl-login-bg-image', url);
     }
 
     if (config.brandName) {
@@ -45,18 +44,36 @@ export class WhiteLabelService {
   }
 
   get brandName(): string {
-    return this.config.brandName ?? LARA_LIGHT_BLUE.brandName;
+    return this.config.brandName ?? SIG_DEFAULT_WHITELABEL.brandName;
   }
 
   get brandSubtitle(): string {
-    return this.config.brandSubtitle ?? LARA_LIGHT_BLUE.brandSubtitle;
+    return this.config.brandSubtitle ?? SIG_DEFAULT_WHITELABEL.brandSubtitle;
   }
 
   get logoUrl(): string | null {
     return this.config.logoUrl ?? null;
   }
 
-  get logoMiniUrl(): string | null {
-    return this.config.logoMiniUrl ?? this.config.logoUrl ?? null;
+  get logoHorizontal(): string | null {
+    return this.config.logoUrl ?? null;
+  }
+
+  get logoIcon(): string | null {
+    return this.config.logoIconUrl ?? this.config.logoUrl ?? null;
+  }
+
+  get logoLogin(): string | null {
+    return this.config.logoLoginUrl ?? this.config.logoUrl ?? null;
+  }
+
+  brandRgba(alpha: number): string {
+    return `rgba(var(--wl-background-color), ${alpha})`;
+  }
+
+  private rgbToHex(rgb: string): string | null {
+    const parts = rgb.split(',').map((s) => parseInt(s.trim(), 10));
+    if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+    return `#${parts.map((n) => n.toString(16).padStart(2, '0')).join('')}`;
   }
 }

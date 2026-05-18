@@ -1,0 +1,197 @@
+/**
+ * Responsividade SIG — mobile-first, tablet e desktop
+ */
+
+/* —— Tokens por breakpoint —— */
+@media (max-width: 767.98px) {
+  :root {
+    --tab-content-padding: 0.75rem;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199.98px) {
+  :root {
+    --tab-content-padding: 1rem;
+  }
+}
+
+/* —— Conteúdo: grids e cartões —— */
+@media (max-width: 575.98px) {
+  .sig-content .grid.grid-cols-2,
+  .sig-content .grid.grid-cols-2.md\:grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sig-content .grid .col-span-2 {
+    grid-column: span 1 !important;
+  }
+
+  .app-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-page-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app-page-title {
+    font-size: 1.2rem;
+  }
+
+  .sig-kpi-card__value {
+    font-size: 1.25rem;
+  }
+
+  .app-card {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .sig-content .min-h-full.space-y-6 {
+    gap: 1rem;
+  }
+}
+
+/* —— Tabelas: scroll horizontal —— */
+@media (max-width: 991.98px) {
+  .sig-content .bg-white.rounded-lg.border.overflow-hidden,
+  .sig-content .sig-list-card {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sig-content .bg-white.rounded-lg.border.overflow-hidden table,
+  .sig-content .sig-list-card table {
+    min-width: 640px;
+  }
+}
+
+/* —— Toolbar de listagens —— */
+@media (max-width: 767.98px) {
+  .sig-list-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sig-list-toolbar .sig-toolbar-search,
+  .sig-list-toolbar .relative.min-w-\[200px\] {
+    min-width: 0 !important;
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .sig-list-toolbar .sig-toolbar-actions,
+  .sig-list-toolbar .ml-auto {
+    margin-left: 0 !important;
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .sig-list-toolbar .sig-toolbar-actions .app-btn-ghost,
+  .sig-list-toolbar .sig-toolbar-actions button,
+  .sig-list-toolbar .ml-auto .app-btn-ghost,
+  .sig-list-toolbar .ml-auto button,
+  .sig-list-toolbar .ml-auto label {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 2.5rem;
+  }
+
+  .sig-list-toolbar select.app-field {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* —— Gráficos —— */
+.sig-chart-donut {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+  .sig-chart-donut {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .sig-chart-donut .sig-chart-donut__legend {
+    width: 100%;
+  }
+}
+
+.sig-chart-line {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sig-chart-line svg {
+  min-width: 280px;
+}
+
+/* —— Modais —— */
+@media (max-width: 575.98px) {
+  .app-modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .app-modal-dialog {
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: var(--br-lg) var(--br-lg) 0 0;
+    margin: 0;
+  }
+
+  .app-modal-footer {
+    flex-wrap: wrap;
+  }
+
+  .app-modal-footer .btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
+  }
+}
+
+/* —— Login —— */
+@media (max-width: 575.98px) {
+  .sig-login__panel {
+    padding: 1.25rem 1rem;
+  }
+
+  .sig-login__card {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+/* —— Utilitário: esconder em mobile —— */
+@media (max-width: 767.98px) {
+  .sig-hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .sig-hide-desktop {
+    display: none !important;
+  }
+}
+
+/* Safe area (telemóveis com notch) */
+@supports (padding: max(0px)) {
+  .sig-content {
+    padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  .sig-header__row {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+}

@@ -11,17 +11,13 @@ import { Alert, DashboardService } from '../services/dashboard.service';
   template: `
     <a
       routerLink="/alertas"
-      routerLinkActive="active"
-      class="nav-link position-relative d-inline-flex align-items-center gap-1"
+      routerLinkActive="is-active"
+      class="sig-alert-btn"
       [attr.aria-label]="ariaLabel"
       [attr.title]="ariaLabel"
     >
-      <i class="far fa-bell"></i>
-      <span class="d-none d-md-inline">Alertas</span>
-      <span
-        *ngIf="unreadCount > 0"
-        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-      >
+      <i class="far fa-bell" aria-hidden="true"></i>
+      <span *ngIf="unreadCount > 0" class="sig-alert-badge">
         {{ unreadCount > 99 ? '99+' : unreadCount }}
       </span>
     </a>

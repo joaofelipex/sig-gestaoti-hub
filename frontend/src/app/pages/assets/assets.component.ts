@@ -13,8 +13,13 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
   standalone: true,
   imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
   template: `
-    <div class="p-6">
-      <h1 class="text-2xl font-bold mb-4">Ativos (ITAM)</h1>
+    <section class="sig-page">
+      <header class="app-page-header">
+        <div>
+          <h1 class="app-page-title">Ativos (ITAM)</h1>
+          <p class="app-page-sub">Inventário de hardware e periféricos da organização.</p>
+        </div>
+      </header>
       <app-data-toolbar
         searchPlaceholder="Buscar tipo, marca, modelo, série..."
         [search]="search"
@@ -23,36 +28,38 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
         (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"
       ></app-data-toolbar>
-      <div *ngIf="loading" class="text-center py-8 text-gray-500">Carregando...</div>
-      <div *ngIf="!loading" class="bg-white rounded-lg shadow overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50"><tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Marca/Modelo</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Série</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Atribuído</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ações</th>
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+      <div *ngIf="!loading" class="sig-list-card">
+        <div class="sig-table-wrap">
+        <table class="sig-table">
+          <thead><tr>
+            <th>Tipo</th>
+            <th>Marca/Modelo</th>
+            <th>Série</th>
+            <th>Status</th>
+            <th>Atribuído</th>
+            <th>Valor</th>
+            <th class="text-end">Ações</th>
           </tr></thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr *ngFor="let a of filtered" class="hover:bg-gray-50">
-              <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ a.type }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ a.brand }} {{ a.model }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ a.serialNumber || '—' }}</td>
-              <td class="px-4 py-3"><span class="px-2 py-1 text-xs rounded-full font-semibold" [class]="statusClass(a.status)">{{ a.status }}</span></td>
-              <td class="px-4 py-3 text-sm text-gray-500">{{ a.assignedTo || 'Não atribuído' }}</td>
-              <td class="px-4 py-3 text-sm text-gray-500">R$ {{ a.purchaseValue.toLocaleString('pt-BR') }}</td>
-              <td class="px-4 py-3 text-right text-sm">
-                <button (click)="openEdit(a)" class="text-blue-600 hover:underline mr-3">Editar</button>
-                <button (click)="askDelete(a)" class="text-red-600 hover:underline">Excluir</button>
+          <tbody>
+            <tr *ngFor="let a of filtered">
+              <td class="fw-medium">{{ a.type }}</td>
+              <td>{{ a.brand }} {{ a.model }}</td>
+              <td>{{ a.serialNumber || '—' }}</td>
+              <td><span class="px-2 py-1 text-xs rounded-full font-semibold" [class]="statusClass(a.status)">{{ a.status }}</span></td>
+              <td>{{ a.assignedTo || 'Não atribuído' }}</td>
+              <td>R$ {{ a.purchaseValue.toLocaleString('pt-BR') }}</td>
+              <td class="text-end">
+                <button type="button" (click)="openEdit(a)" class="sig-link-action me-3">Editar</button>
+                <button type="button" (click)="askDelete(a)" class="sig-link-action sig-link-action--danger">Excluir</button>
               </td>
             </tr>
-            <tr *ngIf="!filtered.length"><td colspan="7" class="text-center py-8 text-sm text-gray-400">Nenhum ativo</td></tr>
+            <tr *ngIf="!filtered.length"><td colspan="7" class="sig-table-empty">Nenhum ativo</td></tr>
           </tbody>
         </table>
+        </div>
       </div>
-    </div>
+    </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Ativo' : 'Novo Ativo'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
       <div class="grid grid-cols-2 gap-4">

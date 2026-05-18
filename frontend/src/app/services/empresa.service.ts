@@ -16,23 +16,6 @@ export interface Empresa {
 }
 
 const STORAGE_KEY = 'imts_selected_empresa';
-const SEED_NAMES = [
-  'IMTS Holding',
-  'Onni.ai',
-  'Reach',
-  'Mobcall',
-  'PMGT',
-  'Hcitis',
-  'TRON',
-  'Auttis',
-  'Onni.ai Fortaleza',
-  'Doutor-ai',
-  'Siders',
-  'Vycma',
-  'Visttoriar',
-  'Smartts',
-  'Reddi',
-];
 
 @Injectable({ providedIn: 'root' })
 export class EmpresaService {
@@ -80,9 +63,7 @@ export class EmpresaService {
       const data = (await firstValueFrom(this.api.getEmpresas())) as Empresa[];
       const list = data ?? [];
       this._list.next(list);
-      if (list.length === 0) {
-        await this.seedDefaults();
-      } else if (this._selected.value && !list.find((e) => e.id === this._selected.value)) {
+      if (this._selected.value && !list.find((e) => e.id === this._selected.value)) {
         this.setSelected(null);
       }
     } catch {
@@ -96,30 +77,6 @@ export class EmpresaService {
       return me.profile.org_id;
     } catch {
       return null;
-    }
-  }
-
-  private async seedDefaults() {
-    const orgId = await this.getOrgId();
-    if (!orgId) return;
-    const rows = SEED_NAMES.map((nome) => ({ org_id: orgId, nome, ativo: true }));
-    try {
-      const data = (await firstValueFrom(this.api.postTable('empresas', rows))) as Empresa[];
-      if (data?.length) {
-        this._list.next(data);
-        this.toast.show({
-          title: 'Empresas cadastradas',
-          description: `${data.length} empresas da holding inicializadas`,
-        });
-      }
-    } catch (e: unknown) {
-      const msg =
-        e instanceof HttpErrorResponse && e.error && typeof e.error === 'object' && 'error' in e.error
-          ? String((e.error as { error: string }).error)
-          : e instanceof HttpErrorResponse
-            ? e.message
-            : '';
-      if (msg) this.toast.show({ title: 'Erro', description: msg, variant: 'destructive' });
     }
   }
 

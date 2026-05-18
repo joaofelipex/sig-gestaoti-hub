@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
-import { pool } from '../db';
+import { getPostgresTargetLabel, pool, verifyConnection } from '../db';
 import { signToken } from '../jwt';
 import type { AuthedRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
@@ -47,9 +47,28 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
     res.status(404).json({ error: 'Perfil não encontrado' });
     return;
   }
+  const orgId = prof.org_id;
+  const [pg, countsQ] = await Promise.all([
+    verifyConnection().catch(() => null),
+    pool.query<{ ativos: number; empresas: number; alertas: number }>(
+      `SELECT
+         (SELECT count(*)::int FROM public.ativos WHERE org_id = $1::uuid) AS ativos,
+         (SELECT count(*)::int FROM public.empresas WHERE org_id = $1::uuid) AS empresas,
+         (SELECT count(*)::int FROM public.alertas WHERE org_id = $1::uuid) AS alertas`,
+      [orgId],
+    ),
+  ]);
+  const counts = countsQ.rows[0] ?? { ativos: 0, empresas: 0, alertas: 0 };
   res.json({
     user: { id: uid, email: prof.email },
-    profile: { org_id: prof.org_id, nome: prof.nome, email: prof.email },
+    profile: { org_id: orgId, nome: prof.nome, email: prof.email },
+    postgres: {
+      configured: getPostgresTargetLabel(),
+      database: pg?.database ?? null,
+      host: pg?.host ?? null,
+      port: pg?.port ?? null,
+    },
+    dataCounts: counts,
   });
 });
 
