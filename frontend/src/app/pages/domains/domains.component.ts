@@ -131,13 +131,25 @@ export class DomainsComponent implements OnInit, OnDestroy {
   }
   async save() {
     if (!this.form.nome) return;
+    const payload = this.cleanDates(this.form);
     this.saving = true;
-    const ok = await this.crud.upsert('dominios', this.cleanDates(this.form));
+    this.modalOpen = false;
+    const ok = await this.crud.upsert('dominios', payload);
     this.saving = false;
-    if (ok) this.modalOpen = false;
+    if (!ok) this.modalOpen = true;
   }
   askDelete(d: Domain) { this.toDelete = d; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.crud.remove('dominios', this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() {
+    const target = this.toDelete;
+    if (!target) return;
+    this.confirmOpen = false;
+    this.toDelete = null;
+    const ok = await this.crud.remove('dominios', target.id);
+    if (!ok) {
+      this.toDelete = target;
+      this.confirmOpen = true;
+    }
+  }
 
   exportCSV() {
     exportToCSV(this.filtered.map(d => ({

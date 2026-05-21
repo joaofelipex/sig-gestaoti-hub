@@ -55,12 +55,12 @@ import { EmpresaService } from '../../services/empresa.service';
         </div>
 
         <div class="sig-kpi-grid sig-kpi-grid--6">
-          <app-kpi-card label="Índice de saúde" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" hint="Saúde geral da TI"></app-kpi-card>
-          <app-kpi-card label="Ativos em uso" [value]="assetsInUse" [icon]="icons.assets" color="#3b82f6"></app-kpi-card>
-          <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" [icon]="icons.cost" color="#10b981"></app-kpi-card>
-          <app-kpi-card label="Domínios ≤30d" [value]="domainsExpiring" [icon]="icons.domain" color="#f59e0b"></app-kpi-card>
-          <app-kpi-card label="Licenças ociosas" [value]="unusedLicenses" [icon]="icons.license" color="#8b5cf6" hint="Não usadas"></app-kpi-card>
-          <app-kpi-card label="Alertas críticos" [value]="criticalAlerts" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
+          <app-kpi-card label="Índice de saúde" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" [hint]="healthHint"></app-kpi-card>
+          <app-kpi-card label="Ativos em uso" [value]="assetsInUse" [icon]="icons.assets" color="#3b82f6" [hint]="assetsHint"></app-kpi-card>
+          <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" [icon]="icons.cost" color="#10b981" [hint]="costHint"></app-kpi-card>
+          <app-kpi-card label="Domínios ≤30d" [value]="domainsExpiring" [icon]="icons.domain" color="#f59e0b" [hint]="domainsHint"></app-kpi-card>
+          <app-kpi-card label="Licenças ociosas" [value]="unusedLicenses" [icon]="icons.license" color="#8b5cf6" [hint]="licensesHint"></app-kpi-card>
+          <app-kpi-card label="Alertas críticos" [value]="criticalAlerts" [icon]="icons.alertCritical" color="#ef4444" [hint]="alertsHint"></app-kpi-card>
         </div>
 
         <div *ngIf="!isEmpty" class="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -139,7 +139,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
   data: any = { assets: [], domains: [], licenses: [], servers: [], alerts: [], payments: [], loading: true };
   loading = true;
-  healthScore = 0; assetsInUse = 0; domainsExpiring = 0; unusedLicenses = 0; monthlyCost = 0; criticalAlerts = 0;
+  healthScore = 0; healthHint = 'Saúde geral da TI'; assetsInUse = 0; domainsExpiring = 0; unusedLicenses = 0; monthlyCost = 0; criticalAlerts = 0;
+  assetsHint = 'Ativos cadastrados';
+  costHint = 'Servidores, licenças e domínios';
+  domainsHint = 'Vencimentos próximos';
+  licensesHint = 'Assentos não utilizados';
+  alertsHint = 'Críticos não lidos';
   costByCategory: ChartDatum[] = [];
   assetStatus: ChartDatum[] = [];
   paymentTrend: ChartDatum[] = [];
@@ -204,9 +209,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.criticalAlerts = alerts.filter((a: any) => a.severidade === 'critico' && !a.lida).length;
 
     const serverCost = servers.reduce((s: number, x: any) => s + (x.monthlyCost||0), 0);
-    const licCost = licenses.reduce((s: number, l: any) => s + (l.costPerUnit||0) * (l.type === 'Mensal' ? (l.usedLicenses||0) : (l.usedLicenses||0)/12), 0);
+    const licCost = licenses.reduce((s: number, l: any) => {
+      const seats = l.totalLicenses || l.usedLicenses || 0;
+      const monthlyFactor = l.type === 'Mensal' ? 1 : 1 / 12;
+      return s + (l.costPerUnit || 0) * seats * monthlyFactor;
+    }, 0);
     const domCost = domains.reduce((s: number, d: any) => s + (d.renewalCost||0)/12, 0);
     this.monthlyCost = Math.round(serverCost + licCost + domCost);
+    this.updateKpiHints({ assets, domains, licenses, alerts, serverCost, licCost, domCost, days });
 
     this.costByCategory = [
       { label: 'Servidores', value: Math.round(serverCost), color: '#023ed8' },
@@ -267,13 +277,54 @@ export class DashboardComponent implements OnInit, OnDestroy {
           ].filter((d) => d.value > 0)
         : [];
 
-    let score = 100;
-    score -= this.criticalAlerts * 8;
-    score -= domains.filter((d: any) => d.status === 'Expirado').length * 15;
-    score -= this.domainsExpiring * 4;
-    score -= assets.filter((a: any) => a.status === 'Em uso' && !a.assignedTo).length * 2;
-    this.healthScore = Math.max(0, Math.min(100, score));
+    const expiredDomains = domains.filter((d: any) => d.status === 'Expirado').length;
+    const unassignedAssets = assets.filter((a: any) => a.status === 'Em uso' && !a.assignedTo).length;
+    const offlineServers = servers.filter((s: any) => ['offline', 'manutenção', 'manutencao'].includes(String(s.status || '').toLowerCase())).length;
+    const inUseAssets = Math.max(1, this.assetsInUse);
+
+    const penalties = [
+      { label: 'alertas críticos', value: Math.min(25, this.criticalAlerts * 5), count: this.criticalAlerts },
+      { label: 'domínios expirados', value: Math.min(25, expiredDomains * 12), count: expiredDomains },
+      { label: 'domínios a vencer', value: Math.min(15, this.domainsExpiring * 3), count: this.domainsExpiring },
+      { label: 'servidores indisponíveis', value: Math.min(20, offlineServers * 10), count: offlineServers },
+      { label: 'ativos sem responsável', value: Math.min(10, Math.round((unassignedAssets / inUseAssets) * 10)), count: unassignedAssets },
+    ];
+    const totalPenalty = penalties.reduce((sum, p) => sum + p.value, 0);
+    this.healthScore = Math.max(0, Math.min(100, Math.round(100 - totalPenalty)));
+
+    const mainFactor = penalties
+      .filter((p) => p.value > 0 && p.count > 0)
+      .sort((a, b) => b.value - a.value)[0];
+    this.healthHint = mainFactor
+      ? `Principal impacto: ${mainFactor.count} ${mainFactor.label}`
+      : 'Sem impactos críticos detectados';
   }
 
   async logout() { await this.authService.signOut(); }
+
+  private updateKpiHints(ctx: {
+    assets: any[];
+    domains: any[];
+    licenses: any[];
+    alerts: any[];
+    serverCost: number;
+    licCost: number;
+    domCost: number;
+    days: (date: string) => number;
+  }) {
+    const retiredAssets = ctx.assets.filter((a: any) => a.status === 'Aposentado').length;
+    const expiredDomains = ctx.domains.filter((d: any) => d.expirationDate && ctx.days(d.expirationDate) <= 0).length;
+    const licTotal = ctx.licenses.reduce((s: number, l: any) => s + (l.totalLicenses || 0), 0);
+    const unreadAlerts = ctx.alerts.filter((a: any) => !a.lida).length;
+
+    this.assetsHint = `${this.assetsInUse} de ${ctx.assets.length} ativo(s) em uso${retiredAssets ? ` · ${retiredAssets} aposentado(s)` : ''}`;
+    this.costHint = `Serv. ${this.brl(ctx.serverCost)} · Lic. ${this.brl(ctx.licCost)} · Dom. ${this.brl(ctx.domCost)}`;
+    this.domainsHint = expiredDomains
+      ? `${expiredDomains} expirado(s) · ${this.domainsExpiring} vencem em até 30d`
+      : `${this.domainsExpiring} vencem em até 30d`;
+    this.licensesHint = licTotal
+      ? `${this.unusedLicenses} de ${licTotal} assento(s) sem uso`
+      : 'Nenhuma licença cadastrada';
+    this.alertsHint = `${this.criticalAlerts} crítico(s) não lido(s) · ${unreadAlerts} alerta(s) pendente(s)`;
+  }
 }

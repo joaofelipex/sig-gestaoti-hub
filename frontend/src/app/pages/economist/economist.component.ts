@@ -6,13 +6,18 @@ import {
   DashboardService,
   Budget,
   ActionItem,
+  FinancialContract,
+  License,
 } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import {
   KpiCardComponent,
   BarChartComponent,
   DonutChartComponent,
+  LineChartComponent,
+  MultiLineChartComponent,
   ChartDatum,
+  ChartSeries,
 } from '../../components/charts.component';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
@@ -31,6 +36,8 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
     KpiCardComponent,
     BarChartComponent,
     DonutChartComponent,
+    LineChartComponent,
+    MultiLineChartComponent,
     DataToolbarComponent,
     ModalComponent,
     ConfirmComponent,
@@ -98,6 +105,13 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
               hint="% das ações sobre o orçamento"
             ></app-kpi-card>
             <app-kpi-card
+              label="ROI estimado"
+              [value]="roiPct"
+              [icon]="icons.chart"
+              color="#8b5cf6"
+              [hint]="roiHint"
+            ></app-kpi-card>
+            <app-kpi-card
               label="Ações em aberto"
               [value]="openActions"
               [icon]="icons.tasks"
@@ -142,6 +156,56 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
                 <h3 class="sig-chart-title">Ações por status</h3>
               </div>
               <app-donut-chart [data]="statusChartData"></app-donut-chart>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div class="sig-chart-panel">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">Evolução do ROI</h3>
+                <span class="sig-chart-panel__meta">Economia estimada / base financeira anual</span>
+              </div>
+              <app-line-chart [data]="roiTrendData" suffix="%" strokeColor="#8b5cf6"></app-line-chart>
+            </div>
+            <div class="sig-chart-panel">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">Evolução CAPEX x OPEX</h3>
+                <span class="sig-chart-panel__meta">Base anual por classificação</span>
+              </div>
+              <app-multi-line-chart [series]="capexOpexTrendSeries" prefix="R$ "></app-multi-line-chart>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2" *ngIf="contractTypeChartData.length || capexOpexChartData.length">
+            <div class="sig-chart-panel" *ngIf="contractTypeChartData.length">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">Contratos anualizados por tipo</h3>
+                <span class="sig-chart-panel__meta">{{ brl(annualContractCost) }} em contratos</span>
+              </div>
+              <app-bar-chart [data]="contractTypeChartData" prefix="R$ "></app-bar-chart>
+            </div>
+            <div class="sig-chart-panel" [class.lg:col-span-2]="!contractTypeChartData.length">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">Base financeira anual</h3>
+                <span class="sig-chart-panel__meta">Orçamentos + contratos + licenças SAM</span>
+              </div>
+              <div class="sig-metric-row mb-0">
+                <div class="sig-metric-tile">
+                  <p class="sig-metric-tile__label">CAPEX</p>
+                  <p class="sig-metric-tile__value">{{ brl(capexTotal) }}</p>
+                  <p class="sig-metric-tile__hint">Aquisição e investimento</p>
+                </div>
+                <div class="sig-metric-tile">
+                  <p class="sig-metric-tile__label">OPEX</p>
+                  <p class="sig-metric-tile__value">{{ brl(opexTotal) }}</p>
+                  <p class="sig-metric-tile__hint">Operação, recorrência e SAM desde 01/01/2026</p>
+                </div>
+                <div class="sig-metric-tile">
+                  <p class="sig-metric-tile__label">Outros</p>
+                  <p class="sig-metric-tile__value">{{ brl(otherSpendTotal) }}</p>
+                  <p class="sig-metric-tile__hint">Sem classificação direta</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -483,6 +547,8 @@ export class EconomistComponent implements OnInit, OnDestroy {
   tab: TabId = 'visao';
   budgets: Budget[] = [];
   actions: ActionItem[] = [];
+  contracts: FinancialContract[] = [];
+  licenses: License[] = [];
   loading = true;
   private sub!: Subscription;
 
@@ -497,11 +563,24 @@ export class EconomistComponent implements OnInit, OnDestroy {
   currentYear = new Date().getFullYear();
   currentYearBudget = 0;
   budgetCategories = 0;
+  roi = 0;
+  realizedRoi = 0;
+  annualContractCost = 0;
+  annualLicenseCost = 0;
+  capexTotal = 0;
+  opexTotal = 0;
+  otherSpendTotal = 0;
+  capexOpexTotal = 0;
 
   budgetChartData: ChartDatum[] = [];
   savingsChartData: ChartDatum[] = [];
   statusChartData: ChartDatum[] = [];
   priorityChartData: ChartDatum[] = [];
+  roiChartData: ChartDatum[] = [];
+  roiTrendData: ChartDatum[] = [];
+  capexOpexChartData: ChartDatum[] = [];
+  capexOpexTrendSeries: ChartSeries[] = [];
+  contractTypeChartData: ChartDatum[] = [];
   topActions: ActionItem[] = [];
   upcomingActions: (ActionItem & { _overdue?: boolean; _soon?: boolean })[] = [];
   topCategory: ChartDatum | null = null;
@@ -551,6 +630,8 @@ export class EconomistComponent implements OnInit, OnDestroy {
     Cancelada: '#ef4444',
   };
 
+  private readonly samStartYear = 2026;
+
   constructor(
     private dashboard: DashboardService,
     private crud: CrudService,
@@ -560,6 +641,8 @@ export class EconomistComponent implements OnInit, OnDestroy {
     this.sub = this.dashboard.data$.subscribe((d) => {
       this.budgets = d.budgets;
       this.actions = d.actions;
+      this.contracts = d.contracts || [];
+      this.licenses = d.licenses || [];
       this.loading = d.loading;
       if (!d.loading) this.compute();
     });
@@ -570,7 +653,7 @@ export class EconomistComponent implements OnInit, OnDestroy {
   }
 
   get hasData() {
-    return this.budgets.length > 0 || this.actions.length > 0;
+    return this.budgets.length > 0 || this.actions.length > 0 || this.contracts.length > 0 || this.licenses.length > 0;
   }
 
   get savingsRateLabel() {
@@ -579,6 +662,14 @@ export class EconomistComponent implements OnInit, OnDestroy {
 
   get savingsRatePct() {
     return `${this.savingsRate.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+  }
+
+  get roiPct() {
+    return `${this.roi.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+  }
+
+  get roiHint() {
+    return `Realizado: ${this.realizedRoi.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
   }
 
   get doneRateLabel() {
@@ -671,6 +762,8 @@ export class EconomistComponent implements OnInit, OnDestroy {
     this.totalBudget = this.budgets.reduce((s, b) => s + (b.annualBudget || 0), 0);
     this.totalSavings = this.actions.reduce((s, a) => s + (a.estimatedSavings || 0), 0);
     this.savingsRate = this.totalBudget > 0 ? (this.totalSavings / this.totalBudget) * 100 : 0;
+    this.annualContractCost = this.contracts.reduce((s, c) => s + (c.monthlyCost || 0) * 12, 0);
+    this.annualLicenseCost = this.licenses.reduce((s, l) => s + this.licenseMonthlyCost(l) * 12, 0);
 
     this.openActions = this.actions.filter((a) => this.isOpen(a.status)).length;
     this.doneActions = this.actions.filter((a) => this.isDone(a.status)).length;
@@ -684,6 +777,10 @@ export class EconomistComponent implements OnInit, OnDestroy {
     this.currentYearBudget = this.budgets
       .filter((b) => b.year === this.currentYear)
       .reduce((s, b) => s + b.annualBudget, 0);
+
+    const roiBase = this.totalBudget + this.annualContractCost + this.annualLicenseCost;
+    this.roi = roiBase > 0 ? (this.totalSavings / roiBase) * 100 : 0;
+    this.realizedRoi = roiBase > 0 ? (this.doneSavings / roiBase) * 100 : 0;
 
     const cats = new Set(this.budgets.map((b) => b.category));
     this.budgetCategories = cats.size;
@@ -712,6 +809,15 @@ export class EconomistComponent implements OnInit, OnDestroy {
       this.actions,
       (a) => a.category || 'Outros',
       (a) => a.estimatedSavings,
+    );
+    this.roiChartData = this.buildRoiChart();
+    this.capexOpexChartData = this.buildCapexOpexChart();
+    this.roiTrendData = this.buildRoiTrend();
+    this.capexOpexTrendSeries = this.buildCapexOpexTrend();
+    this.contractTypeChartData = this.groupChart(
+      this.contracts,
+      (c) => c.type || 'Outros',
+      (c) => (c.monthlyCost || 0) * 12,
     );
     this.topCategory = this.budgetChartData[0] ?? null;
 
@@ -764,6 +870,190 @@ export class EconomistComponent implements OnInit, OnDestroy {
       out[k] = (out[k] || 0) + 1;
     }
     return out;
+  }
+
+  private buildRoiChart(): ChartDatum[] {
+    const budgetByCategory = new Map<string, number>();
+    const savingsByCategory = new Map<string, number>();
+
+    for (const b of this.budgets) {
+      const key = b.category || 'Outros';
+      budgetByCategory.set(key, (budgetByCategory.get(key) || 0) + (b.annualBudget || 0));
+    }
+
+    for (const a of this.actions) {
+      const key = a.category || 'Outros';
+      savingsByCategory.set(key, (savingsByCategory.get(key) || 0) + (a.estimatedSavings || 0));
+    }
+
+    const byCategory = Array.from(budgetByCategory.entries())
+      .map(([label, budget], i) => ({
+        label,
+        value: budget > 0 ? Math.round(((savingsByCategory.get(label) || 0) / budget) * 100) : 0,
+        color: this.chartColors[i % this.chartColors.length],
+      }))
+      .filter((d) => d.value > 0)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+
+    if (!byCategory.length && this.totalBudget > 0 && this.totalSavings > 0) {
+      return [{ label: 'Carteira total', value: Math.round((this.totalSavings / this.totalBudget) * 100), color: this.brandHex }];
+    }
+
+    return byCategory;
+  }
+
+  private buildCapexOpexChart(): ChartDatum[] {
+    const spend = new Map<string, number>([
+      ['CAPEX', 0],
+      ['OPEX', 0],
+      ['Outros', 0],
+    ]);
+
+    const add = (label: string, value: number) => {
+      spend.set(label, (spend.get(label) || 0) + (value || 0));
+    };
+
+    for (const b of this.budgets) {
+      add(this.classifySpendType(`${b.category} ${b.costCenter} ${b.notes || ''}`), b.annualBudget || 0);
+    }
+
+    for (const c of this.contracts) {
+      add(this.classifySpendType(`${c.type} ${c.object} ${c.costCenter} ${c.supplier}`), (c.monthlyCost || 0) * 12);
+    }
+
+    add('OPEX', this.annualLicenseCost);
+
+    this.capexTotal = spend.get('CAPEX') || 0;
+    this.opexTotal = spend.get('OPEX') || 0;
+    this.otherSpendTotal = spend.get('Outros') || 0;
+    this.capexOpexTotal = this.capexTotal + this.opexTotal + this.otherSpendTotal;
+
+    return [
+      { label: 'CAPEX', value: this.capexTotal, color: '#023ed8' },
+      { label: 'OPEX', value: this.opexTotal, color: '#10b981' },
+      { label: 'Outros', value: this.otherSpendTotal, color: '#64748b' },
+    ].filter((d) => d.value > 0);
+  }
+
+  private buildRoiTrend(): ChartDatum[] {
+    return this.financialYears().map((year) => {
+      const budget = this.budgets
+        .filter((b) => b.year === year)
+        .reduce((sum, b) => sum + (b.annualBudget || 0), 0);
+      const savings = this.actions
+        .filter((a) => this.actionYear(a) === year)
+        .reduce((sum, a) => sum + (a.estimatedSavings || 0), 0);
+      const contractBase = year === this.currentYear ? this.annualContractCost : 0;
+      const licenseBase = year >= this.samStartYear ? this.annualLicenseCost : 0;
+      const base = budget + contractBase + licenseBase;
+
+      return {
+        label: String(year),
+        value: base > 0 ? Math.round((savings / base) * 100) : 0,
+        color: '#8b5cf6',
+      };
+    });
+  }
+
+  private buildCapexOpexTrend(): ChartSeries[] {
+    const years = this.financialYears();
+    const capexByYear = new Map<number, number>();
+    const opexByYear = new Map<number, number>();
+
+    const add = (year: number, type: 'CAPEX' | 'OPEX' | 'Outros', value: number) => {
+      if (type === 'CAPEX') capexByYear.set(year, (capexByYear.get(year) || 0) + (value || 0));
+      if (type === 'OPEX') opexByYear.set(year, (opexByYear.get(year) || 0) + (value || 0));
+    };
+
+    for (const b of this.budgets) {
+      add(b.year, this.classifySpendType(`${b.category} ${b.costCenter} ${b.notes || ''}`), b.annualBudget || 0);
+    }
+
+    for (const c of this.contracts) {
+      add(this.currentYear, this.classifySpendType(`${c.type} ${c.object} ${c.costCenter} ${c.supplier}`), (c.monthlyCost || 0) * 12);
+    }
+
+    for (const year of years) {
+      if (year >= this.samStartYear) add(year, 'OPEX', this.annualLicenseCost);
+    }
+
+    return [
+      {
+        label: 'CAPEX',
+        color: '#023ed8',
+        data: years.map((year) => ({ label: String(year), value: capexByYear.get(year) || 0 })),
+      },
+      {
+        label: 'OPEX',
+        color: '#10b981',
+        data: years.map((year) => ({ label: String(year), value: opexByYear.get(year) || 0 })),
+      },
+    ];
+  }
+
+  private financialYears(): number[] {
+    const years = new Set<number>();
+    this.budgets.forEach((b) => years.add(b.year));
+    this.actions.forEach((a) => years.add(this.actionYear(a)));
+    if (this.contracts.length) years.add(this.currentYear);
+    if (this.licenses.length) years.add(Math.max(this.currentYear, this.samStartYear));
+    if (!years.size) years.add(this.currentYear);
+    return Array.from(years).sort((a, b) => a - b);
+  }
+
+  private licenseMonthlyCost(license: License): number {
+    const seats = license.totalLicenses || license.usedLicenses || 0;
+    const monthlyFactor = license.type === 'Mensal' ? 1 : 1 / 12;
+    return (license.costPerUnit || 0) * seats * monthlyFactor;
+  }
+
+  private actionYear(action: ActionItem): number {
+    const rawDate = action.dueDate || action.createdAt;
+    const year = rawDate ? new Date(rawDate).getFullYear() : NaN;
+    return Number.isFinite(year) ? year : this.currentYear;
+  }
+
+  private classifySpendType(text: string): 'CAPEX' | 'OPEX' | 'Outros' {
+    const k = (text || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+
+    if (k.includes('capex') || k.includes('capital')) {
+      return 'CAPEX';
+    }
+
+    if (
+      k.includes('opex') ||
+      k.includes('operacional') ||
+      k.includes('cloud') ||
+      k.includes('aws') ||
+      k.includes('hosped') ||
+      k.includes('licen') ||
+      k.includes('assinatura') ||
+      k.includes('contrato') ||
+      k.includes('suporte') ||
+      k.includes('manutenc') ||
+      k.includes('servico') ||
+      k.includes('servidor') ||
+      k.includes('dominio')
+    ) {
+      return 'OPEX';
+    }
+
+    if (
+      k.includes('aquisicao') ||
+      k.includes('equip') ||
+      k.includes('hardware') ||
+      k.includes('implantacao') ||
+      k.includes('projeto') ||
+      k.includes('infraestrutura')
+    ) {
+      return 'CAPEX';
+    }
+
+    return 'Outros';
   }
 
   openNewBudget() {

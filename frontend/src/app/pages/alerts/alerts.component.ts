@@ -49,24 +49,32 @@ import { SigIcons } from '../../core/sig-icons';
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
       <div *ngIf="!loading" class="d-flex flex-column gap-2">
         <article *ngFor="let a of filtered" class="sig-alert-item" [class]="borderClass(a.severidade)" [class.is-read]="a.lida">
-          <div class="flex items-start justify-between">
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-1">
-                <h3 class="text-sm font-semibold text-gray-900">{{ displayTitle(a) }}</h3>
-                <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="sevClass(a.severidade)">{{ sevLabel(a.severidade) }}</span>
-                <span *ngIf="!a.lida" class="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Novo</span>
-              </div>
-              <p *ngIf="a.mensagem" class="text-sm text-gray-600 mb-1">{{ a.mensagem }}</p>
-              <div class="text-xs text-gray-400">{{ a.tipo }} · {{ a.created_at | date:'dd/MM/yyyy HH:mm' }}</div>
+          <div class="sig-alert-item__layout">
+            <div class="sig-alert-item__icon" [class]="alertIconClass(a.severidade)">
+              <i [class]="alertIcon(a.severidade)" aria-hidden="true"></i>
             </div>
-            <div class="flex items-center gap-2 ml-4">
-              <a *ngIf="a.link" [href]="a.link" target="_blank" class="sig-icon-btn text-blue-600" title="Abrir">
+            <div class="sig-alert-item__content">
+              <div class="sig-alert-item__head">
+                <div>
+                  <p class="sig-alert-item__eyebrow">{{ typeLabel(a.tipo) }}</p>
+                  <h3 class="sig-alert-item__title">{{ displayTitle(a) }}</h3>
+                </div>
+                <div class="sig-alert-item__badges">
+                  <span class="sig-alert-pill" [class]="sevClass(a.severidade)">{{ sevLabel(a.severidade) }}</span>
+                  <span *ngIf="!a.lida" class="sig-alert-pill sig-alert-pill--new">Novo</span>
+                </div>
+              </div>
+              <p *ngIf="a.mensagem" class="sig-alert-item__message">{{ a.mensagem }}</p>
+              <div class="sig-alert-item__meta">{{ a.created_at | date:'dd/MM/yyyy HH:mm' }}</div>
+            </div>
+            <div class="sig-alert-item__actions">
+              <a *ngIf="a.link" [href]="a.link" target="_blank" class="sig-icon-btn text-blue-600" title="Abrir" aria-label="Abrir alerta">
                 <i [class]="icons.external" aria-hidden="true"></i>
               </a>
-              <button *ngIf="!a.lida" type="button" (click)="markRead(a)" class="sig-icon-btn sig-icon-btn--success" title="Marcar como lido">
+              <button *ngIf="!a.lida" type="button" (click)="markRead(a)" class="sig-icon-btn sig-icon-btn--success" title="Marcar como lido" aria-label="Marcar alerta como lido">
                 <i [class]="icons.check" aria-hidden="true"></i>
               </button>
-              <button type="button" (click)="remove(a)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir">
+              <button type="button" (click)="remove(a)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir" aria-label="Excluir alerta">
                 <i [class]="icons.trash" aria-hidden="true"></i>
               </button>
             </div>
@@ -99,6 +107,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
   sevLabel(s: string) { return ({ critico:'Crítico', aviso:'Aviso', info:'Info' } as any)[s] || s; }
   sevClass(s: string) { return s === 'critico' ? 'bg-red-100 text-red-800' : s === 'aviso' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'; }
   borderClass(s: string) { return s === 'critico' ? 'border-red-500' : s === 'aviso' ? 'border-yellow-500' : 'border-blue-500'; }
+  typeLabel(t: string) { return ({ dominio:'Domínio', licenca:'Licença', servidor:'Servidor', pagamento:'Pagamento', infra:'Infraestrutura' } as any)[t] || t; }
+  alertIcon(s: string) { return s === 'critico' ? this.icons.alertCritical : s === 'aviso' ? this.icons.warning : this.icons.info; }
+  alertIconClass(s: string) { return s === 'critico' ? 'sig-alert-item__icon--critical' : s === 'aviso' ? 'sig-alert-item__icon--warning' : 'sig-alert-item__icon--info'; }
 
   async markRead(a: Alert) {
     await firstValueFrom(this.api.patchTable('alertas', a.id, { lida: true }));

@@ -77,7 +77,7 @@ export class CrudService {
         await firstValueFrom(this.api.postTable(table, row));
       }
       this.toast.show({ title: row['id'] ? 'Atualizado' : 'Criado', description: 'Registro salvo com sucesso' });
-      await this.dashboard.loadData(true);
+      void this.dashboard.loadData(true);
       return true;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro', description: this.errMsg(e), variant: 'destructive' });
@@ -89,7 +89,7 @@ export class CrudService {
     try {
       await firstValueFrom(this.api.deleteTable(table, id));
       this.toast.show({ title: 'Excluído', description: 'Registro removido' });
-      await this.dashboard.loadData(true);
+      void this.dashboard.loadData(true);
       return true;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro', description: this.errMsg(e), variant: 'destructive' });
@@ -105,7 +105,7 @@ export class CrudService {
       const data = await firstValueFrom(this.api.postTable(table, payload));
       const n = Array.isArray(data) ? data.length : 1;
       this.toast.show({ title: 'Importação concluída', description: `${n} registros importados` });
-      await this.dashboard.loadData(true);
+      void this.dashboard.loadData(true);
       return n;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro na importação', description: this.errMsg(e), variant: 'destructive' });

@@ -77,6 +77,7 @@
   }
 
   .sig-list-toolbar .sig-toolbar-search,
+  .sig-toolbar-standalone .sig-toolbar-search,
   .sig-list-toolbar .relative.min-w-\[200px\] {
     min-width: 0 !important;
     width: 100%;
@@ -84,6 +85,8 @@
   }
 
   .sig-list-toolbar .sig-toolbar-actions,
+  .sig-toolbar-standalone .sig-toolbar-actions,
+  .sig-toolbar-standalone .ms-auto,
   .sig-list-toolbar .ml-auto {
     margin-left: 0 !important;
     width: 100%;
@@ -100,9 +103,14 @@
     min-height: 2.5rem;
   }
 
+  .sig-toolbar-standalone .sig-toolbar-filter,
   .sig-list-toolbar select.app-field {
     width: 100%;
     min-width: 0;
+  }
+
+  .sig-toolbar-standalone .sig-toolbar-filter__menu {
+    width: 100%;
   }
 }
 

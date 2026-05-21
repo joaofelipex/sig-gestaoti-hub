@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SigIcons } from '../core/sig-icons';
@@ -27,15 +27,42 @@ export interface FilterDef {
           class="app-field pl-9"
         />
       </div>
-      <select
-        *ngFor="let f of filters"
-        [ngModel]="filterValues[f.key] || ''"
-        (ngModelChange)="onFilterChange(f.key, $event)"
-        class="app-field w-auto min-w-[140px] py-2"
-      >
-        <option value="">{{ f.label }}: Todos</option>
-        <option *ngFor="let o of f.options" [value]="o.value">{{ o.label }}</option>
-      </select>
+      <div *ngFor="let f of filters" class="sig-toolbar-filter" [class.is-open]="openFilterKey === f.key">
+        <button
+          type="button"
+          class="sig-toolbar-filter__button"
+          (click)="toggleFilter(f.key, $event)"
+          [attr.aria-label]="f.label"
+          [attr.aria-expanded]="openFilterKey === f.key"
+          aria-haspopup="listbox"
+        >
+          <span class="sig-toolbar-filter__label">{{ f.label }}</span>
+          <span class="sig-toolbar-filter__value">{{ selectedFilterLabel(f) }}</span>
+        </button>
+        <div *ngIf="openFilterKey === f.key" class="sig-toolbar-filter__menu" role="listbox" [attr.aria-label]="f.label">
+          <button
+            type="button"
+            class="sig-toolbar-filter__option"
+            [class.is-active]="!filterValues[f.key]"
+            role="option"
+            [attr.aria-selected]="!filterValues[f.key]"
+            (click)="selectFilter(f.key, '', $event)"
+          >
+            Todos
+          </button>
+          <button
+            *ngFor="let o of f.options"
+            type="button"
+            class="sig-toolbar-filter__option"
+            [class.is-active]="filterValues[f.key] === o.value"
+            role="option"
+            [attr.aria-selected]="filterValues[f.key] === o.value"
+            (click)="selectFilter(f.key, o.value, $event)"
+          >
+            {{ o.label }}
+          </button>
+        </div>
+      </div>
       <div class="sig-toolbar-actions ms-auto flex flex-wrap items-center gap-2">
         <input
           #importInput
@@ -62,6 +89,7 @@ export interface FilterDef {
 })
 export class DataToolbarComponent {
   readonly icons = SigIcons;
+  openFilterKey: string | null = null;
 
   @Input() search = '';
   @Input() searchPlaceholder = 'Buscar...';
@@ -76,6 +104,27 @@ export class DataToolbarComponent {
 
   onFilterChange(key: string, value: string) {
     this.filterChange.emit({ key, value });
+  }
+
+  selectedFilterLabel(filter: FilterDef) {
+    const value = this.filterValues[filter.key] || '';
+    return filter.options.find((o) => o.value === value)?.label || 'Todos';
+  }
+
+  toggleFilter(key: string, ev: MouseEvent) {
+    ev.stopPropagation();
+    this.openFilterKey = this.openFilterKey === key ? null : key;
+  }
+
+  selectFilter(key: string, value: string, ev: MouseEvent) {
+    ev.stopPropagation();
+    this.openFilterKey = null;
+    this.onFilterChange(key, value);
+  }
+
+  @HostListener('document:click')
+  closeFilters() {
+    this.openFilterKey = null;
   }
 
   onFileSelected(ev: Event) {

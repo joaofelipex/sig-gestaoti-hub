@@ -2,6 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface ChartDatum { label: string; value: number; color?: string }
+export interface ChartSeries { label: string; color?: string; data: ChartDatum[] }
 
 const PALETTE = ['#023ed8', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b'];
 
@@ -38,6 +39,7 @@ let lineChartSeq = 0;
 export class BarChartComponent {
   @Input() data: ChartDatum[] = [];
   @Input() prefix = '';
+  @Input() suffix = '';
   @Input() showShare = true;
 
   get max() {
@@ -65,7 +67,7 @@ export class BarChartComponent {
   }
 
   formatValue(v: number) {
-    return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + this.suffix;
   }
 }
 
@@ -194,6 +196,7 @@ export class DonutChartComponent {
 export class LineChartComponent {
   @Input() data: ChartDatum[] = [];
   @Input() prefix = '';
+  @Input() suffix = '';
   @Input() strokeColor = '#023ed8';
 
   readonly gradId = `sig-line-grad-${++lineChartSeq}`;
@@ -244,15 +247,132 @@ export class LineChartComponent {
   }
 
   formatTick(v: number) {
+    if (this.suffix === '%') return `${Math.round(v)}%`;
     if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)} mi`;
     if (v >= 1_000) return `${Math.round(v / 1_000)} mil`;
-    return String(v);
+    return `${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}${this.suffix}`;
   }
 
   formatValue(v: number) {
     if (v >= 1_000_000) return this.prefix + (v / 1_000_000).toFixed(1) + ' mi';
     if (v >= 10_000) return this.prefix + Math.round(v / 1_000) + ' mil';
-    return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + this.suffix;
+  }
+}
+
+@Component({
+  selector: 'app-multi-line-chart',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <div class="sig-chart-line" *ngIf="series.length && labels.length; else empty">
+      <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="sig-chart-line__svg" role="img">
+        <g class="sig-chart-line__grid">
+          <line
+            *ngFor="let t of yTicks"
+            [attr.x1]="padX"
+            [attr.x2]="W - padX"
+            [attr.y1]="yAt(t)"
+            [attr.y2]="yAt(t)"
+          />
+        </g>
+        <g class="sig-chart-line__ylabels">
+          <text
+            *ngFor="let t of yTicks"
+            [attr.x]="padX - 6"
+            [attr.y]="yAt(t) + 3"
+            text-anchor="end"
+          >{{ formatTick(t) }}</text>
+        </g>
+        <g *ngFor="let s of normalizedSeries; let i = index">
+          <polyline
+            [attr.points]="path(s.data)"
+            fill="none"
+            [attr.stroke]="s.color || color(i)"
+            stroke-width="2.5"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+          />
+          <g *ngFor="let p of points(s.data); let j = index" class="sig-chart-line__point">
+            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" [attr.fill]="s.color || color(i)" stroke="#fff" stroke-width="2" />
+            <text *ngIf="i === 0" [attr.x]="p.x" [attr.y]="H - 6" text-anchor="middle" class="sig-chart-line__month">{{ labels[j] }}</text>
+          </g>
+        </g>
+      </svg>
+      <div class="d-flex flex-wrap gap-3 mt-2">
+        <span *ngFor="let s of series; let i = index" class="d-inline-flex align-items-center gap-1 text-sm" style="color: var(--sig-text-muted)">
+          <span class="sig-chart-donut__swatch" [style.background]="s.color || color(i)"></span>
+          {{ s.label }}
+        </span>
+      </div>
+    </div>
+    <ng-template #empty>
+      <div class="sig-chart-empty">Sem dados para exibir</div>
+    </ng-template>
+  `,
+})
+export class MultiLineChartComponent {
+  @Input() series: ChartSeries[] = [];
+  @Input() prefix = '';
+  @Input() suffix = '';
+
+  W = 420;
+  H = 176;
+  padX = 44;
+  padTop = 22;
+  padBottom = 28;
+
+  get labels(): string[] {
+    return Array.from(new Set(this.series.flatMap((s) => s.data.map((d) => d.label))));
+  }
+
+  get normalizedSeries(): ChartSeries[] {
+    return this.series.map((s) => ({
+      ...s,
+      data: this.labels.map((label) => s.data.find((d) => d.label === label) || { label, value: 0 }),
+    }));
+  }
+
+  get max() {
+    return Math.max(1, ...this.normalizedSeries.flatMap((s) => s.data.map((d) => d.value)));
+  }
+
+  get yTicks(): number[] {
+    const m = this.max;
+    if (m <= 0) return [0];
+    const step = m <= 4 ? 1 : m <= 20 ? 5 : m <= 100 ? 25 : m <= 1000 ? 250 : Math.ceil(m / 4 / 1000) * 1000;
+    const ticks: number[] = [];
+    for (let v = 0; v <= m; v += step) ticks.push(v);
+    if (ticks[ticks.length - 1] !== m) ticks.push(m);
+    return ticks.slice(-5);
+  }
+
+  color(i: number) {
+    return PALETTE[i % PALETTE.length];
+  }
+
+  yAt(value: number) {
+    const h = this.H - this.padTop - this.padBottom;
+    return this.padTop + h - (value / this.max) * h;
+  }
+
+  points(data: ChartDatum[]) {
+    const w = this.W - this.padX * 2;
+    return data.map((d, i) => ({
+      x: this.padX + (i / Math.max(1, data.length - 1)) * w,
+      y: this.yAt(d.value),
+    }));
+  }
+
+  path(data: ChartDatum[]) {
+    return this.points(data).map((p) => `${p.x},${p.y}`).join(' ');
+  }
+
+  formatTick(v: number) {
+    if (this.suffix === '%') return `${Math.round(v)}%`;
+    if (v >= 1_000_000) return `${this.prefix}${(v / 1_000_000).toFixed(1)} mi`;
+    if (v >= 1_000) return `${this.prefix}${Math.round(v / 1_000)} mil`;
+    return `${this.prefix}${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}${this.suffix}`;
   }
 }
 
