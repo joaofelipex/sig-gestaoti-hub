@@ -52,7 +52,7 @@ import { SigIcons } from '../../core/sig-icons';
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
-                <h3 class="font-semibold text-gray-900">{{ a.titulo }}</h3>
+                <h3 class="text-sm font-semibold text-gray-900">{{ displayTitle(a) }}</h3>
                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full" [class]="sevClass(a.severidade)">{{ sevLabel(a.severidade) }}</span>
                 <span *ngIf="!a.lida" class="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full">Novo</span>
               </div>
@@ -115,31 +115,35 @@ export class AlertsComponent implements OnInit, OnDestroy {
   async generate() {
     this.generating = true;
     try {
-      const today = new Date(); const in30 = new Date(Date.now() + 30*86400000); const in15 = new Date(Date.now() + 15*86400000);
+      const today = new Date();
       const data = await firstValueFrom(this.dashboard.data$.pipe(take(1)));
       const newAlerts: any[] = [];
+      const existingKeys = new Set(this.alerts.map(a => this.alertKey(this.displayTitle(a), a.mensagem, a.tipo)));
       const existingTitles = new Set(this.alerts.map(a => a.titulo));
-      const push = (titulo: string, mensagem: string, tipo: string, severidade: string) => {
-        if (!existingTitles.has(titulo)) newAlerts.push({ titulo, mensagem, tipo, severidade, lida: false });
+      const push = (titulo: string, mensagem: string, tipo: string, severidade: string, legacyTitles: string[] = []) => {
+        const key = this.alertKey(titulo, mensagem, tipo);
+        if (existingKeys.has(key) || legacyTitles.some((legacyTitle) => existingTitles.has(legacyTitle))) return;
+        newAlerts.push({ titulo, mensagem, tipo, severidade, lida: false });
+        existingKeys.add(key);
       };
       data.domains.forEach((d: any) => {
         if (!d.expirationDate) return;
         const days = Math.ceil((new Date(d.expirationDate).getTime() - today.getTime()) / 86400000);
-        if (days <= 0) push(`Domínio expirado: ${d.url}`, `Vencido em ${d.expirationDate}`, 'dominio', 'critico');
-        else if (days <= 15) push(`Domínio vence em ${days}d: ${d.url}`, `Vence em ${d.expirationDate}`, 'dominio', 'critico');
-        else if (days <= 30) push(`Domínio vence em ${days}d: ${d.url}`, `Vence em ${d.expirationDate}`, 'dominio', 'aviso');
+        if (days <= 0) push('Domínio expirado', `${d.url} venceu em ${d.expirationDate}`, 'dominio', 'critico', [`Domínio expirado: ${d.url}`]);
+        else if (days <= 15) push(`Domínio expira em ${days} dias`, `${d.url} vence em ${d.expirationDate}`, 'dominio', 'critico', [`Domínio vence em ${days}d: ${d.url}`]);
+        else if (days <= 30) push(`Domínio expira em ${days} dias`, `${d.url} vence em ${d.expirationDate}`, 'dominio', 'aviso', [`Domínio vence em ${days}d: ${d.url}`]);
       });
       data.licenses.forEach((l: any) => {
         if (!l.renewalDate) return;
         const days = Math.ceil((new Date(l.renewalDate).getTime() - today.getTime()) / 86400000);
-        if (days <= 30 && days > 0) push(`Licença renova em ${days}d: ${l.software}`, `Renovação em ${l.renewalDate}`, 'licenca', days <= 15 ? 'critico' : 'aviso');
+        if (days <= 30 && days > 0) push(`Licença renova em ${days} dias`, `${l.software} renova em ${l.renewalDate}`, 'licenca', days <= 15 ? 'critico' : 'aviso', [`Licença renova em ${days}d: ${l.software}`]);
       });
       data.servers.forEach((s: any) => {
-        if (s.sslExpiration) { const d = Math.ceil((new Date(s.sslExpiration).getTime() - today.getTime()) / 86400000); if (d <= 30 && d > 0) push(`SSL ${s.name} vence em ${d}d`, `SSL em ${s.sslExpiration}`, 'servidor', d <= 15 ? 'critico':'aviso'); }
-        if (s.contractEnd) { const d = Math.ceil((new Date(s.contractEnd).getTime() - today.getTime()) / 86400000); if (d <= 30 && d > 0) push(`Contrato ${s.name} vence em ${d}d`, `Contrato em ${s.contractEnd}`, 'servidor', 'aviso'); }
+        if (s.sslExpiration) { const d = Math.ceil((new Date(s.sslExpiration).getTime() - today.getTime()) / 86400000); if (d <= 30 && d > 0) push(`SSL vence em ${d} dias`, `${s.name} vence em ${s.sslExpiration}`, 'servidor', d <= 15 ? 'critico':'aviso', [`SSL ${s.name} vence em ${d}d`]); }
+        if (s.contractEnd) { const d = Math.ceil((new Date(s.contractEnd).getTime() - today.getTime()) / 86400000); if (d <= 30 && d > 0) push(`Contrato vence em ${d} dias`, `${s.name} vence em ${s.contractEnd}`, 'servidor', 'aviso', [`Contrato ${s.name} vence em ${d}d`]); }
       });
       data.payments.forEach((p: any) => {
-        if (p.status === 'pendente' && p.vencimento) { const d = Math.ceil((new Date(p.vencimento).getTime() - today.getTime()) / 86400000); if (d < 0) push(`Pagamento atrasado: ${p.nome}`, `Venceu em ${p.vencimento}`, 'pagamento', 'critico'); else if (d <= 7) push(`Pagamento em ${d}d: ${p.nome}`, `Vence em ${p.vencimento}`, 'pagamento', 'aviso'); }
+        if (p.status === 'pendente' && p.vencimento) { const d = Math.ceil((new Date(p.vencimento).getTime() - today.getTime()) / 86400000); if (d < 0) push('Pagamento atrasado', `${p.nome} venceu em ${p.vencimento}`, 'pagamento', 'critico', [`Pagamento atrasado: ${p.nome}`]); else if (d <= 7) push(`Pagamento vence em ${d} dias`, `${p.nome} vence em ${p.vencimento}`, 'pagamento', 'aviso', [`Pagamento em ${d}d: ${p.nome}`]); }
       });
       if (newAlerts.length) {
         await this.crud.bulkInsert('alertas', newAlerts);
@@ -147,5 +151,24 @@ export class AlertsComponent implements OnInit, OnDestroy {
         this.toast.show({ title: 'Atualizado', description: 'Nenhum novo alerta encontrado' });
       }
     } finally { this.generating = false; }
+  }
+
+  displayTitle(a: Alert) {
+    return this.polishTitle(a.titulo);
+  }
+
+  private polishTitle(title: string) {
+    return title
+      .replace(/^Domínio expirado:.+$/i, 'Domínio expirado')
+      .replace(/^Domínio vence em (\d+)d:.+$/i, 'Domínio expira em $1 dias')
+      .replace(/^Licença renova em (\d+)d:.+$/i, 'Licença renova em $1 dias')
+      .replace(/^SSL .+ vence em (\d+)d$/i, 'SSL vence em $1 dias')
+      .replace(/^Contrato .+ vence em (\d+)d$/i, 'Contrato vence em $1 dias')
+      .replace(/^Pagamento atrasado:.+$/i, 'Pagamento atrasado')
+      .replace(/^Pagamento em (\d+)d:.+$/i, 'Pagamento vence em $1 dias');
+  }
+
+  private alertKey(titulo: string, mensagem: string | null, tipo: string) {
+    return `${tipo}:${titulo}:${mensagem ?? ''}`;
   }
 }

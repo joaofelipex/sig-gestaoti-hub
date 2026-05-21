@@ -76,6 +76,7 @@ export class ApiService {
 
   getHealth(): Observable<{
     ok: boolean;
+    api?: string;
     database?: string;
     postgres?: { database: string; host: string; port: number; configured: string };
     error?: string;
@@ -83,11 +84,12 @@ export class ApiService {
   }> {
     return this.http.get<{
       ok: boolean;
+      api?: string;
       database?: string;
       postgres?: { database: string; host: string; port: number; configured: string };
       error?: string;
       configured?: string;
-    }>('/health');
+    }>(this.api('/health'));
   }
 
   getEmpresas(): Observable<unknown[]> {

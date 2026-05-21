@@ -276,18 +276,8 @@ export class DashboardService {
           risks: f(raw.risks),
           payments: f(raw.payments),
         };
-        const rawTotal =
-          raw.assets.length +
-          raw.domains.length +
-          raw.licenses.length +
-          raw.servers.length +
-          raw.payments.length;
-        const filteredTotal =
-          filtered.assets.length +
-          filtered.domains.length +
-          filtered.licenses.length +
-          filtered.servers.length +
-          filtered.payments.length;
+        const rawTotal = this.totalRows(raw);
+        const filteredTotal = this.totalRows(filtered);
         if (rawTotal > 0 && filteredTotal === 0) {
           queueMicrotask(() => this.empresa.setSelected(null));
           return raw;
@@ -341,15 +331,40 @@ export class DashboardService {
   }
 
   private hasCachedRows(): boolean {
-    const v = this._raw.value;
+    return this.totalRows(this._raw.value) > 0;
+  }
+
+  private totalRows(v: {
+    assets: unknown[];
+    domains: unknown[];
+    licenses: unknown[];
+    servers: unknown[];
+    contracts: unknown[];
+    maintenance: unknown[];
+    movements: unknown[];
+    inventory: unknown[];
+    alerts: unknown[];
+    budgets: unknown[];
+    actions: unknown[];
+    accessRecords: unknown[];
+    risks: unknown[];
+    payments: unknown[];
+  }): number {
     return (
-      v.assets.length > 0 ||
-      v.domains.length > 0 ||
-      v.licenses.length > 0 ||
-      v.servers.length > 0 ||
-      v.payments.length > 0 ||
-      v.budgets.length > 0 ||
-      v.actions.length > 0
+      v.assets.length +
+      v.domains.length +
+      v.licenses.length +
+      v.servers.length +
+      v.contracts.length +
+      v.maintenance.length +
+      v.movements.length +
+      v.inventory.length +
+      v.alerts.length +
+      v.budgets.length +
+      v.actions.length +
+      v.accessRecords.length +
+      v.risks.length +
+      v.payments.length
     );
   }
 
@@ -402,7 +417,7 @@ export class DashboardService {
       this._raw.next({
         ...this._raw.value,
         ...this.mapDashboardPayload(priority),
-        loading: false,
+        loading: showSpinner,
       });
     } catch (error) {
       console.error('Erro ao carregar dados prioritários do painel:', error);

@@ -71,7 +71,6 @@ export class AuthService {
           this.api.setToken(res.token);
           this._user.next({ id: res.user.id, email: res.user.email });
           this._loading.next(false);
-          this.api.emitAuthChange();
           resolve();
         },
         error: (err: unknown) =>
@@ -92,7 +91,6 @@ export class AuthService {
           this.api.setToken(res.token);
           this._user.next({ id: res.user.id, email: res.user.email });
           this._loading.next(false);
-          this.api.emitAuthChange();
           resolve();
         },
         error: (err: unknown) =>

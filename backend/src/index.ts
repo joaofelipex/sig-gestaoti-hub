@@ -29,7 +29,26 @@ app.use(
 );
 app.use(express.json({ limit: '2mb' }));
 
-app.get('/health', async (_req, res) => {
+function sendApiHealth(_req: express.Request, res: express.Response) {
+  res.json({
+    ok: true,
+    api: 'up',
+    database: postgresTarget ? 'connected' : 'starting',
+    postgres: postgresTarget
+      ? {
+          database: postgresTarget.database,
+          host: postgresTarget.host,
+          port: postgresTarget.port,
+          configured: getPostgresTargetLabel(),
+        }
+      : null,
+  });
+}
+
+app.get('/health', sendApiHealth);
+app.get('/api/health', sendApiHealth);
+
+app.get('/api/health/db', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
     const pg = postgresTarget ?? (await verifyConnection());

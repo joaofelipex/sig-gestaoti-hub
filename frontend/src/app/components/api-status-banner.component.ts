@@ -1,8 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { Subscription, interval } from 'rxjs';
-import { switchMap, startWith } from 'rxjs/operators';
+import { Subscription, interval, of } from 'rxjs';
+import { catchError, startWith, switchMap, timeout } from 'rxjs/operators';
 import { ApiService } from '../services/api.service';
 import { DashboardService } from '../services/dashboard.service';
 
@@ -19,8 +19,8 @@ import { DashboardService } from '../services/dashboard.service';
       role="status"
     >
       <ng-container *ngIf="!apiOk">
-        <strong>API offline.</strong>
-        Em outro terminal: <code>cd backend && npm run dev</code> (porta 3000). Depois recarregue a página.
+        <strong>Conexão instável com a API.</strong>
+        Se persistir, verifique o backend na porta 3000.
       </ng-container>
       <ng-container *ngIf="apiOk && !hasToken">
         <strong>Sessão não iniciada.</strong>
@@ -33,7 +33,9 @@ import { DashboardService } from '../services/dashboard.service';
 export class ApiStatusBannerComponent implements OnInit, OnDestroy {
   apiOk = true;
   hasToken = false;
-  private sub?: Subscription;
+  private healthSub?: Subscription;
+  private authSub?: Subscription;
+  private healthFailures = 0;
 
   get showBanner(): boolean {
     return !this.apiOk || (this.apiOk && !this.hasToken);
@@ -46,34 +48,42 @@ export class ApiStatusBannerComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.hasToken = !!this.api.getToken();
-    this.sub = interval(8000)
+    this.healthSub = interval(30000)
       .pipe(
         startWith(0),
-        switchMap(() => this.api.getHealth()),
+        switchMap(() =>
+          this.api.getHealth().pipe(
+            timeout(5000),
+            catchError(() => of(null)),
+          ),
+        ),
       )
       .subscribe({
         next: (h) => {
           const wasOk = this.apiOk;
-          this.apiOk = !!h?.ok;
+          if (h?.ok) {
+            this.healthFailures = 0;
+            this.apiOk = true;
+          } else {
+            this.healthFailures += 1;
+            this.apiOk = this.healthFailures < 2;
+          }
           this.hasToken = !!this.api.getToken();
           if (this.apiOk && !wasOk && this.hasToken) {
             void this.dashboard.loadData(true);
           }
         },
-        error: () => {
-          this.apiOk = false;
-          this.hasToken = !!this.api.getToken();
-        },
       });
-    this.api.authChanged$.subscribe(() => {
+    this.authSub = this.api.authChanged$.subscribe(() => {
       this.hasToken = !!this.api.getToken();
       if (this.hasToken && this.apiOk) {
-        void this.dashboard.loadData(true);
+        void this.dashboard.loadData();
       }
     });
   }
 
   ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+    this.healthSub?.unsubscribe();
+    this.authSub?.unsubscribe();
   }
 }
