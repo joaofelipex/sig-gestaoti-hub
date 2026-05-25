@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, Movement, Asset } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -77,15 +78,15 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="col-span-2 text-sm">Notas<textarea [(ngModel)]="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
-    <app-confirm [open]="confirmOpen" title="Excluir movimentação" message="Confirmar exclusão?" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir movimentação" [message]="'Excluir movimentação de ' + (toDelete?.ativo_label || (toDelete ? assetLabel(toDelete.ativo_id) : '?')) + '?'" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class MovementsComponent implements OnInit, OnDestroy {
   movements: Movement[] = []; assets: Asset[] = []; loading = true; search = ''; filterValues: any = {};
-  modalOpen = false; confirmOpen = false; saving = false; form: any = {}; toDelete: Movement | null = null;
+  modalOpen = false; confirmOpen = false; saving = false; deleting = false; form: any = {}; toDelete: Movement | null = null;
   tipoOpts = ['Entrega','Devolução','Transferência','Descarte','Empréstimo'].map(v=>({value:v,label:v}));
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.movements = d.movements; this.assets = d.assets; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
   get filtered() {
@@ -99,17 +100,18 @@ export class MovementsComponent implements OnInit, OnDestroy {
   openNew() { this.form = { tipo: 'Entrega', data: new Date().toISOString().slice(0,10) }; this.modalOpen = true; }
   openEdit(m: Movement) { this.form = { ...m }; this.modalOpen = true; }
   async save() {
-    if (!this.form.ativo_id || !this.form.tipo) return;
+    if (!this.ux.requireAll([[this.form.ativo_id, 'o ativo'], [this.form.tipo, 'o tipo da movimentação']])) return;
     const a = this.assets.find(x => x.id === this.form.ativo_id);
     if (a) this.form.ativo_label = `${a.type} ${a.brand} ${a.model}`.trim();
-    this.saving = true; const ok = await this.crud.upsert('movimentacoes', this.form); this.saving = false; if (ok) this.modalOpen = false;
+    this.saving = true; try { const ok = await this.crud.upsert('movimentacoes', this.form); if (ok) this.modalOpen = false; } finally { this.saving = false; }
   }
   askDelete(m: Movement) { this.toDelete = m; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.crud.remove('movimentacoes', this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('movimentacoes', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(m => ({ Ativo: m.ativo_label, Tipo: m.tipo, Data: m.data, De: m.from_user, Para: m.to_user, Responsavel: m.responsible, Motivo: m.reason })), 'movimentacoes'); }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const payload = rows.map(r => ({ ativo_id: r['ativo_id'], ativo_label: r['Ativo']||null, tipo: r['Tipo']||'Entrega', data: r['Data']||new Date().toISOString().slice(0,10), from_user: r['De']||null, to_user: r['Para']||null, responsible: r['Responsavel']||null, reason: r['Motivo']||null })).filter(r => r.ativo_id);
     if (payload.length) await this.crud.bulkInsert('movimentacoes', payload);
+    else this.ux.noImportRows('movimentações');
   }
 }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, AccessRecord, RiskItem } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent, DonutChartComponent } from '../../components/charts.component';
@@ -137,18 +138,18 @@ import { SigIcons } from '../../core/sig-icons';
       </div>
     </app-modal>
 
-    <app-confirm [open]="confirmOpen" title="Excluir" message="Confirmar exclusão?" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir" [message]="deleteMessage" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class GovernanceComponent implements OnInit, OnDestroy {
   readonly icons = SigIcons;
   accessRecords: AccessRecord[] = []; risks: RiskItem[] = []; loading = true; tab: 'access'|'risks' = 'access';
   searchA = ''; filterA: any = {}; searchR = ''; filterR: any = {};
-  modalA = false; modalR = false; confirmOpen = false; saving = false;
+  modalA = false; modalR = false; confirmOpen = false; saving = false; deleting = false;
   formA: any = {}; formR: any = {};
   delType: 'access'|'risk' = 'access'; delId = '';
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.accessRecords = d.accessRecords; this.risks = d.risks; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
@@ -159,6 +160,14 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   get criticalRisks() { return this.risks.filter(r => r.severity === 'Crítico').length; }
   get healthScore() { let s = 100; s -= this.criticalRisks * 15; s -= this.risks.filter(r => r.severity === 'Alto').length * 8; return Math.max(0, Math.min(100, s)); }
   get healthColor() { return this.healthScore >= 80 ? '#10b981' : this.healthScore >= 50 ? '#f59e0b' : '#ef4444'; }
+  get deleteMessage() {
+    if (this.delType === 'access') {
+      const item = this.accessRecords.find((r) => r.id === this.delId);
+      return `Excluir acesso de ${item?.user || '?'}?`;
+    }
+    const item = this.risks.find((r) => r.id === this.delId);
+    return `Excluir risco ${item?.title || '?'}?`;
+  }
   get riskDistribution() { const map: any = { Crítico:'#ef4444', Alto:'#f97316', Médio:'#f59e0b', Baixo:'#10b981' }; const counts: any = {}; this.risks.forEach(r => counts[r.severity] = (counts[r.severity]||0)+1); return Object.entries(counts).map(([k,v]:any) => ({ label: k, value: v as number, color: map[k] })); }
   get accessDistribution() { const counts: any = {}; this.accessRecords.forEach(r => counts[r.accessLevel] = (counts[r.accessLevel]||0)+1); return Object.entries(counts).map(([k,v]:any) => ({ label: k, value: v as number })); }
 
@@ -167,17 +176,17 @@ export class GovernanceComponent implements OnInit, OnDestroy {
 
   openNewAccess() { this.formA = { ativo: true, nivel_acesso: 'Leitura', recurso_tipo: 'Aplicação', sistema: 'IMTS', data_concessao: new Date().toISOString().slice(0,10) }; this.modalA = true; }
   openEditAccess(r: AccessRecord) { this.formA = { id: r.id, user_label: r.user, recurso: r.resource, recurso_tipo: r.resourceType, nivel_acesso: r.accessLevel, ativo: r.ativo, data_concessao: r.grantedDate, ultimo_acesso: r.lastAccess, sistema: 'IMTS' }; this.modalA = true; }
-  async saveAccess() { if (!this.formA.user_label) return; this.saving = true; const o = { ...this.formA }; if (!o.sistema) o.sistema = 'Sistema'; if (!o.ultimo_acesso) o.ultimo_acesso = null; const ok = await this.crud.upsert('registros_acesso', o); this.saving = false; if (ok) this.modalA = false; }
+  async saveAccess() { if (!this.ux.require(this.formA.user_label, 'o usuário')) return; this.saving = true; try { const o = { ...this.formA }; if (!o.sistema) o.sistema = 'Sistema'; if (!o.ultimo_acesso) o.ultimo_acesso = null; const ok = await this.crud.upsert('registros_acesso', o); if (ok) this.modalA = false; } finally { this.saving = false; } }
 
   openNewRisk() { this.formR = { severity: 'Médio' }; this.modalR = true; }
   openEditRisk(r: RiskItem) { this.formR = { ...r }; this.modalR = true; }
-  async saveRisk() { if (!this.formR.title) return; this.saving = true; const ok = await this.crud.upsert('riscos', this.formR); this.saving = false; if (ok) this.modalR = false; }
+  async saveRisk() { if (!this.ux.require(this.formR.title, 'o título do risco')) return; this.saving = true; try { const ok = await this.crud.upsert('riscos', this.formR); if (ok) this.modalR = false; } finally { this.saving = false; } }
 
   askDelete(t: 'access'|'risk', id: string) { this.delType = t; this.delId = id; this.confirmOpen = true; }
-  async doDelete() { await this.crud.remove(this.delType === 'access' ? 'registros_acesso' : 'riscos', this.delId); this.confirmOpen = false; }
+  async doDelete() { if (this.deleting) return; this.deleting = true; const ok = await this.crud.remove(this.delType === 'access' ? 'registros_acesso' : 'riscos', this.delId); this.deleting = false; if (ok) this.confirmOpen = false; }
 
   exportAccess() { exportToCSV(this.filteredAccess.map(r => ({ Usuario: r.user, Recurso: r.resource, Tipo: r.resourceType, Nivel: r.accessLevel, Ativo: r.ativo ? 'Sim':'Não', UltimoAcesso: r.lastAccess })), 'acessos'); }
-  async importAccess(f: File) { const rows = parseCSV(await readFileAsText(f)); const p = rows.map(r => ({ user_label: r['Usuario'], recurso: r['Recurso']||null, recurso_tipo: r['Tipo']||'Aplicação', nivel_acesso: r['Nivel']||'Leitura', sistema: 'IMTS', ativo: (r['Ativo']||'Sim').toLowerCase().startsWith('s'), data_concessao: new Date().toISOString().slice(0,10) })).filter(r => r.user_label); if (p.length) await this.crud.bulkInsert('registros_acesso', p); }
+  async importAccess(f: File) { const rows = parseCSV(await readFileAsText(f)); const p = rows.map(r => ({ user_label: r['Usuario'], recurso: r['Recurso']||null, recurso_tipo: r['Tipo']||'Aplicação', nivel_acesso: r['Nivel']||'Leitura', sistema: 'IMTS', ativo: (r['Ativo']||'Sim').toLowerCase().startsWith('s'), data_concessao: new Date().toISOString().slice(0,10) })).filter(r => r.user_label); if (p.length) await this.crud.bulkInsert('registros_acesso', p); else this.ux.noImportRows('acessos'); }
   exportRisks() { exportToCSV(this.filteredRisks.map(r => ({ Titulo: r.title, Severidade: r.severity, Responsavel: r.owner, Mitigacao: r.mitigation })), 'riscos'); }
-  async importRisks(f: File) { const rows = parseCSV(await readFileAsText(f)); const p = rows.map(r => ({ title: r['Titulo'], severity: r['Severidade']||'Médio', owner: r['Responsavel']||null, mitigation: r['Mitigacao']||null })).filter(r => r.title); if (p.length) await this.crud.bulkInsert('riscos', p); }
+  async importRisks(f: File) { const rows = parseCSV(await readFileAsText(f)); const p = rows.map(r => ({ title: r['Titulo'], severity: r['Severidade']||'Médio', owner: r['Responsavel']||null, mitigation: r['Mitigacao']||null })).filter(r => r.title); if (p.length) await this.crud.bulkInsert('riscos', p); else this.ux.noImportRows('riscos'); }
 }

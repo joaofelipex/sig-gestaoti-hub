@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { EmpresaService, Empresa } from '../../services/empresa.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 
 @Component({
@@ -79,17 +80,17 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
         <label class="col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
-    <app-confirm [open]="confirmOpen" title="Excluir empresa" [message]="'Excluir ' + (toDelete?.nome || '?') + '? Os registros vinculados não serão removidos.'" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir empresa" [message]="'Excluir ' + (toDelete?.nome || '?') + '? Os registros vinculados não serão removidos.'" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class EmpresasComponent implements OnInit, OnDestroy {
   empresas: Empresa[] = [];
   loading = true;
   selectedId: string | null = null;
-  modalOpen = false; confirmOpen = false; saving = false;
+  modalOpen = false; confirmOpen = false; saving = false; deleting = false;
   form: any = {}; toDelete: Empresa | null = null;
   private subs: Subscription[] = [];
-  constructor(private svc: EmpresaService) {}
+  constructor(private svc: EmpresaService, private ux: UxFeedbackService) {}
   ngOnInit() {
     this.subs.push(this.svc.list$.subscribe(l => this.empresas = l));
     this.subs.push(this.svc.loading$.subscribe(v => this.loading = v));
@@ -103,12 +104,15 @@ export class EmpresasComponent implements OnInit, OnDestroy {
   openNew() { this.form = { ativo: true }; this.modalOpen = true; }
   openEdit(e: Empresa) { this.form = { ...e }; this.modalOpen = true; }
   async save() {
-    if (!this.form.nome) return;
+    if (!this.ux.require(this.form.nome, 'o nome da empresa')) return;
     this.saving = true;
-    const ok = await this.svc.upsert(this.form);
-    this.saving = false;
-    if (ok) this.modalOpen = false;
+    try {
+      const ok = await this.svc.upsert(this.form);
+      if (ok) this.modalOpen = false;
+    } finally {
+      this.saving = false;
+    }
   }
   askDelete(e: Empresa) { this.toDelete = e; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.svc.remove(this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.svc.remove(this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
 }

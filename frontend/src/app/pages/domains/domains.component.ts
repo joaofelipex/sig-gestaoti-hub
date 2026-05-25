@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, Domain } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -93,7 +94,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
       </div>
     </app-modal>
 
-    <app-confirm [open]="confirmOpen" title="Excluir domínio" [message]="'Confirmar exclusão de ' + (toDelete?.url || '?')" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir domínio" [message]="'Confirmar exclusão de ' + (toDelete?.url || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class DomainsComponent implements OnInit, OnDestroy {
@@ -104,11 +105,12 @@ export class DomainsComponent implements OnInit, OnDestroy {
   modalOpen = false;
   confirmOpen = false;
   saving = false;
+  deleting = false;
   form: any = {};
   toDelete: Domain | null = null;
   private sub!: Subscription;
 
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.domains = d.domains; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
 
@@ -130,25 +132,25 @@ export class DomainsComponent implements OnInit, OnDestroy {
     this.modalOpen = true;
   }
   async save() {
-    if (!this.form.nome) return;
+    if (!this.ux.require(this.form.nome, 'o domínio')) return;
     const payload = this.cleanDates(this.form);
     this.saving = true;
     this.modalOpen = false;
-    const ok = await this.crud.upsert('dominios', payload);
-    this.saving = false;
-    if (!ok) this.modalOpen = true;
+    try {
+      const ok = await this.crud.upsert('dominios', payload);
+      if (!ok) this.modalOpen = true;
+    } finally {
+      this.saving = false;
+    }
   }
   askDelete(d: Domain) { this.toDelete = d; this.confirmOpen = true; }
   async doDelete() {
     const target = this.toDelete;
-    if (!target) return;
-    this.confirmOpen = false;
-    this.toDelete = null;
+    if (!target || this.deleting) return;
+    this.deleting = true;
     const ok = await this.crud.remove('dominios', target.id);
-    if (!ok) {
-      this.toDelete = target;
-      this.confirmOpen = true;
-    }
+    this.deleting = false;
+    if (ok) { this.confirmOpen = false; this.toDelete = null; }
   }
 
   exportCSV() {
@@ -170,6 +172,7 @@ export class DomainsComponent implements OnInit, OnDestroy {
       auto_renovacao: (r['AutoRenovacao'] || 'Sim').toLowerCase().startsWith('s'),
     })).filter(r => r.nome);
     if (payload.length) await this.crud.bulkInsert('dominios', payload);
+    else this.ux.noImportRows('domínios');
   }
 
   private cleanDates(o: any) {

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, License } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -78,15 +79,15 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
       </div>
     </app-modal>
 
-    <app-confirm [open]="confirmOpen" title="Excluir licença" [message]="'Excluir ' + (toDelete?.software || '?')" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir licença" [message]="'Excluir ' + (toDelete?.software || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class LicensesComponent implements OnInit, OnDestroy {
   licenses: License[] = []; loading = true; search = ''; filterValues: any = {};
-  modalOpen = false; confirmOpen = false; saving = false; form: any = {}; toDelete: License | null = null;
+  modalOpen = false; confirmOpen = false; saving = false; deleting = false; form: any = {}; toDelete: License | null = null;
   catOpts = ['Produtividade','Design','Desenvolvimento','Segurança','Comunicação','Outros'].map(v=>({value:v,label:v}));
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.licenses = d.licenses; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
   get filtered() {
@@ -99,13 +100,14 @@ export class LicensesComponent implements OnInit, OnDestroy {
   }
   openNew() { this.form = { tipo: 'Mensal', categoria: 'Produtividade', total_licencas: 1, qtd_usuarios: 0, custo_unitario: 0 }; this.modalOpen = true; }
   openEdit(l: License) { this.form = { id: l.id, nome: l.software, fornecedor: l.vendor, tipo: l.type, categoria: l.category, total_licencas: l.totalLicenses, qtd_usuarios: l.usedLicenses, custo_unitario: l.costPerUnit, chave_ativacao: l.activationKey, data_renovacao: l.renewalDate }; this.modalOpen = true; }
-  async save() { if (!this.form.nome) return; this.saving = true; const o = { ...this.form }; if (!o.data_renovacao) o.data_renovacao = null; const ok = await this.crud.upsert('licencas', o); this.saving = false; if (ok) this.modalOpen = false; }
+  async save() { if (!this.ux.require(this.form.nome, 'o software')) return; this.saving = true; try { const o = { ...this.form }; if (!o.data_renovacao) o.data_renovacao = null; const ok = await this.crud.upsert('licencas', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(l: License) { this.toDelete = l; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.crud.remove('licencas', this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('licencas', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(l => ({ Software: l.software, Fornecedor: l.vendor, Tipo: l.type, Categoria: l.category, Total: l.totalLicenses, EmUso: l.usedLicenses, Custo: l.costPerUnit, Renovacao: l.renewalDate })), 'licencas'); }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const payload = rows.map(r => ({ nome: r['Software']||r['nome'], fornecedor: r['Fornecedor']||null, tipo: r['Tipo']||'Mensal', categoria: r['Categoria']||'Produtividade', total_licencas: Number(r['Total']||1), qtd_usuarios: Number(r['EmUso']||0), custo_unitario: Number(r['Custo']||0), data_renovacao: r['Renovacao']||null })).filter(r => r.nome);
     if (payload.length) await this.crud.bulkInsert('licencas', payload);
+    else this.ux.noImportRows('licenças');
   }
 }

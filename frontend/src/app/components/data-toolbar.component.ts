@@ -79,6 +79,9 @@ export interface FilterDef {
           <i [class]="icons.export" aria-hidden="true"></i>
           Exportar
         </button>
+        <button *ngIf="hasActiveInput" type="button" class="sig-toolbar-btn sig-toolbar-btn--ghost" (click)="clearAll()">
+          Limpar
+        </button>
         <button *ngIf="showNew" type="button" class="sig-toolbar-btn sig-toolbar-btn--primary" (click)="newClick.emit()">
           <i [class]="icons.plus" aria-hidden="true"></i>
           Novo
@@ -111,6 +114,10 @@ export class DataToolbarComponent {
     return filter.options.find((o) => o.value === value)?.label || 'Todos';
   }
 
+  get hasActiveInput(): boolean {
+    return !!this.search || this.filters.some((f) => !!this.filterValues[f.key]);
+  }
+
   toggleFilter(key: string, ev: MouseEvent) {
     ev.stopPropagation();
     this.openFilterKey = this.openFilterKey === key ? null : key;
@@ -122,8 +129,21 @@ export class DataToolbarComponent {
     this.onFilterChange(key, value);
   }
 
+  clearAll() {
+    this.openFilterKey = null;
+    if (this.search) this.searchChange.emit('');
+    this.filters.forEach((f) => {
+      if (this.filterValues[f.key]) this.filterChange.emit({ key: f.key, value: '' });
+    });
+  }
+
   @HostListener('document:click')
   closeFilters() {
+    this.openFilterKey = null;
+  }
+
+  @HostListener('document:keydown.escape')
+  closeFiltersByKeyboard() {
     this.openFilterKey = null;
   }
 

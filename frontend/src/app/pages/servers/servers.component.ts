@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, Server } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -73,14 +74,14 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="col-span-2 text-sm">Finalidade<input [(ngModel)]="form.finalidade" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
       </div>
     </app-modal>
-    <app-confirm [open]="confirmOpen" title="Excluir servidor" [message]="'Excluir ' + (toDelete?.name || '?')" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir servidor" [message]="'Excluir ' + (toDelete?.name || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class ServersComponent implements OnInit, OnDestroy {
   servers: Server[] = []; loading = true; search = ''; filterValues: any = {};
-  modalOpen = false; confirmOpen = false; saving = false; form: any = {}; toDelete: Server | null = null;
+  modalOpen = false; confirmOpen = false; saving = false; deleting = false; form: any = {}; toDelete: Server | null = null;
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.servers = d.servers; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
   get filtered() {
@@ -95,13 +96,14 @@ export class ServersComponent implements OnInit, OnDestroy {
   }
   openNew() { this.form = { status: 'Online', ambiente: 'producao', uptime_pct: 99.9, custo_mensal: 0 }; this.modalOpen = true; }
   openEdit(s: Server) { this.form = { id: s.id, nome: s.name, provedor: s.provider, tipo: s.type, status: s.status, ip_publico: s.ip, regiao: s.region, sistema_operacional: s.os, cpu: s.cpu, ram: s.ram, armazenamento: s.storage, uptime_pct: s.uptime, custo_mensal: s.monthlyCost, ssl_vencimento: s.sslExpiration, contrato_fim: s.contractEnd, finalidade: s.purpose }; this.modalOpen = true; }
-  async save() { if (!this.form.nome) return; this.saving = true; const o = { ...this.form }; ['ssl_vencimento','contrato_fim'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('servidores', o); this.saving = false; if (ok) this.modalOpen = false; }
+  async save() { if (!this.ux.require(this.form.nome, 'o nome do servidor')) return; this.saving = true; try { const o = { ...this.form }; ['ssl_vencimento','contrato_fim'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('servidores', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(s: Server) { this.toDelete = s; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.crud.remove('servidores', this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('servidores', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(s => ({ Nome: s.name, Provedor: s.provider, Tipo: s.type, Status: s.status, IP: s.ip, Uptime: s.uptime, CustoMensal: s.monthlyCost })), 'servidores'); }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const payload = rows.map(r => ({ nome: r['Nome'], provedor: r['Provedor']||null, tipo: r['Tipo']||null, status: r['Status']||'Online', ip_publico: r['IP']||null, uptime_pct: Number(r['Uptime']||100), custo_mensal: Number(r['CustoMensal']||0) })).filter(r => r.nome);
     if (payload.length) await this.crud.bulkInsert('servidores', payload);
+    else this.ux.noImportRows('servidores');
   }
 }

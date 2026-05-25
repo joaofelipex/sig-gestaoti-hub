@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, Maintenance, Asset } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -70,14 +71,14 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="col-span-2 text-sm">Descrição<textarea [(ngModel)]="form.descricao" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
-    <app-confirm [open]="confirmOpen" title="Excluir manutenção" message="Confirmar exclusão?" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir manutenção" [message]="'Excluir manutenção de ' + (toDelete ? assetLabel(toDelete.ativo_id) : '?') + '?'" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class MaintenanceComponent implements OnInit, OnDestroy {
   maintenance: Maintenance[] = []; assets: Asset[] = []; loading = true; search = ''; filterValues: any = {};
-  modalOpen = false; confirmOpen = false; saving = false; form: any = {}; toDelete: Maintenance | null = null;
+  modalOpen = false; confirmOpen = false; saving = false; deleting = false; form: any = {}; toDelete: Maintenance | null = null;
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.maintenance = d.maintenance; this.assets = d.assets; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
   get filtered() {
@@ -91,13 +92,14 @@ export class MaintenanceComponent implements OnInit, OnDestroy {
   statusClass(s: string) { return s === 'concluida' ? 'bg-green-100 text-green-800' : s === 'em_andamento' ? 'bg-blue-100 text-blue-800' : s === 'aberta' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'; }
   openNew() { this.form = { tipo: 'Preventiva', status: 'aberta', data_abertura: new Date().toISOString().slice(0,10) }; this.modalOpen = true; }
   openEdit(m: Maintenance) { this.form = { ...m }; this.modalOpen = true; }
-  async save() { if (!this.form.ativo_id || !this.form.tipo) return; this.saving = true; const o = { ...this.form }; if (!o.data_conclusao) o.data_conclusao = null; if (!o.custo) o.custo = null; const ok = await this.crud.upsert('manutencoes', o); this.saving = false; if (ok) this.modalOpen = false; }
+  async save() { if (!this.ux.requireAll([[this.form.ativo_id, 'o ativo'], [this.form.tipo, 'o tipo da manutenção']])) return; this.saving = true; try { const o = { ...this.form }; if (!o.data_conclusao) o.data_conclusao = null; if (!o.custo) o.custo = null; const ok = await this.crud.upsert('manutencoes', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(m: Maintenance) { this.toDelete = m; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.crud.remove('manutencoes', this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('manutencoes', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(m => ({ Ativo: this.assetLabel(m.ativo_id), Tipo: m.tipo, Status: m.status, Abertura: m.data_abertura, Conclusao: m.data_conclusao, Fornecedor: m.fornecedor, Custo: m.custo, Descricao: m.descricao })), 'manutencoes'); }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const payload = rows.map(r => ({ ativo_id: r['ativo_id'], tipo: r['Tipo']||'Preventiva', status: r['Status']||'aberta', data_abertura: r['Abertura']||new Date().toISOString().slice(0,10), data_conclusao: r['Conclusao']||null, fornecedor: r['Fornecedor']||null, custo: Number(r['Custo']||0)||null, descricao: r['Descricao']||null })).filter(r => r.ativo_id);
     if (payload.length) await this.crud.bulkInsert('manutencoes', payload);
+    else this.ux.noImportRows('manutenções');
   }
 }

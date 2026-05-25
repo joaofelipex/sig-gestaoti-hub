@@ -1,9 +1,10 @@
 import { Component, EventEmitter, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { WhiteLabelService } from '../services/white-label.service';
 import { EmpresaSelectorComponent } from '../components/empresa-selector.component';
 import { AlertsHeaderButtonComponent } from '../components/alerts-header-button.component';
+import { ToastService } from '../services/toast.service';
 
 export interface SigTab {
   to: string;
@@ -31,7 +32,13 @@ export interface SigTab {
         <div class="sig-header__search">
           <div class="sig-header__search-wrap">
             <i class="fas fa-search"></i>
-            <input type="search" placeholder="Busca rápida…" aria-label="Busca rápida" />
+            <input
+              #quickSearch
+              type="search"
+              placeholder="Busca rápida…"
+              aria-label="Busca rápida"
+              (keydown.enter)="goToQuickSearch(quickSearch.value); quickSearch.value = ''"
+            />
           </div>
         </div>
 
@@ -72,9 +79,38 @@ export class AppShellHeaderComponent {
     { to: '/economista', title: 'Economista', subtitle: 'BI' },
   ];
 
-  constructor(readonly wl: WhiteLabelService) {}
+  private readonly quickRoutes: SigTab[] = [
+    ...this.tabs,
+    { to: '/manutencao', title: 'Manutenção', subtitle: 'Operações' },
+    { to: '/movimentacoes', title: 'Movimentações', subtitle: 'Operações' },
+    { to: '/estoque', title: 'Estoque', subtitle: 'Operações' },
+  ];
+
+  constructor(readonly wl: WhiteLabelService, private router: Router, private toast: ToastService) {}
 
   get initials(): string {
     return this.wl.brandName.slice(0, 1).toUpperCase();
+  }
+
+  goToQuickSearch(value: string): void {
+    const q = this.normalize(value);
+    if (!q) return;
+    const route = this.quickRoutes.find((item) => {
+      const label = this.normalize(`${item.title} ${item.subtitle ?? ''}`);
+      return label.includes(q) || q.includes(this.normalize(item.title));
+    });
+    if (route) {
+      void this.router.navigateByUrl(route.to);
+      return;
+    }
+    this.toast.show({ title: 'Busca rápida', description: 'Nenhum módulo encontrado com esse termo.' });
+  }
+
+  private normalize(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
   }
 }

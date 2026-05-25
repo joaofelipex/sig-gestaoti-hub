@@ -10,6 +10,7 @@ import {
   License,
 } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import {
   KpiCardComponent,
   BarChartComponent,
@@ -401,9 +402,10 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
                       *ngIf="!isDone(a.status)"
                       type="button"
                       (click)="markActionDone(a)"
+                      [disabled]="actionDoneId === a.id"
                       class="sig-link-action sig-link-action--success me-2"
                     >
-                      Concluir
+                      {{ actionDoneId === a.id ? 'Concluindo...' : 'Concluir' }}
                     </button>
                     <button type="button" (click)="openEditAction(a)" class="sig-link-action me-2">Editar</button>
                     <button type="button" (click)="askDeleteAction(a)" class="sig-link-action sig-link-action--danger">
@@ -527,6 +529,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
       [open]="confirmBudget"
       title="Excluir orçamento"
       [message]="'Excluir ' + (toDeleteBudget?.category || 'esta linha') + '?'"
+      [confirming]="deletingBudget"
       (cancel)="confirmBudget = false"
       (confirm)="doDeleteBudget()"
     ></app-confirm>
@@ -535,6 +538,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
       [open]="confirmAction"
       title="Excluir ação"
       [message]="'Excluir «' + (toDeleteAction?.title || '') + '»?'"
+      [confirming]="deletingAction"
       (cancel)="confirmAction = false"
       (confirm)="doDeleteAction()"
     ></app-confirm>
@@ -596,6 +600,9 @@ export class EconomistComponent implements OnInit, OnDestroy {
   confirmBudget = false;
   confirmAction = false;
   saving = false;
+  deletingBudget = false;
+  deletingAction = false;
+  actionDoneId: string | null = null;
   budgetForm: any = {};
   actionForm: any = {};
   toDeleteBudget: Budget | null = null;
@@ -635,6 +642,7 @@ export class EconomistComponent implements OnInit, OnDestroy {
   constructor(
     private dashboard: DashboardService,
     private crud: CrudService,
+    private ux: UxFeedbackService,
   ) {}
 
   ngOnInit() {
@@ -1080,11 +1088,14 @@ export class EconomistComponent implements OnInit, OnDestroy {
   }
 
   async saveBudget() {
-    if (!this.budgetForm.category || !this.budgetForm.cost_center) return;
+    if (!this.ux.requireAll([[this.budgetForm.category, 'a categoria'], [this.budgetForm.cost_center, 'o centro de custo']])) return;
     this.saving = true;
-    const ok = await this.crud.upsert('orcamentos', { ...this.budgetForm });
-    this.saving = false;
-    if (ok) this.budgetModal = false;
+    try {
+      const ok = await this.crud.upsert('orcamentos', { ...this.budgetForm });
+      if (ok) this.budgetModal = false;
+    } finally {
+      this.saving = false;
+    }
   }
 
   askDeleteBudget(b: Budget) {
@@ -1093,9 +1104,11 @@ export class EconomistComponent implements OnInit, OnDestroy {
   }
 
   async doDeleteBudget() {
-    if (this.toDeleteBudget) await this.crud.remove('orcamentos', this.toDeleteBudget.id);
-    this.confirmBudget = false;
-    this.toDeleteBudget = null;
+    if (!this.toDeleteBudget || this.deletingBudget) return;
+    this.deletingBudget = true;
+    const ok = await this.crud.remove('orcamentos', this.toDeleteBudget.id);
+    this.deletingBudget = false;
+    if (ok) { this.confirmBudget = false; this.toDeleteBudget = null; }
   }
 
   exportBudgets() {
@@ -1123,6 +1136,7 @@ export class EconomistComponent implements OnInit, OnDestroy {
       }))
       .filter((r) => r.category);
     if (payload.length) await this.crud.bulkInsert('orcamentos', payload);
+    else this.ux.noImportRows('orçamentos');
   }
 
   openNewAction() {
@@ -1157,17 +1171,26 @@ export class EconomistComponent implements OnInit, OnDestroy {
   }
 
   async saveAction() {
-    if (!this.actionForm.title) return;
+    if (!this.ux.require(this.actionForm.title, 'o título da ação')) return;
     this.saving = true;
-    const o = { ...this.actionForm };
-    if (!o.due_date) o.due_date = null;
-    const ok = await this.crud.upsert('acoes_economista', o);
-    this.saving = false;
-    if (ok) this.actionModal = false;
+    try {
+      const o = { ...this.actionForm };
+      if (!o.due_date) o.due_date = null;
+      const ok = await this.crud.upsert('acoes_economista', o);
+      if (ok) this.actionModal = false;
+    } finally {
+      this.saving = false;
+    }
   }
 
   async markActionDone(a: ActionItem) {
-    await this.crud.upsert('acoes_economista', { id: a.id, status: 'Concluída' });
+    if (this.actionDoneId) return;
+    this.actionDoneId = a.id;
+    try {
+      await this.crud.upsert('acoes_economista', { id: a.id, status: 'Concluída' });
+    } finally {
+      this.actionDoneId = null;
+    }
   }
 
   askDeleteAction(a: ActionItem) {
@@ -1176,9 +1199,11 @@ export class EconomistComponent implements OnInit, OnDestroy {
   }
 
   async doDeleteAction() {
-    if (this.toDeleteAction) await this.crud.remove('acoes_economista', this.toDeleteAction.id);
-    this.confirmAction = false;
-    this.toDeleteAction = null;
+    if (!this.toDeleteAction || this.deletingAction) return;
+    this.deletingAction = true;
+    const ok = await this.crud.remove('acoes_economista', this.toDeleteAction.id);
+    this.deletingAction = false;
+    if (ok) { this.confirmAction = false; this.toDeleteAction = null; }
   }
 
   exportActions() {
@@ -1213,5 +1238,6 @@ export class EconomistComponent implements OnInit, OnDestroy {
       }))
       .filter((r) => r.title);
     if (payload.length) await this.crud.bulkInsert('acoes_economista', payload);
+    else this.ux.noImportRows('ações');
   }
 }

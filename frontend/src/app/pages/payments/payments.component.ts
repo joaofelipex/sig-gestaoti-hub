@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, Payment } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent } from '../../components/charts.component';
@@ -52,7 +53,7 @@ import { SigIcons } from '../../core/sig-icons';
               <td class="fw-medium">{{ brl(p.valor) }}</td>
               <td><span [class]="statusClass(p.status)">{{ p.status }}</span></td>
               <td class="text-end">
-                <button *ngIf="p.status !== 'pago'" type="button" (click)="markPaid(p)" class="sig-link-action sig-link-action--success me-3">Pagar</button>
+                <button *ngIf="p.status !== 'pago'" type="button" (click)="markPaid(p)" [disabled]="payingId === p.id" class="sig-link-action sig-link-action--success me-3">{{ payingId === p.id ? 'Pagando...' : 'Pagar' }}</button>
                 <button type="button" (click)="openEdit(p)" class="sig-link-action me-3">Editar</button>
                 <button type="button" (click)="askDelete(p)" class="sig-link-action sig-link-action--danger">Excluir</button>
               </td>
@@ -77,16 +78,16 @@ import { SigIcons } from '../../core/sig-icons';
         <label class="col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
-    <app-confirm [open]="confirmOpen" title="Excluir pagamento" [message]="'Excluir ' + (toDelete?.nome || '?')" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir pagamento" [message]="'Excluir ' + (toDelete?.nome || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class PaymentsComponent implements OnInit, OnDestroy {
   readonly icons = SigIcons;
   payments: Payment[] = []; loading = true; search = ''; filterValues: any = {};
-  modalOpen = false; confirmOpen = false; saving = false; form: any = {}; toDelete: Payment | null = null;
+  modalOpen = false; confirmOpen = false; saving = false; deleting = false; payingId: string | null = null; form: any = {}; toDelete: Payment | null = null;
   catOpts = [{value:'servidor',label:'Servidor'},{value:'licenca',label:'Licença'},{value:'dominio',label:'Domínio'},{value:'contrato',label:'Contrato'},{value:'outro',label:'Outro'}];
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.payments = d.payments; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
   get filtered() {
@@ -106,14 +107,15 @@ export class PaymentsComponent implements OnInit, OnDestroy {
   statusClass(s: string) { return s === 'pago' ? 'bg-green-100 text-green-800' : s === 'atrasado' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'; }
   openNew() { this.form = { categoria: 'outro', status: 'pendente', valor: 0, competencia: new Date().toISOString().slice(0,10) }; this.modalOpen = true; }
   openEdit(p: Payment) { this.form = { ...p }; this.modalOpen = true; }
-  async markPaid(p: Payment) { await this.crud.upsert('pagamentos', { id: p.id, status: 'pago', data_pagamento: new Date().toISOString().slice(0,10) }); }
-  async save() { if (!this.form.nome) return; this.saving = true; const o = { ...this.form }; ['vencimento','data_pagamento','competencia'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('pagamentos', o); this.saving = false; if (ok) this.modalOpen = false; }
+  async markPaid(p: Payment) { if (this.payingId) return; this.payingId = p.id; try { await this.crud.upsert('pagamentos', { id: p.id, status: 'pago', data_pagamento: new Date().toISOString().slice(0,10) }); } finally { this.payingId = null; } }
+  async save() { if (!this.ux.require(this.form.nome, 'o nome do pagamento')) return; this.saving = true; try { const o = { ...this.form }; ['vencimento','data_pagamento','competencia'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('pagamentos', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(p: Payment) { this.toDelete = p; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.crud.remove('pagamentos', this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('pagamentos', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(p => ({ Nome: p.nome, Categoria: p.categoria, Competencia: p.competencia, Vencimento: p.vencimento, Valor: p.valor, Status: p.status, Fornecedor: p.fornecedor })), 'pagamentos'); }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const payload = rows.map(r => ({ nome: r['Nome'], categoria: r['Categoria']||'outro', competencia: r['Competencia']||new Date().toISOString().slice(0,10), vencimento: r['Vencimento']||null, valor: Number(r['Valor']||0), status: r['Status']||'pendente', fornecedor: r['Fornecedor']||null })).filter(r => r.nome);
     if (payload.length) await this.crud.bulkInsert('pagamentos', payload);
+    else this.ux.noImportRows('pagamentos');
   }
 }

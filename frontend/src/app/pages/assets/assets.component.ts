@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, Asset } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -87,16 +88,16 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" rows="2"></textarea></label>
       </div>
     </app-modal>
-    <app-confirm [open]="confirmOpen" title="Excluir ativo" [message]="'Excluir ' + (toDelete?.brand || '') + ' ' + (toDelete?.model || '?')" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir ativo" [message]="'Excluir ' + (toDelete?.brand || '') + ' ' + (toDelete?.model || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class AssetsComponent implements OnInit, OnDestroy {
   assets: Asset[] = []; loading = true; search = ''; filterValues: any = {};
-  modalOpen = false; confirmOpen = false; saving = false; form: any = {}; toDelete: Asset | null = null;
+  modalOpen = false; confirmOpen = false; saving = false; deleting = false; form: any = {}; toDelete: Asset | null = null;
   statusOpts = ['Em uso','Estoque','Manutenção','Aposentado'].map(v=>({value:v,label:v}));
   typeOpts = ['Notebook','Desktop','Monitor','Impressora','TV','Servidor','Periférico'].map(v=>({value:v,label:v}));
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.assets = d.assets; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
   get filtered() {
@@ -116,14 +117,15 @@ export class AssetsComponent implements OnInit, OnDestroy {
     this.form = { id: a.id, tipo: a.type, status: statusMap[a.status]||'ativo', marca: a.brand, modelo: a.model, numero_serie: a.serialNumber, assigned_to: a.assignedTo, department_nome: a.department, data_aquisicao: a.purchaseDate, warranty_end: a.warrantyEnd, valor_aquisicao: a.purchaseValue };
     this.modalOpen = true;
   }
-  async save() { if (!this.form.tipo) return; this.saving = true; const o = { ...this.form }; ['data_aquisicao','warranty_end'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('ativos', o); this.saving = false; if (ok) this.modalOpen = false; }
+  async save() { if (!this.ux.require(this.form.tipo, 'o tipo do ativo')) return; this.saving = true; try { const o = { ...this.form }; ['data_aquisicao','warranty_end'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('ativos', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(a: Asset) { this.toDelete = a; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.crud.remove('ativos', this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('ativos', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(a => ({ Tipo: a.type, Marca: a.brand, Modelo: a.model, Serie: a.serialNumber, Status: a.status, Atribuido: a.assignedTo, Departamento: a.department, Aquisicao: a.purchaseDate, Valor: a.purchaseValue })), 'ativos'); }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const map: any = { 'Em uso':'ativo','Estoque':'estoque','Manutenção':'manutencao','Aposentado':'aposentado' };
     const payload = rows.map(r => ({ tipo: r['Tipo']||'Notebook', marca: r['Marca']||null, modelo: r['Modelo']||null, numero_serie: r['Serie']||null, status: map[r['Status']]||'ativo', assigned_to: r['Atribuido']||null, department_nome: r['Departamento']||null, data_aquisicao: r['Aquisicao']||null, valor_aquisicao: Number(r['Valor']||0) })).filter(r => r.tipo);
     if (payload.length) await this.crud.bulkInsert('ativos', payload);
+    else this.ux.noImportRows('ativos');
   }
 }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { DashboardService, Inventory } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
+import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -67,16 +68,16 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="col-span-2 text-sm">Notas<textarea [(ngModel)]="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
-    <app-confirm [open]="confirmOpen" title="Excluir item" [message]="'Excluir ' + (toDelete?.nome || '?')" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
+    <app-confirm [open]="confirmOpen" title="Excluir item" [message]="'Excluir ' + (toDelete?.nome || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
   `
 })
 export class InventoryComponent implements OnInit, OnDestroy {
   inventory: Inventory[] = []; loading = true; search = ''; filterValues: any = {};
-  modalOpen = false; confirmOpen = false; saving = false; form: any = {}; toDelete: Inventory | null = null;
+  modalOpen = false; confirmOpen = false; saving = false; deleting = false; form: any = {}; toDelete: Inventory | null = null;
   categorias = ['Cabo','Áudio','Vídeo','Periférico','Acessório','Consumível','Outros'];
   catOpts = this.categorias.map(c=>({value:c,label:c}));
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.inventory = d.inventory; this.loading = d.loading; }); }
   ngOnDestroy() { this.sub?.unsubscribe(); }
   get filtered() {
@@ -90,13 +91,14 @@ export class InventoryComponent implements OnInit, OnDestroy {
   qtyClass(i: Inventory) { return i.quantity <= i.min_quantity ? 'bg-red-100 text-red-800' : i.quantity <= i.min_quantity * 1.5 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'; }
   openNew() { this.form = { categoria: 'Outros', unit: 'un', quantity: 0, min_quantity: 0, unit_cost: 0 }; this.modalOpen = true; }
   openEdit(i: Inventory) { this.form = { ...i }; this.modalOpen = true; }
-  async save() { if (!this.form.nome) return; this.saving = true; const ok = await this.crud.upsert('inventario', this.form); this.saving = false; if (ok) this.modalOpen = false; }
+  async save() { if (!this.ux.require(this.form.nome, 'o nome do item')) return; this.saving = true; try { const ok = await this.crud.upsert('inventario', this.form); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(i: Inventory) { this.toDelete = i; this.confirmOpen = true; }
-  async doDelete() { if (this.toDelete) await this.crud.remove('inventario', this.toDelete.id); this.confirmOpen = false; this.toDelete = null; }
+  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('inventario', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(i => ({ Nome: i.nome, Categoria: i.categoria, SKU: i.sku, Quantidade: i.quantity, Minimo: i.min_quantity, Unidade: i.unit, Custo: i.unit_cost, Local: i.location, Fornecedor: i.supplier })), 'estoque'); }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const payload = rows.map(r => ({ nome: r['Nome'], categoria: r['Categoria']||'Outros', sku: r['SKU']||null, quantity: Number(r['Quantidade']||0), min_quantity: Number(r['Minimo']||0), unit: r['Unidade']||'un', unit_cost: Number(r['Custo']||0), location: r['Local']||null, supplier: r['Fornecedor']||null })).filter(r => r.nome);
     if (payload.length) await this.crud.bulkInsert('inventario', payload);
+    else this.ux.noImportRows('itens');
   }
 }

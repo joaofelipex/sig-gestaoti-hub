@@ -308,17 +308,24 @@ export class DashboardService {
     });
   }
 
-  loadData(force = false): Promise<void> {
+  loadData(force = false, silent = false): Promise<void> {
     if (!force && this.loadInFlight === null && this.isCacheFresh()) {
       return Promise.resolve();
     }
     if (this.loadInFlight) {
       return this.loadInFlight;
     }
-    this.loadInFlight = this.fetchDashboard().finally(() => {
+    this.loadInFlight = this.fetchDashboard(silent).finally(() => {
       this.loadInFlight = null;
     });
     return this.loadInFlight;
+  }
+
+  refreshAfterMutation(): Promise<void> {
+    if (this._raw.value.loading) {
+      this._raw.next({ ...this._raw.value, loading: false });
+    }
+    return this.loadData(true, true);
   }
 
   private isCacheFresh(): boolean {
@@ -391,7 +398,7 @@ export class DashboardService {
     return out;
   }
 
-  private async fetchDashboard() {
+  private async fetchDashboard(silent = false) {
     if (!this.api.getToken()) {
       this._raw.next({
         assets: [], domains: [], licenses: [], servers: [], contracts: [],
@@ -402,7 +409,7 @@ export class DashboardService {
       this.fetchComplete = false;
       return;
     }
-    const showSpinner = !this.hasCachedRows();
+    const showSpinner = !silent && !this.hasCachedRows();
     if (showSpinner) {
       this._raw.next({ ...this._raw.value, loading: true });
     }

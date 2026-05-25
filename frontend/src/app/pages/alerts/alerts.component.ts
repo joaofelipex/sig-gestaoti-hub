@@ -7,12 +7,13 @@ import { CrudService } from '../../services/crud.service';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { KpiCardComponent } from '../../components/charts.component';
+import { ConfirmComponent } from '../../components/modal.component';
 import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
-  imports: [CommonModule, KpiCardComponent],
+  imports: [CommonModule, KpiCardComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -25,7 +26,7 @@ import { SigIcons } from '../../core/sig-icons';
             <i class="fas fa-sync-alt" [class.fa-spin]="generating" aria-hidden="true"></i>
             {{ generating ? 'Atualizando…' : 'Atualizar alertas' }}
           </button>
-          <button type="button" (click)="markAllRead()" class="btn btn-outline-secondary btn-sm">
+          <button type="button" (click)="markAllRead()" [disabled]="markingAll" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-check-double" aria-hidden="true"></i> Marcar todos como lidos
           </button>
         </div>
@@ -71,10 +72,10 @@ import { SigIcons } from '../../core/sig-icons';
               <a *ngIf="a.link" [href]="a.link" target="_blank" class="sig-icon-btn text-blue-600" title="Abrir" aria-label="Abrir alerta">
                 <i [class]="icons.external" aria-hidden="true"></i>
               </a>
-              <button *ngIf="!a.lida" type="button" (click)="markRead(a)" class="sig-icon-btn sig-icon-btn--success" title="Marcar como lido" aria-label="Marcar alerta como lido">
+              <button *ngIf="!a.lida" type="button" (click)="markRead(a)" [disabled]="markingId === a.id" class="sig-icon-btn sig-icon-btn--success" title="Marcar como lido" aria-label="Marcar alerta como lido">
                 <i [class]="icons.check" aria-hidden="true"></i>
               </button>
-              <button type="button" (click)="remove(a)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir" aria-label="Excluir alerta">
+              <button type="button" (click)="askRemove(a)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir" aria-label="Excluir alerta">
                 <i [class]="icons.trash" aria-hidden="true"></i>
               </button>
             </div>
@@ -83,11 +84,15 @@ import { SigIcons } from '../../core/sig-icons';
         <div *ngIf="!filtered.length" class="sig-table-empty">Nenhum alerta</div>
       </div>
     </section>
+    <app-confirm [open]="confirmOpen" title="Excluir alerta" [message]="'Excluir ' + (toDelete ? displayTitle(toDelete) : 'este alerta') + '?'" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="remove()"></app-confirm>
   `
 })
 export class AlertsComponent implements OnInit, OnDestroy {
   readonly icons = SigIcons;
-  alerts: Alert[] = []; loading = true; filter = 'todos'; generating = false;
+  alerts: Alert[] = []; loading = true; filter = 'todos'; generating = false; markingAll = false; deleting = false;
+  markingId: string | null = null;
+  confirmOpen = false;
+  toDelete: Alert | null = null;
   private sub!: Subscription;
   constructor(private dashboard: DashboardService, private crud: CrudService, private api: ApiService, private toast: ToastService) {}
   ngOnInit() {
@@ -112,16 +117,28 @@ export class AlertsComponent implements OnInit, OnDestroy {
   alertIconClass(s: string) { return s === 'critico' ? 'sig-alert-item__icon--critical' : s === 'aviso' ? 'sig-alert-item__icon--warning' : 'sig-alert-item__icon--info'; }
 
   async markRead(a: Alert) {
-    await firstValueFrom(this.api.patchTable('alertas', a.id, { lida: true }));
-    a.lida = true;
+    if (this.markingId) return;
+    this.markingId = a.id;
+    try {
+      await firstValueFrom(this.api.patchTable('alertas', a.id, { lida: true }));
+      a.lida = true;
+    } finally {
+      this.markingId = null;
+    }
   }
   async markAllRead() {
     const ids = this.alerts.filter((x) => !x.lida).map((x) => x.id);
     if (!ids.length) return;
-    await Promise.all(ids.map((id) => firstValueFrom(this.api.patchTable('alertas', id, { lida: true }))));
-    void this.dashboard.loadData(true);
+    this.markingAll = true;
+    try {
+      await Promise.all(ids.map((id) => firstValueFrom(this.api.patchTable('alertas', id, { lida: true }))));
+      void this.dashboard.loadData(true);
+    } finally {
+      this.markingAll = false;
+    }
   }
-  async remove(a: Alert) { await this.crud.remove('alertas', a.id); }
+  askRemove(a: Alert) { this.toDelete = a; this.confirmOpen = true; }
+  async remove() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('alertas', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
 
   async generate() {
     this.generating = true;
