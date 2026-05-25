@@ -72,7 +72,7 @@ import { SigBadge } from '../../utils/status-badge';
         </label>
         <label class="text-sm">Status
           <select [(ngModel)]="form.status" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
-            <option value="ativo">Em uso</option><option value="estoque">Estoque</option><option value="manutencao">Manutenção</option><option value="aposentado">Aposentado</option>
+            <option value="ativo">Em uso</option><option value="estoque">Estoque</option><option value="manutencao">Manutenção</option><option value="descartado">Aposentado</option>
           </select>
         </label>
         <label class="text-sm">Marca<input [(ngModel)]="form.marca" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
@@ -113,7 +113,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   }
   openNew() { this.form = { tipo: 'Notebook', status: 'ativo', valor_aquisicao: 0, vida_util_meses: 60 }; this.modalOpen = true; }
   openEdit(a: Asset) {
-    const statusMap: any = { 'Em uso':'ativo','Estoque':'estoque','Manutenção':'manutencao','Aposentado':'aposentado' };
+    const statusMap: any = { 'Em uso':'ativo','Estoque':'estoque','Manutenção':'manutencao','Aposentado':'descartado' };
     this.form = { id: a.id, tipo: a.type, status: statusMap[a.status]||'ativo', marca: a.brand, modelo: a.model, numero_serie: a.serialNumber, assigned_to: a.assignedTo, department_nome: a.department, data_aquisicao: a.purchaseDate, warranty_end: a.warrantyEnd, valor_aquisicao: a.purchaseValue };
     this.modalOpen = true;
   }
@@ -123,7 +123,7 @@ export class AssetsComponent implements OnInit, OnDestroy {
   exportCSV() { exportToCSV(this.filtered.map(a => ({ Tipo: a.type, Marca: a.brand, Modelo: a.model, Serie: a.serialNumber, Status: a.status, Atribuido: a.assignedTo, Departamento: a.department, Aquisicao: a.purchaseDate, Valor: a.purchaseValue })), 'ativos'); }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
-    const map: any = { 'Em uso':'ativo','Estoque':'estoque','Manutenção':'manutencao','Aposentado':'aposentado' };
+    const map: any = { 'Em uso':'ativo','Estoque':'estoque','Manutenção':'manutencao','Aposentado':'descartado' };
     const payload = rows.map(r => ({ tipo: r['Tipo']||'Notebook', marca: r['Marca']||null, modelo: r['Modelo']||null, numero_serie: r['Serie']||null, status: map[r['Status']]||'ativo', assigned_to: r['Atribuido']||null, department_nome: r['Departamento']||null, data_aquisicao: r['Aquisicao']||null, valor_aquisicao: Number(r['Valor']||0) })).filter(r => r.tipo);
     if (payload.length) await this.crud.bulkInsert('ativos', payload);
     else this.ux.noImportRows('ativos');

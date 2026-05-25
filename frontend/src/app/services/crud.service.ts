@@ -71,13 +71,15 @@ export class CrudService {
     const row = this.withEmpresa(table, { ...payload, org_id: orgId }) as Record<string, unknown>;
     if (row['empresa_id'] === '') row['empresa_id'] = null;
     try {
+      let saved: unknown;
       if (row['id']) {
-        await firstValueFrom(this.api.patchTable(table, String(row['id']), row));
+        saved = await firstValueFrom(this.api.patchTable(table, String(row['id']), row));
       } else {
-        await firstValueFrom(this.api.postTable(table, row));
+        saved = await firstValueFrom(this.api.postTable(table, row));
       }
-      this.toast.show({ title: row['id'] ? 'Atualizado' : 'Criado', description: 'Registro salvo com sucesso' });
+      this.dashboard.applyTableMutation(table, saved, 'upsert');
       void this.dashboard.refreshAfterMutation();
+      this.toast.show({ title: row['id'] ? 'Atualizado' : 'Criado', description: 'Registro salvo com sucesso' });
       return true;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro', description: this.errMsg(e), variant: 'destructive' });
@@ -88,8 +90,9 @@ export class CrudService {
   async remove(table: string, id: string): Promise<boolean> {
     try {
       await firstValueFrom(this.api.deleteTable(table, id));
-      this.toast.show({ title: 'Excluído', description: 'Registro removido' });
+      this.dashboard.applyTableMutation(table, id, 'delete');
       void this.dashboard.refreshAfterMutation();
+      this.toast.show({ title: 'Excluído', description: 'Registro removido' });
       return true;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro', description: this.errMsg(e), variant: 'destructive' });
@@ -104,8 +107,13 @@ export class CrudService {
     try {
       const data = await firstValueFrom(this.api.postTable(table, payload));
       const n = Array.isArray(data) ? data.length : 1;
-      this.toast.show({ title: 'Importação concluída', description: `${n} registros importados` });
+      if (Array.isArray(data)) {
+        data.forEach((row) => this.dashboard.applyTableMutation(table, row, 'upsert'));
+      } else {
+        this.dashboard.applyTableMutation(table, data, 'upsert');
+      }
       void this.dashboard.refreshAfterMutation();
+      this.toast.show({ title: 'Importação concluída', description: `${n} registros importados` });
       return n;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro na importação', description: this.errMsg(e), variant: 'destructive' });

@@ -15,7 +15,7 @@ export interface Asset extends HasEmpresa {
   brand: string;
   model: string;
   serialNumber: string;
-  status: 'Em uso' | 'Estoque' | 'Manutenção' | 'Aposentado';
+  status: 'Em uso' | 'Estoque' | 'Manutenção' | 'Aposentado' | '';
   assignedTo: string | null;
   department: string;
   purchaseDate: string;
@@ -246,6 +246,23 @@ export class DashboardService {
     'riscos',
   ] as const;
 
+  private static readonly TABLE_STATE_KEYS: Record<string, string> = {
+    ativos: 'assets',
+    dominios: 'domains',
+    licencas: 'licenses',
+    servidores: 'servers',
+    contratos: 'contracts',
+    manutencoes: 'maintenance',
+    movimentacoes: 'movements',
+    inventario: 'inventory',
+    alertas: 'alerts',
+    orcamentos: 'budgets',
+    acoes_economista: 'actions',
+    registros_acesso: 'accessRecords',
+    riscos: 'risks',
+    pagamentos: 'payments',
+  };
+
   /** Populated in the constructor so `empresa` (a ctor parameter) exists before use. */
   public readonly data$: Observable<any>;
 
@@ -313,7 +330,8 @@ export class DashboardService {
       return Promise.resolve();
     }
     if (this.loadInFlight) {
-      return this.loadInFlight;
+      if (!force) return this.loadInFlight;
+      return this.loadInFlight.then(() => this.loadData(true, silent));
     }
     this.loadInFlight = this.fetchDashboard(silent).finally(() => {
       this.loadInFlight = null;
@@ -325,7 +343,45 @@ export class DashboardService {
     if (this._raw.value.loading) {
       this._raw.next({ ...this._raw.value, loading: false });
     }
+    this.lastFetchAt = 0;
+    this.fetchComplete = false;
     return this.loadData(true, true);
+  }
+
+  applyTableMutation(table: string, rowOrId: unknown, action: 'upsert' | 'delete'): void {
+    const key = DashboardService.TABLE_STATE_KEYS[table];
+    if (!key) return;
+
+    const current: any = this._raw.value;
+    const currentRows = Array.isArray(current[key]) ? current[key] : [];
+    const id = typeof rowOrId === 'object' && rowOrId !== null
+      ? String((rowOrId as { id?: unknown }).id || '')
+      : String(rowOrId || '');
+    if (!id) return;
+
+    if (action === 'delete') {
+      this._raw.next({
+        ...current,
+        [key]: currentRows.filter((item: { id?: unknown }) => String(item.id) !== id),
+        loading: false,
+      });
+      return;
+    }
+
+    if (!rowOrId || typeof rowOrId !== 'object') return;
+    const mapped = (this.mapDashboardPayload({ [table]: [rowOrId as Record<string, unknown>] }) as any)[key]?.[0];
+    if (!mapped) return;
+
+    const idx = currentRows.findIndex((item: { id?: unknown }) => String(item.id) === id);
+    const nextRows = idx >= 0
+      ? currentRows.map((item: { id?: unknown }, i: number) => (i === idx ? mapped : item))
+      : [mapped, ...currentRows];
+
+    this._raw.next({
+      ...current,
+      [key]: nextRows,
+      loading: false,
+    });
   }
 
   private isCacheFresh(): boolean {
@@ -496,14 +552,14 @@ export class DashboardService {
   private mapAsset(r: any): Asset {
     return {
       id: r.id,
-      type: r.tipo || 'Notebook',
+      type: r.tipo || '',
       brand: r.marca || '',
       model: r.modelo || '',
       serialNumber: r.numero_serie || '',
-      status: r.status === 'ativo' ? 'Em uso' : r.status === 'estoque' ? 'Estoque' : r.status === 'manutencao' ? 'Manutenção' : 'Aposentado',
+      status: r.status === 'ativo' ? 'Em uso' : r.status === 'estoque' ? 'Estoque' : r.status === 'manutencao' ? 'Manutenção' : r.status === 'descartado' ? 'Aposentado' : '',
       assignedTo: r.assigned_to || null,
       department: r.department_nome || '',
-      purchaseDate: r.data_aquisicao || new Date().toISOString().slice(0, 10),
+      purchaseDate: r.data_aquisicao || '',
       warrantyEnd: r.warranty_end || '',
       specs: r.specs || {},
       purchaseValue: Number(r.valor_aquisicao || 0),
@@ -513,19 +569,17 @@ export class DashboardService {
 
   private mapDomain(r: any): Domain {
     const exp = r.data_vencimento || '';
-    const days = exp ? Math.ceil((new Date(exp).getTime() - Date.now()) / 86400000) : 999;
-    const status = days <= 0 ? 'Expirado' : days <= 30 ? 'Expirando' : 'Ativo';
     return {
       id: r.id,
       url: r.nome,
       registrar: r.registrar || '',
       expirationDate: exp,
-      renewalCost: Number(r.custo_renovacao || r.custo_anual || 0),
+      renewalCost: Number(r.custo_renovacao ?? r.custo_anual ?? 0),
       autoRenew: !!r.auto_renovacao,
       dnsProvider: r.dns_provider || '',
       hostingProvider: r.hosting_provider || '',
-      sslExpiration: r.ssl_vencimento || exp,
-      status,
+      sslExpiration: r.ssl_vencimento || '',
+      status: r.status || '',
     };
   }
 
@@ -533,14 +587,14 @@ export class DashboardService {
     return {
       id: r.id,
       software: r.nome,
-      type: r.tipo || 'Mensal',
+      type: r.tipo || '',
       totalLicenses: r.total_licencas || 0,
       usedLicenses: r.qtd_usuarios || 0,
       activationKey: r.chave_ativacao || '',
       costPerUnit: Number(r.custo_unitario || 0),
       renewalDate: r.data_renovacao || '',
       vendor: r.fornecedor || '',
-      category: r.categoria || 'Produtividade',
+      category: r.categoria || '',
     };
   }
 
@@ -548,16 +602,16 @@ export class DashboardService {
     return {
       id: r.id,
       name: r.nome,
-      provider: r.provedor || 'Outro',
-      type: r.tipo || 'VPS',
+      provider: r.provedor || '',
+      type: r.tipo || '',
       region: r.regiao || '',
       ip: r.ip_publico || '',
       os: r.sistema_operacional || '',
       cpu: r.cpu || '',
       ram: r.ram || '',
       storage: r.armazenamento || '',
-      status: r.status || 'Online',
-      uptime: Number(r.uptime_pct || 100),
+      status: r.status || '',
+      uptime: Number(r.uptime_pct ?? 0),
       monthlyCost: Number(r.custo_mensal || 0),
       purpose: r.finalidade || '',
       responsibleTeam: r.equipe_responsavel || '',
@@ -574,7 +628,7 @@ export class DashboardService {
       id: r.id,
       supplier: r.supplier,
       object: r.object,
-      type: r.type || 'OPEX',
+      type: r.type || '',
       costCenter: r.cost_center || '',
       monthlyCost: Number(r.monthly_cost || 0),
     };
@@ -675,10 +729,10 @@ export class DashboardService {
       id: r.id,
       user: r.user_label || '',
       resource: r.recurso || '',
-      resourceType: r.recurso_tipo || 'Aplicação',
-      accessLevel: r.nivel_acesso || 'Leitura',
+      resourceType: r.recurso_tipo || '',
+      accessLevel: r.nivel_acesso || '',
       grantedDate: r.data_concessao,
-      lastAccess: r.ultimo_acesso || r.data_concessao,
+      lastAccess: r.ultimo_acesso || '',
       ativo: r.ativo,
     };
   }

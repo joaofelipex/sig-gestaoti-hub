@@ -48,7 +48,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
               <td class="fw-medium">{{ d.url }}</td>
               <td>{{ d.registrar }}</td>
               <td><span [class]="statusClass(d.status)">{{ d.status }}</span></td>
-              <td>{{ d.expirationDate | date:'dd/MM/yyyy' }}</td>
+              <td>{{ d.expirationDate ? (d.expirationDate | date:'dd/MM/yyyy') : '—' }}</td>
               <td>{{ d.sslExpiration ? (d.sslExpiration | date:'dd/MM/yyyy') : '—' }}</td>
               <td>R$ {{ d.renewalCost.toLocaleString('pt-BR') }}</td>
               <td class="text-end">
