@@ -55,8 +55,8 @@ import { SigBadge } from '../../utils/status-badge';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Servidor' : 'Novo Servidor'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Provedor<input [(ngModel)]="form.provedor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Tipo<input [(ngModel)]="form.tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" placeholder="VPS, Dedicado, Cloud..."/></label>
         <label class="text-sm">Status<select [(ngModel)]="form.status" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Online</option><option>Offline</option><option>Manutenção</option></select></label>
@@ -71,7 +71,7 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="text-sm">Custo Mensal (R$)<input type="number" step="0.01" [(ngModel)]="form.custo_mensal" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">SSL Vencimento<input type="date" [(ngModel)]="form.ssl_vencimento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Contrato fim<input type="date" [(ngModel)]="form.contrato_fim" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Finalidade<input [(ngModel)]="form.finalidade" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="md:col-span-2 text-sm">Finalidade<input [(ngModel)]="form.finalidade" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
       </div>
     </app-modal>
     <app-confirm [open]="confirmOpen" title="Excluir servidor" [message]="'Excluir ' + (toDelete?.name || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>

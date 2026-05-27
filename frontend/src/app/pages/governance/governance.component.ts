@@ -117,24 +117,24 @@ import { SigIcons } from '../../core/sig-icons';
     </section>
 
     <app-modal [open]="modalA" [title]="formA.id ? 'Editar Acesso' : 'Novo Acesso'" [saving]="saving" (close)="modalA=false" (save)="saveAccess()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Usuário *<input [(ngModel)]="formA.user_label" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Usuário *<input [(ngModel)]="formA.user_label" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Recurso<input [(ngModel)]="formA.recurso" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Tipo<select [(ngModel)]="formA.recurso_tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Aplicação</option><option>Servidor</option><option>Banco de Dados</option><option>Sistema</option></select></label>
         <label class="text-sm">Nível<select [(ngModel)]="formA.nivel_acesso" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Administrador</option><option>Escrita</option><option>Leitura</option></select></label>
         <label class="text-sm">Sistema<input [(ngModel)]="formA.sistema" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Concedido em<input type="date" [(ngModel)]="formA.data_concessao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Último acesso<input type="date" [(ngModel)]="formA.ultimo_acesso" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm flex items-center gap-2"><input type="checkbox" [(ngModel)]="formA.ativo"/> Ativo</label>
+        <label class="md:col-span-2 text-sm flex items-center gap-2"><input type="checkbox" [(ngModel)]="formA.ativo"/> Ativo</label>
       </div>
     </app-modal>
 
     <app-modal [open]="modalR" [title]="formR.id ? 'Editar Risco' : 'Novo Risco'" [saving]="saving" (close)="modalR=false" (save)="saveRisk()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Título *<input [(ngModel)]="formR.title" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Título *<input [(ngModel)]="formR.title" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Severidade<select [(ngModel)]="formR.severity" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Crítico</option><option>Alto</option><option>Médio</option><option>Baixo</option></select></label>
         <label class="text-sm">Responsável<input [(ngModel)]="formR.owner" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Mitigação<textarea [(ngModel)]="formR.mitigation" rows="3" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
+        <label class="md:col-span-2 text-sm">Mitigação<textarea [(ngModel)]="formR.mitigation" rows="3" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
 

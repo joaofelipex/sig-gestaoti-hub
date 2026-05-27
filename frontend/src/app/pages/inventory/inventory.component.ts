@@ -55,8 +55,8 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Item' : 'Novo Item'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Categoria<select [(ngModel)]="form.categoria" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option *ngFor="let c of categorias">{{c}}</option></select></label>
         <label class="text-sm">SKU<input [(ngModel)]="form.sku" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Quantidade<input type="number" [(ngModel)]="form.quantity" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
@@ -65,7 +65,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="text-sm">Custo Unit. (R$)<input type="number" step="0.01" [(ngModel)]="form.unit_cost" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Localização<input [(ngModel)]="form.location" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Fornecedor<input [(ngModel)]="form.supplier" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Notas<textarea [(ngModel)]="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
+        <label class="md:col-span-2 text-sm">Notas<textarea [(ngModel)]="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
     <app-confirm [open]="confirmOpen" title="Excluir item" [message]="'Excluir ' + (toDelete?.nome || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>

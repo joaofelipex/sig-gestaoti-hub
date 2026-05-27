@@ -66,16 +66,16 @@ import { SigIcons } from '../../core/sig-icons';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Pagamento' : 'Novo Pagamento'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Categoria<select [(ngModel)]="form.categoria" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option value="servidor">Servidor</option><option value="licenca">Licença</option><option value="dominio">Domínio</option><option value="contrato">Contrato</option><option value="outro">Outro</option></select></label>
         <label class="text-sm">Status<select [(ngModel)]="form.status" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option value="pendente">Pendente</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option></select></label>
         <label class="text-sm">Competência<input type="date" [(ngModel)]="form.competencia" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Vencimento<input type="date" [(ngModel)]="form.vencimento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Valor (R$)<input type="number" step="0.01" [(ngModel)]="form.valor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Data Pagamento<input type="date" [(ngModel)]="form.data_pagamento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Fornecedor<input [(ngModel)]="form.fornecedor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
+        <label class="md:col-span-2 text-sm">Fornecedor<input [(ngModel)]="form.fornecedor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="md:col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
     <app-confirm [open]="confirmOpen" title="Excluir pagamento" [message]="'Excluir ' + (toDelete?.nome || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>

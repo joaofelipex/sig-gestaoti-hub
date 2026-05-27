@@ -15,7 +15,7 @@ export interface FilterDef {
   imports: [CommonModule, FormsModule],
   template: `
     <div class="sig-toolbar-standalone flex flex-wrap items-center gap-3" role="toolbar">
-      <div class="sig-toolbar-search relative min-w-[200px] flex-1">
+      <div class="sig-toolbar-search relative min-w-0 sm:min-w-[200px] flex-1">
         <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
           <i [class]="icons.search"></i>
         </span>

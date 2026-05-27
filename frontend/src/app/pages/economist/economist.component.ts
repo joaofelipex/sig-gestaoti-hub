@@ -431,8 +431,8 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
       (close)="budgetModal = false"
       (save)="saveBudget()"
     >
-      <div class="sig-modal-form grid grid-cols-2 gap-4">
-        <label class="text-sm col-span-2">
+      <div class="sig-modal-form grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="text-sm md:col-span-2">
           Categoria *
           <input [(ngModel)]="budgetForm.category" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
         </label>
@@ -444,7 +444,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
           Centro de custo *
           <input [(ngModel)]="budgetForm.cost_center" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
         </label>
-        <label class="text-sm col-span-2">
+        <label class="text-sm md:col-span-2">
           Orçamento anual (R$) *
           <input
             type="number"
@@ -453,7 +453,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
             class="mt-1 w-full px-3 py-2 border rounded-md text-sm"
           />
         </label>
-        <label class="text-sm col-span-2">
+        <label class="text-sm md:col-span-2">
           Notas
           <textarea [(ngModel)]="budgetForm.notes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea>
         </label>
@@ -468,12 +468,12 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
       (close)="actionModal = false"
       (save)="saveAction()"
     >
-      <div class="sig-modal-form grid grid-cols-2 gap-4">
-        <label class="text-sm col-span-2">
+      <div class="sig-modal-form grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="text-sm md:col-span-2">
           Título *
           <input [(ngModel)]="actionForm.title" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
         </label>
-        <label class="text-sm col-span-2">
+        <label class="text-sm md:col-span-2">
           Descrição
           <textarea [(ngModel)]="actionForm.description" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea>
         </label>

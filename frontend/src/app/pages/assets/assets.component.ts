@@ -64,7 +64,7 @@ import { SigBadge } from '../../utils/status-badge';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Ativo' : 'Novo Ativo'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <label class="text-sm">Tipo *
           <select [(ngModel)]="form.tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
             <option>Notebook</option><option>Desktop</option><option>Monitor</option><option>Impressora</option><option>TV</option><option>Servidor</option><option>Periférico</option><option>Outro</option>
@@ -85,7 +85,7 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="text-sm">Garantia até<input type="date" [(ngModel)]="form.warranty_end" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Valor (R$)<input type="number" step="0.01" [(ngModel)]="form.valor_aquisicao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Vida útil (meses)<input type="number" [(ngModel)]="form.vida_util_meses" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" rows="2"></textarea></label>
+        <label class="md:col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" rows="2"></textarea></label>
       </div>
     </app-modal>
     <app-confirm [open]="confirmOpen" title="Excluir ativo" [message]="'Excluir ' + (toDelete?.brand || '') + ' ' + (toDelete?.model || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>

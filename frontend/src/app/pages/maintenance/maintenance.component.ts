@@ -55,8 +55,8 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Manutenção' : 'Nova Manutenção'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Ativo *
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Ativo *
           <select [(ngModel)]="form.ativo_id" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
             <option value="">Selecione...</option>
             <option *ngFor="let a of assets" [value]="a.id">{{ a.type }} {{ a.brand }} {{ a.model }} ({{ a.serialNumber || a.id.slice(0,8) }})</option>
@@ -68,7 +68,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="text-sm">Conclusão<input type="date" [(ngModel)]="form.data_conclusao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Fornecedor<input [(ngModel)]="form.fornecedor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Custo (R$)<input type="number" step="0.01" [(ngModel)]="form.custo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Descrição<textarea [(ngModel)]="form.descricao" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
+        <label class="md:col-span-2 text-sm">Descrição<textarea [(ngModel)]="form.descricao" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
     <app-confirm [open]="confirmOpen" title="Excluir manutenção" [message]="'Excluir manutenção de ' + (toDelete ? assetLabel(toDelete.ativo_id) : '?') + '?'" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>

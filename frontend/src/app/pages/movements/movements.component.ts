@@ -59,8 +59,8 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Movimentação' : 'Nova Movimentação'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Ativo *
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Ativo *
           <select [(ngModel)]="form.ativo_id" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
             <option value="">Selecione...</option>
             <option *ngFor="let a of assets" [value]="a.id">{{ a.type }} {{ a.brand }} {{ a.model }}</option>
@@ -74,8 +74,8 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="text-sm">Para (depto)<input [(ngModel)]="form.to_department" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Responsável<input [(ngModel)]="form.responsible" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Destinatário<input [(ngModel)]="form.recipient" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Motivo<input [(ngModel)]="form.reason" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Notas<textarea [(ngModel)]="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
+        <label class="md:col-span-2 text-sm">Motivo<input [(ngModel)]="form.reason" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="md:col-span-2 text-sm">Notas<textarea [(ngModel)]="form.notes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
     <app-confirm [open]="confirmOpen" title="Excluir movimentação" [message]="'Excluir movimentação de ' + (toDelete?.ativo_label || (toDelete ? assetLabel(toDelete.ativo_id) : '?')) + '?'" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>

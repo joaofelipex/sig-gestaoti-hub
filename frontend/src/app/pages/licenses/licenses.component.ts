@@ -60,8 +60,8 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Licença' : 'Nova Licença'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Software *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Software *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Fornecedor<input [(ngModel)]="form.fornecedor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Categoria
           <select [(ngModel)]="form.categoria" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
@@ -75,7 +75,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="text-sm">Em Uso<input type="number" [(ngModel)]="form.qtd_usuarios" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Custo Unitário (R$)<input type="number" step="0.01" [(ngModel)]="form.custo_unitario" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Renovação<input type="date" [(ngModel)]="form.data_renovacao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="col-span-2 text-sm">Chave de Ativação<input [(ngModel)]="form.chave_ativacao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="md:col-span-2 text-sm">Chave de Ativação<input [(ngModel)]="form.chave_ativacao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
       </div>
     </app-modal>
 

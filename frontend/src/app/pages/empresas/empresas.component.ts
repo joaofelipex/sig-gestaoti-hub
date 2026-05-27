@@ -66,8 +66,8 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Empresa' : 'Nova Empresa'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">CNPJ<input [(ngModel)]="form.cnpj" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" placeholder="00.000.000/0000-00"/></label>
         <label class="text-sm">Segmento<input [(ngModel)]="form.segmento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" placeholder="Tecnologia, Saúde..."/></label>
         <label class="text-sm">Responsável<input [(ngModel)]="form.responsavel" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
@@ -77,7 +77,7 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
             <option [ngValue]="false">Inativa</option>
           </select>
         </label>
-        <label class="col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
+        <label class="md:col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
     <app-confirm [open]="confirmOpen" title="Excluir empresa" [message]="'Excluir ' + (toDelete?.nome || '?') + '? Os registros vinculados não serão removidos.'" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>

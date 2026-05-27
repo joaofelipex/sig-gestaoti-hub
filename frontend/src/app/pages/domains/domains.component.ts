@@ -64,8 +64,8 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Domínio' : 'Novo Domínio'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-2 gap-4">
-        <label class="col-span-2 text-sm">Domínio *
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="md:col-span-2 text-sm">Domínio *
           <input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
         </label>
         <label class="text-sm">Registrador
@@ -88,7 +88,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
             <option>Ativo</option><option>Expirando</option><option>Expirado</option>
           </select>
         </label>
-        <label class="col-span-2 text-sm flex items-center gap-2">
+        <label class="md:col-span-2 text-sm flex items-center gap-2">
           <input type="checkbox" [(ngModel)]="form.auto_renovacao" /> Renovação automática
         </label>
       </div>
