@@ -17,7 +17,7 @@ import { EmpresaService } from '../../services/empresa.service';
       <div class="app-page-header">
         <div>
           <h1 class="app-page-title">Painel</h1>
-          <p class="app-page-sub">Bem-vindo(a), <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
+          <p class="app-page-sub">Bem-vindo, <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
         </div>
         <button type="button" (click)="logout()" class="btn btn-outline-danger btn-sm">
           <i class="fas fa-sign-out-alt me-1" aria-hidden="true"></i> Sair

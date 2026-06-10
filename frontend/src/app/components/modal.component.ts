@@ -6,7 +6,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="open" class="app-modal-backdrop" (click)="onBackdrop($event)">
+    <div *ngIf="open" class="app-modal-backdrop">
       <div class="app-modal-dialog" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
         <div class="app-modal-header">
           <h3 class="app-modal-title">{{ title }}</h3>
@@ -38,10 +38,6 @@ export class ModalComponent {
 
   requestSave(): void {
     if (!this.saving) this.save.emit();
-  }
-
-  onBackdrop(_e: MouseEvent): void {
-    this.requestClose();
   }
 
   @HostListener('document:keydown.escape')

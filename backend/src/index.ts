@@ -1,6 +1,7 @@
 import './env';
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import authRoutes from './routes/auth';
 import dataRoutes from './routes/data';
 import { ensureAuthSchema, getPostgresTargetLabel, pool, verifyConnection } from './db';
@@ -27,6 +28,7 @@ app.use(
         },
   ),
 );
+app.use(compression());
 app.use(express.json({ limit: '2mb' }));
 
 function sendApiHealth(_req: express.Request, res: express.Response) {
