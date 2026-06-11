@@ -56,7 +56,7 @@ import { WhiteLabelService } from '../../services/white-label.service';
             </div>
 
             <button type="submit" class="sig-login__submit" [disabled]="loading">
-              {{ tab === 'signin' ? 'Entrar' : 'Cadastrar' }}
+              {{ loading ? 'Carregando...' : (tab === 'signin' ? 'Entrar' : 'Cadastrar') }}
             </button>
           </form>
 
@@ -139,7 +139,7 @@ export class AuthComponent {
         });
       }
       this.empresa.setSelected(null);
-      await this.dashboard.loadData(true);
+      void this.dashboard.loadData(true);
       this.router.navigate(['/dashboard']);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Erro desconhecido';

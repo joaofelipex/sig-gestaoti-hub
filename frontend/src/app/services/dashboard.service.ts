@@ -331,7 +331,7 @@ export class DashboardService {
     }
     if (this.loadInFlight) {
       if (!force) return this.loadInFlight;
-      return this.loadInFlight.then(() => this.loadData(true, silent));
+      return this.loadInFlight;
     }
     this.loadInFlight = this.fetchDashboard(silent).finally(() => {
       this.loadInFlight = null;
@@ -465,7 +465,7 @@ export class DashboardService {
       this.fetchComplete = false;
       return;
     }
-    const showSpinner = !silent && !this.hasCachedRows();
+    const showSpinner = !silent && !this.hasCachedRows() && !this.fetchComplete;
     if (showSpinner) {
       this._raw.next({ ...this._raw.value, loading: true });
     }
@@ -480,7 +480,7 @@ export class DashboardService {
       this._raw.next({
         ...this._raw.value,
         ...this.mapDashboardPayload(priority),
-        loading: showSpinner,
+        loading: false,
       });
     } catch (error) {
       console.error('Erro ao carregar dados prioritários do painel:', error);

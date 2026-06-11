@@ -54,7 +54,7 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
                 <i class="fas fa-pen" aria-hidden="true"></i>
               </button>
               <button type="button" (click)="askDelete(e)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir">
-                <i class="fas fa-trash-can" aria-hidden="true"></i>
+                <i class="fas fa-trash" aria-hidden="true"></i>
               </button>
             </div>
           </div>
