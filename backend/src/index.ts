@@ -7,6 +7,8 @@ import dataRoutes from './routes/data';
 import { ensureAuthSchema, getPostgresTargetLabel, pool, verifyConnection } from './db';
 import { ensureEmpresasUniqueOnStartup } from './ensure-empresas-unique';
 import { logStartupDataSummary } from './startup-log';
+import { getDataScope } from './org-scope';
+import { requireJwtSecret } from './jwt';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
@@ -87,6 +89,11 @@ async function start() {
   await ensureAuthSchema();
   await ensureEmpresasUniqueOnStartup();
   await logStartupDataSummary();
+
+  requireJwtSecret();
+  if (getDataScope() === 'all') {
+    console.warn('[DATA_SCOPE] Aviso: DATA_SCOPE=all está ativo. UPDATE/DELETE por id podem afetar registros fora da org do perfil. Para isolar por organização, use DATA_SCOPE=org.');
+  }
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(

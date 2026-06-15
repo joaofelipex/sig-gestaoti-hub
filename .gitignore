@@ -13,7 +13,17 @@ dist-ssr
 *.local
 .env
 backend/.env
+config/stack.env
+config/stack.runtime.json
 .supabase
+
+# Agent / debug artifacts
+agent-*.txt
+**/strace_out.txt
+*-import-report.txt
+
+# Database dumps (use external backup storage)
+database/*_dump_*.sql
 
 # Editor directories and files
 .vscode/*

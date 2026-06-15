@@ -1,79 +1,50 @@
 # Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.10.
-
-Documentação de arquitetura do monorepo (stack, dados, segurança): [../docs/architecture.md](../docs/architecture.md).
+Angular 21 SPA do SIG Heartbeat Hub. Documentação do monorepo (stack, dados, segurança): [../docs/architecture.md](../docs/architecture.md). Guia operacional completo: [../docs/dados-e-banco.md](../docs/dados-e-banco.md).
 
 ## Development server
 
-To start a local development server, run from this folder:
+Com Postgres e API a correr (ver guia de dados), inicia só o Angular nesta pasta:
 
 ```bash
 npm run dev
 ```
 
-(same as `npm start` — `ng serve` on `http://0.0.0.0:8080` with `--poll` for WSL/Docker file watching.)
+(`npm start` é equivalente — `ng serve` em `http://0.0.0.0:8080` com `--poll` para WSL/Docker.)
 
-### Modo 100% local (Supabase CLI na máquina)
+Na **raiz do repositório**, `npm run dev` sobe API + Angular em paralelo.
 
-Com o stack `supabase start` a correr na raiz do monorepo (ver [../docs/local-stack.md](../docs/local-stack.md)):
+A app usa `proxy.conf.json`: pedidos `/api` e `/health` são encaminhados a `http://127.0.0.1:3000`. Abre [http://localhost:8080](http://localhost:8080).
 
-```bash
-npm run dev:local
-```
-
-Isto usa `environment.local.ts` (`http://127.0.0.1:54321` + chave anon local).
-
-From the **repository root**, you can still use `npm run dev` (it `cd`s into `frontend` first).
-
-Once the server is running, open your browser and navigate to `http://localhost:8080/`. The application will automatically reload whenever you modify any of the source files.
+Conta demo (após seed): **dev@local.imts** / **demo123456**.
 
 ### Tailwind CSS v4
 
-Global styles live in `src/styles.css`. Tailwind is wired through **PostCSS** (`.postcssrc.json` + devDependency `@tailwindcss/postcss`). If the UI looks like unstyled HTML, run `npm install` again inside `frontend/` in the **same environment you use for `ng serve`** (prefer running commands inside WSL, not against `\\wsl.localhost\…` from Windows, to avoid broken `node_modules`).
+Estilos globais em `src/styles.css`. Tailwind via PostCSS (`.postcssrc.json` + `@tailwindcss/postcss`). Se a UI parecer HTML sem estilo, executa `npm install` nesta pasta no **mesmo ambiente** que usas para `ng serve` (preferir WSL em vez de `\\wsl.localhost\…` no Windows).
 
 ## Code scaffolding
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
 ```bash
 ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
 ng generate --help
 ```
 
 ## Building
 
-To build the project run:
-
 ```bash
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Artefactos em `dist/`.
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+## Unit tests
 
 ```bash
 ng test
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+(Vitest via `@angular/build:unit-test`.)
 
 ## Additional Resources
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+[Angular CLI Overview and Command Reference](https://angular.dev/tools/cli)

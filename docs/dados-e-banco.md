@@ -39,7 +39,7 @@ A SPA **nunca** liga diretamente ao Postgres: só à API. A API valida o token e
 | URL da API (Angular) | `http://127.0.0.1:3000/api` |
 | Health (sem JWT) | `GET http://127.0.0.1:3000/health` |
 
-**Subir a API:** na raiz, `npm run api:dev` (ou `cd backend && npm run dev`).
+**Subir a API:** `cd backend && npm run dev` (porta **3000**).
 
 **Variáveis** (`backend/.env`, ver `backend/.env.example`): `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `PORT`, `JWT_SECRET`, `CORS_ORIGIN`.
 
@@ -47,13 +47,13 @@ A SPA **nunca** liga diretamente ao Postgres: só à API. A API valida o token e
 
 | Modo | Comando |
 |------|---------|
-| API + UI na raiz (após `npm run db:up`) | `npm run dev:stack` |
-| Só UI (API já a correr) | `npm run dev:ui` na raiz, ou `cd frontend && npm run dev:local` |
-| Genérico (sem `environment.local.ts`) | `cd frontend && npm run dev` |
+| API + UI (após `npm run db:up`) | `npm run dev` na raiz |
+| Só API | `cd backend && npm run dev` |
+| Só UI (API já a correr) | `cd frontend && npm run dev` |
 
 Conta demo (após seed): **dev@local.imts** / **demo123456**.
 
-Verificação rápida Postgres + API: na raiz, `npm run check:stack`.
+Verificação rápida Postgres + API: na raiz, `npm run doctor`.
 
 ## 4. Migrações SQL no Postgres local
 

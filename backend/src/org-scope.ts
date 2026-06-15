@@ -1,24 +1,27 @@
 /**
  * Âmbito dos dados na API (schema public).
  *
- * Leitura (SELECT): sempre todos os registos — org_id é metadado, não filtro de listagem.
+ * Leitura (SELECT): quando em modo org, filtra por org_id.
  * Escrita (UPDATE/DELETE): DATA_SCOPE=org limita à org do perfil; DATA_SCOPE=all só por id.
  * INSERT: org_id do perfil é sempre atribuído nas rotas de dados.
  */
 export type DataScope = 'all' | 'org';
 
 export function getDataScope(): DataScope {
-  const v = (process.env.DATA_SCOPE || 'all').trim().toLowerCase();
-  return v === 'org' ? 'org' : 'all';
+  const v = (process.env.DATA_SCOPE || 'org').trim().toLowerCase();
+  return v === 'all' ? 'all' : 'org';
 }
 
-/** Escopo de escrita (UPDATE/DELETE). Leituras ignoram org_id. */
+/** Escopo de escrita (UPDATE/DELETE). Leituras usam org_id quando configurado. */
 export function isOrgScoped(): boolean {
   return getDataScope() === 'org';
 }
 
-/** Cláusula WHERE para listagens em public.* — sempre todos os registos. */
-export function sqlOrgReadScope(_orgParam = '$1'): string {
+/** Cláusula WHERE para listagens em public.*. */
+export function sqlOrgReadScope(orgParam = '$1'): string {
+  if (isOrgScoped()) {
+    return `org_id = ${orgParam}::uuid`;
+  }
   return 'TRUE';
 }
 

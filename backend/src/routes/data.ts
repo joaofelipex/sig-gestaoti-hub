@@ -87,14 +87,15 @@ r.get('/dashboard', async (req: AuthedRequest, res) => {
   const scope = getDataScope();
   const tables = parseDashboardTables(req.query.tables);
   try {
-    const where = sqlOrgReadScope();
+    const where = sqlOrgReadScope('$1');
+    const params = isOrgScoped() ? [prof.org_id] : [];
     const rows = await Promise.all(
       tables.map(async (t) => {
         const cols = DASHBOARD_SELECT[t];
         const sql = cols
           ? `SELECT ${cols} FROM public.${t} WHERE ${where}`
           : `SELECT * FROM public.${t} WHERE ${where}`;
-        const q = await pool.query(sql);
+        const q = await pool.query(sql, params);
         return [t, q.rows] as const;
       }),
     );
@@ -114,7 +115,11 @@ r.get('/empresas', async (req: AuthedRequest, res) => {
     res.status(403).json({ error: 'Sem perfil' });
     return;
   }
-  const q = await pool.query(EMPRESAS_UNIQUE_SQL);
+
+  const sql = isOrgScoped()
+    ? `SELECT * FROM (${EMPRESAS_UNIQUE_SQL}) q WHERE q.org_id = $1`
+    : EMPRESAS_UNIQUE_SQL;
+  const q = await pool.query(sql, isOrgScoped() ? [prof.org_id] : []);
   res.json(q.rows);
 });
 
