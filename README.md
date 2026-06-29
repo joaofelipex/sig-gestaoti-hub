@@ -1,4 +1,4 @@
-# SIG Heartbeat Hub
+# SIG Gestão TI
 
 Console de gestão de TI para a holding IMTS (ativos, domínios, licenças, servidores, manutenção, inventário, pagamentos, governança, alertas, visão económica). O produto é **multi-organização** (`org_id`) e **multi-empresa** (`empresa_id`).
 

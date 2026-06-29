@@ -35,7 +35,7 @@ function buildDatabaseUrl(cfg) {
   const p = encodeURIComponent(cfg.DB_PASSWORD || 'postgres');
   const h = cfg.DB_HOST || '127.0.0.1';
   const port = cfg.DB_PORT || '5432';
-  const db = cfg.DB_DATABASE || 'sig_heartbeat_hub';
+  const db = cfg.DB_DATABASE || 'sig_gestao_ti';
   return `postgresql://${u}:${p}@${h}:${port}/${db}`;
 }
 
@@ -53,7 +53,7 @@ function loadBackendEnv() {
     DB_PORT,
     DB_USERNAME: cfg.DB_USERNAME || 'postgres',
     DB_PASSWORD: cfg.DB_PASSWORD || 'postgres',
-    DB_DATABASE: cfg.DB_DATABASE || 'sig_heartbeat_hub',
+    DB_DATABASE: cfg.DB_DATABASE || 'sig_gestao_ti',
     HOST_PG_PORT: cfg.DB_PORT || cfg.HOST_PG_PORT || '5432',
     API_PORT: cfg.PORT || '3000',
     PORT: cfg.PORT || '3000',

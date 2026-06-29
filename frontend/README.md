@@ -1,6 +1,6 @@
 # Frontend
 
-Angular 21 SPA do SIG Heartbeat Hub. Documentação do monorepo (stack, dados, segurança): [../docs/architecture.md](../docs/architecture.md). Guia operacional completo: [../docs/dados-e-banco.md](../docs/dados-e-banco.md).
+Angular 21 SPA do SIG Gestão TI. Documentação do monorepo (stack, dados, segurança): [../docs/architecture.md](../docs/architecture.md). Guia operacional completo: [../docs/dados-e-banco.md](../docs/dados-e-banco.md).
 
 ## Development server
 

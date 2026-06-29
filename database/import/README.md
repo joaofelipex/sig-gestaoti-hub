@@ -9,7 +9,7 @@ Passa a **URI** desse servidor. O script **apaga todas as linhas** do schema `pu
 **Windows (cmd):**
 
 ```bat
-set DATABASE_URL=postgresql://postgres:MINHASENHA@127.0.0.1:5433/sig_heartbeat_hub
+set DATABASE_URL=postgresql://postgres:MINHASENHA@127.0.0.1:5433/sig_gestao_ti
 set CSV_DIR=C:\Users\Infraestrutura-IMTS\Downloads
 npm run db:import-csv
 ```
@@ -17,7 +17,7 @@ npm run db:import-csv
 **WSL / Linux:**
 
 ```bash
-export DATABASE_URL="postgresql://postgres:MINHASENHA@127.0.0.1:5433/sig_heartbeat_hub"
+export DATABASE_URL="postgresql://postgres:MINHASENHA@127.0.0.1:5433/sig_gestao_ti"
 export CSV_DIR="/mnt/c/Users/Infraestrutura-IMTS/Downloads"
 npm run db:import-csv
 ```

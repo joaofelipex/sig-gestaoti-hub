@@ -13,8 +13,8 @@ set -o pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-CONTAINER_NAME="sig-heartbeat-hub-db"
-VOLUME_NAME="sig_heartbeat_hub_pgdata"
+CONTAINER_NAME="sig-gestao-ti-db"
+VOLUME_NAME="sig_gestao_ti_pgdata"
 # Porta no teu PC (evita outro Postgres que já use 5432). Dentro do contentor continua 5432.
 HOST_PG_PORT="${HOST_PG_PORT:-5433}"
 
@@ -62,7 +62,7 @@ plain_docker_up() {
     else
       echo "A iniciar contentor existente $CONTAINER_NAME..."
       docker start "$CONTAINER_NAME"
-      echo "Postgres em localhost:${HOST_PG_PORT} (postgres / postgres, DB sig_heartbeat_hub)"
+      echo "Postgres em localhost:${HOST_PG_PORT} (postgres / postgres, DB sig_gestao_ti)"
       return 0
     fi
   fi
@@ -73,12 +73,12 @@ plain_docker_up() {
     --restart unless-stopped \
     -e POSTGRES_USER=postgres \
     -e POSTGRES_PASSWORD=postgres \
-    -e POSTGRES_DB=sig_heartbeat_hub \
+    -e POSTGRES_DB=sig_gestao_ti \
     -p "${HOST_PG_PORT}:5432" \
     -v "$VOLUME_NAME:/var/lib/postgresql/data" \
     -v "$ROOT/database/init:/docker-entrypoint-initdb.d:ro" \
     postgres:16-alpine
-  echo "Postgres em localhost:${HOST_PG_PORT} (postgres / postgres, DB sig_heartbeat_hub)"
+  echo "Postgres em localhost:${HOST_PG_PORT} (postgres / postgres, DB sig_gestao_ti)"
 }
 
 plain_docker_down() {

@@ -1,4 +1,4 @@
--- SIG Heartbeat Hub — schema local (PostgreSQL 16)
+-- SIG Gestão TI — schema local (PostgreSQL 16)
 -- Derivado de frontend/src/app/services/database.types.ts + tabela empresas / empresa_id.
 -- Auth mínima: schema auth.users para FKs de profiles / user_roles.
 

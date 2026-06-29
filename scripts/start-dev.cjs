@@ -9,7 +9,7 @@ const isWin = process.platform === 'win32';
 const npm = isWin ? 'npm.cmd' : 'npm';
 
 console.log('');
-console.log('  SIG Heartbeat');
+console.log('  SIG Gestão TI');
 console.log('  API  →  http://127.0.0.1:3000');
 console.log('  App  →  http://127.0.0.1:8080');
 console.log('  (Ctrl+C para parar)\n');

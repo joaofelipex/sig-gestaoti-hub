@@ -41,7 +41,7 @@ function buildDatabaseUrl(cfg) {
   const p = encodeURIComponent(cfg.DB_PASSWORD || 'postgres');
   const h = cfg.DB_HOST || '127.0.0.1';
   const port = cfg.DB_PORT || '5433';
-  const db = cfg.DB_DATABASE || 'sig_heartbeat_hub';
+  const db = cfg.DB_DATABASE || 'sig_gestao_ti';
   return `postgresql://${u}:${p}@${h}:${port}/${db}`;
 }
 
@@ -66,7 +66,7 @@ function mergeStack() {
   cfg.DB_PORT = cfg.DB_PORT || cfg.HOST_PG_PORT;
   cfg.DB_USERNAME = cfg.DB_USERNAME || 'postgres';
   cfg.DB_PASSWORD = cfg.DB_PASSWORD || 'postgres';
-  cfg.DB_DATABASE = cfg.DB_DATABASE || 'sig_heartbeat_hub';
+  cfg.DB_DATABASE = cfg.DB_DATABASE || 'sig_gestao_ti';
   cfg.PUBLIC_API_URL = cfg.PUBLIC_API_URL != null && cfg.PUBLIC_API_URL !== '' ? cfg.PUBLIC_API_URL : '/api';
   cfg.CORS_ORIGIN =
     cfg.CORS_ORIGIN ||

@@ -12,9 +12,9 @@ if [ ! -f "$SQL" ]; then
 fi
 
 AUTH_SQL="$ROOT/database/init/03_api_auth.sql"
-echo ">> A aplicar seed em 127.0.0.1:${HOST_PG_PORT}/sig_heartbeat_hub ..."
-psql "postgresql://postgres@127.0.0.1:${HOST_PG_PORT}/sig_heartbeat_hub" -v ON_ERROR_STOP=1 -f "$SQL"
+echo ">> A aplicar seed em 127.0.0.1:${HOST_PG_PORT}/sig_gestao_ti ..."
+psql "postgresql://postgres@127.0.0.1:${HOST_PG_PORT}/sig_gestao_ti" -v ON_ERROR_STOP=1 -f "$SQL"
 if [ -f "$AUTH_SQL" ]; then
-  psql "postgresql://postgres@127.0.0.1:${HOST_PG_PORT}/sig_heartbeat_hub" -v ON_ERROR_STOP=1 -f "$AUTH_SQL"
+  psql "postgresql://postgres@127.0.0.1:${HOST_PG_PORT}/sig_gestao_ti" -v ON_ERROR_STOP=1 -f "$AUTH_SQL"
 fi
 echo ">> Seed concluído. Login: dev@local.imts / demo123456"

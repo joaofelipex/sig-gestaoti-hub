@@ -40,7 +40,7 @@ for cmd in pg_dump pg_restore psql; do
 done
 
 HOST_PG_PORT="${HOST_PG_PORT:-5433}"
-LOCAL_URL="postgresql://postgres:${LOCAL_POSTGRES_PASSWORD:-postgres}@127.0.0.1:${HOST_PG_PORT}/sig_heartbeat_hub?sslmode=disable"
+LOCAL_URL="postgresql://postgres:${LOCAL_POSTGRES_PASSWORD:-postgres}@127.0.0.1:${HOST_PG_PORT}/sig_gestao_ti?sslmode=disable"
 export PGPASSWORD="${LOCAL_POSTGRES_PASSWORD:-postgres}"
 
 echo ">> A verificar Postgres local (127.0.0.1:${HOST_PG_PORT})..."
@@ -78,7 +78,7 @@ if [ "${FULL_PUBLIC_SCHEMA:-0}" = "1" ]; then
 
   echo ">> A restaurar no local ( --clean apaga objetos public existentes no dump )..."
   set +e
-  pg_restore -h 127.0.0.1 -p "$HOST_PG_PORT" -U postgres -d sig_heartbeat_hub \
+  pg_restore -h 127.0.0.1 -p "$HOST_PG_PORT" -U postgres -d sig_gestao_ti \
     --clean --if-exists --no-owner --no-acl --verbose "$DUMP_FULL" 2>&1
   RC=$?
   set -e
@@ -107,7 +107,7 @@ else
 
   echo ">> 4/4 pg_restore --data-only --disable-triggers (local)..."
   set +e
-  pg_restore -h 127.0.0.1 -p "$HOST_PG_PORT" -U postgres -d sig_heartbeat_hub \
+  pg_restore -h 127.0.0.1 -p "$HOST_PG_PORT" -U postgres -d sig_gestao_ti \
     --data-only \
     --disable-triggers \
     --no-owner \
@@ -125,5 +125,5 @@ fi
 
 echo ""
 echo ">> Concluído."
-echo "    psql:  postgresql://postgres:postgres@127.0.0.1:${HOST_PG_PORT}/sig_heartbeat_hub"
-echo "    DBeaver: host 127.0.0.1, porta ${HOST_PG_PORT}, base sig_heartbeat_hub, user postgres, password postgres"
+echo "    psql:  postgresql://postgres:postgres@127.0.0.1:${HOST_PG_PORT}/sig_gestao_ti"
+echo "    DBeaver: host 127.0.0.1, porta ${HOST_PG_PORT}, base sig_gestao_ti, user postgres, password postgres"

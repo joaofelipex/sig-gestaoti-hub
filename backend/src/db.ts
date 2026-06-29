@@ -23,7 +23,7 @@ export function getPostgresTargetLabel(): string {
   }
   const host = process.env.DB_HOST || '127.0.0.1';
   const port = process.env.DB_PORT || '5433';
-  const db = process.env.DB_DATABASE || 'sig_heartbeat_hub';
+  const db = process.env.DB_DATABASE || 'sig_gestao_ti';
   return `${host}:${port}/${db}`;
 }
 
@@ -37,7 +37,7 @@ function buildPoolConfig(): PoolConfig {
     port: parseInt(process.env.DB_PORT || '5433', 10),
     user: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_DATABASE || 'sig_heartbeat_hub',
+    database: process.env.DB_DATABASE || 'sig_gestao_ti',
   };
 }
 
@@ -62,7 +62,7 @@ export async function verifyConnection(): Promise<PostgresTarget> {
 
   const row = r.rows[0];
   return {
-    database: row.database || dbName || process.env.DB_DATABASE || 'sig_heartbeat_hub',
+    database: row.database || dbName || process.env.DB_DATABASE || 'sig_gestao_ti',
     host: row.host || hostFromEnv || '127.0.0.1',
     port: row.port ?? parseInt(portFromEnv || process.env.DB_PORT || '5432', 10),
   };

@@ -18,7 +18,7 @@ A SPA **nunca** liga diretamente ao Postgres: só à API. A API valida o token e
 | Porta | `5433` (`HOST_PG_PORT` no `scripts/db.sh`) |
 | Utilizador | `postgres` |
 | Palavra-passe | `postgres` |
-| Base | `sig_heartbeat_hub` |
+| Base | `sig_gestao_ti` |
 
 **Comandos (raiz do repo):**
 

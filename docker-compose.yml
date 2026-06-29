@@ -1,23 +1,23 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: sig-heartbeat-hub-db
+    container_name: sig-gestao-ti-db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: sig_heartbeat_hub
+      POSTGRES_DB: sig_gestao_ti
     ports:
       # Host 5433 evita conflito com outro Postgres na 5432 (WSL/Windows/DBeaver).
       - "5433:5432"
     volumes:
-      - sig_heartbeat_hub_pgdata:/var/lib/postgresql/data
+      - sig_gestao_ti_pgdata:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d sig_heartbeat_hub"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d sig_gestao_ti"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-  sig_heartbeat_hub_pgdata:
+  sig_gestao_ti_pgdata:

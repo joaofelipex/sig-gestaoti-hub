@@ -8,7 +8,7 @@
  *
  * Uso:
  *   npm run db:apply-migrations
- *   DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/sig_heartbeat_hub" npm run db:apply-migrations
+ *   DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/sig_gestao_ti" npm run db:apply-migrations
  */
 const fs = require('fs');
 const path = require('path');
@@ -46,7 +46,7 @@ function resolveDatabaseUrl() {
   if (u) return u.trim();
   const port = process.env.HOST_PG_PORT || '5433';
   const pw = process.env.LOCAL_POSTGRES_PASSWORD || 'postgres';
-  return `postgresql://postgres:${encodeURIComponent(pw)}@127.0.0.1:${port}/sig_heartbeat_hub`;
+  return `postgresql://postgres:${encodeURIComponent(pw)}@127.0.0.1:${port}/sig_gestao_ti`;
 }
 
 function maskUrl(u) {

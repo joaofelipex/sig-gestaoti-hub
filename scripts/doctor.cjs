@@ -24,7 +24,7 @@ async function main() {
   const host = cfg.DB_HOST;
   const port = parseInt(cfg.DB_PORT, 10);
 
-  console.log('=== SIG Heartbeat — diagnóstico ===\n');
+  console.log('=== SIG Gestão TI — diagnóstico ===\n');
   console.log(`Config: backend/.env`);
   console.log(`Postgres: ${cfg.DATABASE_URL.replace(/:([^:@/]+)@/, ':***@')}`);
   console.log(`API: http://127.0.0.1:${cfg.API_PORT}\n`);

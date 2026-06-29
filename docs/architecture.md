@@ -1,10 +1,10 @@
-# Arquitetura — SIG Heartbeat Hub
+# Arquitetura — SIG Gestão TI
 
 Este documento descreve o **projeto atual do sistema** após a migração para a arquitetura 100% customizada (sem Supabase). 
 
 ## 1. Visão Geral e Contexto
 
-O **SIG Heartbeat Hub** é um console de gestão de TI desenvolvido para a holding IMTS. O sistema centraliza a operação tecnológica: inventário de ativos, contratos, domínios (DNS), licenças, servidores, riscos, orçamentos e alertas.
+O **SIG Gestão TI** é um console de gestão de TI desenvolvido para a holding IMTS. O sistema centraliza a operação tecnológica: inventário de ativos, contratos, domínios (DNS), licenças, servidores, riscos, orçamentos e alertas.
 
 A aplicação é fortemente **multi-tenant** com dois níveis de isolamento:
 - **Organização (`org_id`)**: Isolamento primário (nível macro).
