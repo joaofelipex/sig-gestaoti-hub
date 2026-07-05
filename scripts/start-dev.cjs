@@ -2,11 +2,19 @@
  * Arranque opcional na raiz: API + UI (npm run dev na raiz do repo).
  */
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
 const isWin = process.platform === 'win32';
 const npm = isWin ? 'npm.cmd' : 'npm';
+
+const freePorts = spawnSync(process.execPath, [path.join(__dirname, 'dev-ports.cjs'), 'free'], {
+  cwd: root,
+  stdio: 'inherit',
+});
+if (freePorts.status !== 0) {
+  process.exit(freePorts.status ?? 1);
+}
 
 console.log('');
 console.log('  SIG Gestão TI');

@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { filter, take } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { DashboardService } from '../../services/dashboard.service';
 import { EmpresaService } from '../../services/empresa.service';
@@ -69,7 +70,7 @@ import { WhiteLabelService } from '../../services/white-label.service';
   `,
   styles: [],
 })
-export class AuthComponent {
+export class AuthComponent implements OnInit {
   tab: 'signin' | 'signup' = 'signin';
   form: FormGroup;
   loading = false;
@@ -88,6 +89,16 @@ export class AuthComponent {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
+  }
+
+  ngOnInit() {
+    this.authService.loading$
+      .pipe(filter((loading) => !loading), take(1))
+      .subscribe(() => {
+        if (this.authService.user) {
+          this.router.navigate(['/dashboard']);
+        }
+      });
   }
 
   toggleTab() {

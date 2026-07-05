@@ -6,15 +6,26 @@ import { AUTH_TOKEN_STORAGE_KEY } from './auth-storage';
 
 export interface MeResponse {
   user: { id: string; email?: string };
-  profile: { org_id: string; org_nome?: string; nome: string; email: string };
+  profile: {
+    org_id: string;
+    org_nome?: string;
+    nome: string;
+    email: string;
+    role?: 'admin' | 'gestor' | 'usuario';
+  };
+  permissions?: { canWrite: boolean };
   postgres?: { configured: string; database: string | null; host: string | null; port: number | null };
   dataCounts?: { ativos: number; empresas: number; alertas: number };
   dataScope?: 'all' | 'org';
   writeScope?: 'all' | 'org';
-  databaseSummary?: {
-    totalAtivos: number;
-    topOrg: { org_id: string; org_nome: string; ativos: number } | null;
-  };
+}
+
+export interface DataStatusResponse {
+  org_id: string;
+  org_nome: string;
+  dataScope: 'all' | 'org';
+  role: 'admin' | 'gestor' | 'usuario';
+  tableCounts: Record<string, number>;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -94,6 +105,10 @@ export class ApiService {
 
   getEmpresas(): Observable<unknown[]> {
     return this.http.get<unknown[]>(this.api('/data/empresas'));
+  }
+
+  getDataStatus(): Observable<DataStatusResponse> {
+    return this.http.get<DataStatusResponse>(this.api('/data/status'));
   }
 
   postTable(table: string, body: unknown): Observable<unknown> {

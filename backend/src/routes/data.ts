@@ -5,10 +5,11 @@ import { API_TABLES } from '../tables';
 import { pickRowColumns } from '../columns';
 import type { AuthedRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
-import { getProfileOrg } from './auth';
+import { getProfileOrg } from '../profile';
 import { EMPRESAS_UNIQUE_SQL } from '../empresa-dedupe';
 import { findExistingEmpresa } from '../empresa-dedupe-db';
 import { getDataScope, isOrgScoped, sqlOrgReadScope, sqlOrgWriteScope } from '../org-scope';
+import { requireWriteAccess } from '../middleware/rbac';
 
 const r = Router();
 
@@ -77,6 +78,58 @@ function parseDashboardTables(raw: unknown): DashboardTable[] {
 
 r.use(requireAuth);
 
+const STATUS_TABLES = [
+  'empresas',
+  'ativos',
+  'dominios',
+  'licencas',
+  'servidores',
+  'contratos',
+  'manutencoes',
+  'movimentacoes',
+  'inventario',
+  'alertas',
+  'orcamentos',
+  'acoes_economista',
+  'registros_acesso',
+  'riscos',
+  'pagamentos',
+] as const;
+
+r.get('/status', async (req: AuthedRequest, res) => {
+  const uid = req.userId!;
+  const prof = await getProfileOrg(uid);
+  if (!prof) {
+    res.status(403).json({ error: 'Sem perfil' });
+    return;
+  }
+  const scope = getDataScope();
+  const where = sqlOrgReadScope('$1');
+  const params = isOrgScoped() ? [prof.org_id] : [];
+  try {
+    const counts = await Promise.all(
+      STATUS_TABLES.map(async (table) => {
+        const q = await pool.query<{ count: string }>(
+          `SELECT count(*)::text AS count FROM public.${table} WHERE ${where}`,
+          params,
+        );
+        return [table, parseInt(q.rows[0]?.count ?? '0', 10)] as const;
+      }),
+    );
+    res.setHeader('X-Data-Scope', scope);
+    res.json({
+      org_id: prof.org_id,
+      org_nome: prof.org_nome,
+      dataScope: scope,
+      role: prof.role,
+      tableCounts: Object.fromEntries(counts),
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Erro ao obter estado dos dados' });
+  }
+});
+
 r.get('/dashboard', async (req: AuthedRequest, res) => {
   const uid = req.userId!;
   const prof = await getProfileOrg(uid);
@@ -123,7 +176,7 @@ r.get('/empresas', async (req: AuthedRequest, res) => {
   res.json(q.rows);
 });
 
-r.post('/:table', async (req: AuthedRequest, res) => {
+r.post('/:table', requireWriteAccess, async (req: AuthedRequest, res) => {
   const table = String(req.params.table || '');
   if (!API_TABLES.has(table)) {
     res.status(404).json({ error: 'Tabela não permitida' });
@@ -190,7 +243,7 @@ r.post('/:table', async (req: AuthedRequest, res) => {
   }
 });
 
-r.patch('/:table/:id', async (req: AuthedRequest, res) => {
+r.patch('/:table/:id', requireWriteAccess, async (req: AuthedRequest, res) => {
   const table = String(req.params.table || '');
   const id = String(req.params.id || '');
   if (!API_TABLES.has(table)) {
@@ -236,7 +289,7 @@ r.patch('/:table/:id', async (req: AuthedRequest, res) => {
   }
 });
 
-r.delete('/:table/:id', async (req: AuthedRequest, res) => {
+r.delete('/:table/:id', requireWriteAccess, async (req: AuthedRequest, res) => {
   const table = String(req.params.table || '');
   const id = String(req.params.id || '');
   if (!API_TABLES.has(table)) {

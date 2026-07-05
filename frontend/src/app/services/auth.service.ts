@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, finalize, of } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, tap, timeout } from 'rxjs/operators';
 import { ApiService } from './api.service';
 
 export interface AuthUser {
@@ -37,12 +37,14 @@ export class AuthService {
     this.api
       .me()
       .pipe(
+        timeout(8000),
         tap((res) => this._user.next({ id: res.user.id, email: res.user.email })),
         catchError((err: unknown) => {
-          const status = err instanceof HttpErrorResponse ? err.status : 0;
-          if (status === 401 || status === 403 || status === 404) {
-            this.api.setToken(null);
-            this._user.next(null);
+          // Sessão inválida ou API indisponível — limpa token para mostrar o login.
+          this.api.setToken(null);
+          this._user.next(null);
+          if (err instanceof HttpErrorResponse && err.status === 0) {
+            console.warn('[auth] API inacessível durante bootstrap da sessão');
           }
           return of(null);
         }),

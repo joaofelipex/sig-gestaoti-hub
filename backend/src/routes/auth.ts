@@ -1,26 +1,18 @@
 import { Router } from 'express';
 import { randomUUID } from 'crypto';
 import { getPostgresTargetLabel, pool, verifyConnection } from '../db';
-import { isOrgScoped } from '../org-scope';
+import { getDataScope, isOrgScoped } from '../org-scope';
 import { signToken } from '../jwt';
 import type { AuthedRequest } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
+import { authRateLimit } from '../middleware/rate-limit';
+import { canWrite, getProfileOrg } from '../profile';
 
 const r = Router();
 
-export async function getProfileOrg(userId: string) {
-  const q = await pool.query(
-    `SELECT p.org_id, p.email, p.nome, o.nome AS org_nome
-     FROM public.profiles p
-     JOIN public.organizations o ON o.id = p.org_id
-     WHERE p.user_id = $1
-     LIMIT 1`,
-    [userId],
-  );
-  return q.rows[0] as { org_id: string; email: string; nome: string; org_nome: string } | undefined;
-}
+export { getProfileOrg } from '../profile';
 
-r.post('/login', async (req, res) => {
+r.post('/login', authRateLimit, async (req, res) => {
   const email = String(req.body?.email || '')
     .trim()
     .toLowerCase();
@@ -34,7 +26,7 @@ r.post('/login', async (req, res) => {
      WHERE lower(coalesce(email,'')) = $1
        AND encrypted_password IS NOT NULL
        AND crypt($2::text, encrypted_password::text) = encrypted_password`,
-    [email, password]
+    [email, password],
   );
   const row = u.rows[0] as { id: string; email: string } | undefined;
   if (!row) {
@@ -53,27 +45,22 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
     return;
   }
   const orgId = prof.org_id;
-  const [pg, countsQ, globalQ, topOrgQ] = await Promise.all([
+  const scope = getDataScope();
+  const orgFilter = isOrgScoped() ? 'WHERE org_id = $1' : '';
+  const orgParams = isOrgScoped() ? [orgId] : [];
+
+  const [pg, countsQ] = await Promise.all([
     verifyConnection().catch(() => null),
     pool.query<{ ativos: number; empresas: number; alertas: number }>(
       `SELECT
-         (SELECT count(*)::int FROM public.ativos) AS ativos,
-         (SELECT count(*)::int FROM public.empresas) AS empresas,
-         (SELECT count(*)::int FROM public.alertas) AS alertas`,
-    ),
-    pool.query<{ ativos: number }>(`SELECT count(*)::int AS ativos FROM public.ativos`),
-    pool.query<{ org_id: string; org_nome: string; ativos: number }>(
-      `SELECT o.id AS org_id, o.nome AS org_nome, count(a.id)::int AS ativos
-       FROM public.organizations o
-       LEFT JOIN public.ativos a ON a.org_id = o.id
-       GROUP BY o.id, o.nome
-       ORDER BY count(a.id) DESC
-       LIMIT 1`,
+         (SELECT count(*)::int FROM public.ativos ${orgFilter}) AS ativos,
+         (SELECT count(*)::int FROM public.empresas ${orgFilter}) AS empresas,
+         (SELECT count(*)::int FROM public.alertas ${orgFilter}) AS alertas`,
+      orgParams,
     ),
   ]);
   const counts = countsQ.rows[0] ?? { ativos: 0, empresas: 0, alertas: 0 };
-  const globalAtivos = globalQ.rows[0]?.ativos ?? 0;
-  const topOrg = topOrgQ.rows[0];
+
   res.json({
     user: { id: uid, email: prof.email },
     profile: {
@@ -81,6 +68,10 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
       org_nome: prof.org_nome,
       nome: prof.nome,
       email: prof.email,
+      role: prof.role,
+    },
+    permissions: {
+      canWrite: canWrite(prof.role),
     },
     postgres: {
       configured: getPostgresTargetLabel(),
@@ -89,15 +80,8 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
       port: pg?.port ?? null,
     },
     dataCounts: counts,
-    dataScope: 'all',
-    writeScope: isOrgScoped() ? 'org' : 'all',
-    databaseSummary: {
-      totalAtivos: globalAtivos,
-      topOrg:
-        topOrg && topOrg.ativos > 0
-          ? { org_id: topOrg.org_id, org_nome: topOrg.org_nome, ativos: topOrg.ativos }
-          : null,
-    },
+    dataScope: scope,
+    writeScope: scope,
   });
 });
 
@@ -105,7 +89,7 @@ r.post('/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
-r.post('/signup', async (req, res) => {
+r.post('/signup', authRateLimit, async (req, res) => {
   const email = String(req.body?.email || '')
     .trim()
     .toLowerCase();
@@ -127,13 +111,13 @@ r.post('/signup', async (req, res) => {
     await client.query('BEGIN');
     const org = await client.query(
       `INSERT INTO public.organizations (nome, cnpj, plano) VALUES ($1, null, 'standard') RETURNING id`,
-      [organizacao]
+      [organizacao],
     );
     const orgId = org.rows[0].id as string;
     const userId = randomUUID();
     const hashRow = await client.query<{ hash: string }>(
       `SELECT crypt($1::text, gen_salt('bf')) AS hash`,
-      [password]
+      [password],
     );
     const hash = hashRow.rows[0]?.hash;
     if (!hash) {
@@ -141,11 +125,11 @@ r.post('/signup', async (req, res) => {
     }
     await client.query(
       `INSERT INTO auth.users (id, email, encrypted_password, created_at) VALUES ($1, $2, $3, now())`,
-      [userId, email, hash]
+      [userId, email, hash],
     );
     await client.query(
       `INSERT INTO public.profiles (user_id, org_id, email, nome) VALUES ($1, $2, $3, $4)`,
-      [userId, orgId, email, nome]
+      [userId, orgId, email, nome],
     );
     await client.query(`INSERT INTO public.user_roles (user_id, org_id, role) VALUES ($1, $2, 'admin')`, [
       userId,

@@ -7,22 +7,31 @@ import { KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComp
 import { SigIcons } from '../../core/sig-icons';
 import { ApiService } from '../../services/api.service';
 import { EmpresaService } from '../../services/empresa.service';
+import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
+import { TiContextStripComponent } from '../../components/ti-context-strip.component';
+import { formatBrl } from '../../utils/financial.util';
+import { healthScoreColor } from '../../utils/health.util';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComponent],
+  imports: [CommonModule, KpiCardComponent, BarChartComponent, DonutChartComponent, LineChartComponent, TiContextStripComponent],
   template: `
     <section class="sig-page">
       <div class="app-page-header">
         <div>
           <h1 class="app-page-title">Painel</h1>
-          <p class="app-page-sub">Bem-vindo, <span class="font-medium text-gray-700">{{ user?.email }}</span></p>
+          <p class="app-page-sub">
+            Bem-vindo, <span class="font-medium text-gray-700">{{ user?.email }}</span>
+            · visão operacional integrada ao Economista e Pagamentos
+          </p>
         </div>
         <button type="button" (click)="logout()" class="btn btn-outline-danger btn-sm">
           <i class="fas fa-sign-out-alt me-1" aria-hidden="true"></i> Sair
         </button>
       </div>
+
+      <app-ti-context-strip highlight="dashboard"></app-ti-context-strip>
 
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
 
@@ -55,7 +64,7 @@ import { EmpresaService } from '../../services/empresa.service';
         </div>
 
         <div class="sig-kpi-grid sig-kpi-grid--6">
-          <app-kpi-card label="Índice de saúde" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" [hint]="healthHint"></app-kpi-card>
+          <app-kpi-card label="Saúde operacional" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" [hint]="healthHint"></app-kpi-card>
           <app-kpi-card label="Ativos em uso" [value]="assetsInUse" [icon]="icons.assets" color="#3b82f6" [hint]="assetsHint"></app-kpi-card>
           <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" [icon]="icons.cost" color="#10b981" [hint]="costHint"></app-kpi-card>
           <app-kpi-card label="Domínios ≤30d" [value]="domainsExpiring" [icon]="icons.domain" color="#f59e0b" [hint]="domainsHint"></app-kpi-card>
@@ -138,6 +147,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     );
   }
   data: any = { assets: [], domains: [], licenses: [], servers: [], alerts: [], payments: [], loading: true };
+  ti: TiMetrics | null = null;
   loading = true;
   healthScore = 0; healthHint = 'Saúde geral da TI'; assetsInUse = 0; domainsExpiring = 0; unusedLicenses = 0; monthlyCost = 0; criticalAlerts = 0;
   assetsHint = 'Ativos cadastrados';
@@ -155,12 +165,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   licenseUsagePct = 0;
   unreadAlerts = 0;
   private sub!: Subscription;
+  private metricsSub!: Subscription;
 
   constructor(
     private authService: AuthService,
     private dashboardService: DashboardService,
     private api: ApiService,
     private empresaService: EmpresaService,
+    private tiMetrics: TiMetricsService,
   ) {}
   ngOnInit() {
     this.empresaFilterActive = !!this.empresaService.selectedId;
@@ -188,16 +200,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: () => {},
     });
     void this.dashboardService.loadData(true);
+    this.metricsSub = this.tiMetrics.metrics$.subscribe((m) => {
+      this.ti = m;
+      if (!m.loading) {
+        this.healthScore = m.operationalHealthScore;
+        this.healthHint = m.operationalHealthHint.replace(/^Operacional · /, '');
+        this.monthlyCost = m.operationalMonthlyCost;
+        this.costHint = m.operationalCostHint;
+        this.costByCategory = m.costByCategory;
+        this.criticalAlerts = m.criticalAlerts;
+        this.domainsExpiring = m.domainsExpiring;
+        this.unusedLicenses = m.unusedLicenses;
+        this.assetsInUse = m.assetsInUse;
+        this.assetsHint = `${m.assetsInUse} ativo(s) em uso`;
+        this.alertsHint = `${m.criticalAlerts} crítico(s) · integrado aos Alertas`;
+      }
+    });
     this.sub = this.dashboardService.data$.subscribe((d) => {
       this.data = d;
       this.loading = d.loading;
       if (!d.loading) this.compute();
     });
   }
-  ngOnDestroy() { this.sub?.unsubscribe(); }
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+    this.metricsSub?.unsubscribe();
+  }
 
-  brl(v: number) { return 'R$ ' + (v||0).toLocaleString('pt-BR', { maximumFractionDigits: 0 }); }
-  get healthColor() { return this.healthScore >= 80 ? '#10b981' : this.healthScore >= 50 ? '#f59e0b' : '#ef4444'; }
+  brl(v: number) { return formatBrl(v); }
+  get healthColor() { return healthScoreColor(this.healthScore); }
 
   private compute() {
     const { assets, domains, licenses, servers, alerts, payments } = this.data;
@@ -206,23 +237,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.assetsInUse = assets.filter((a: any) => a.status === 'Em uso').length;
     this.domainsExpiring = domains.filter((d: any) => d.expirationDate && days(d.expirationDate) > 0 && days(d.expirationDate) <= 30).length;
     this.unusedLicenses = licenses.reduce((s: number, l: any) => s + Math.max(0, l.totalLicenses - l.usedLicenses), 0);
-    this.criticalAlerts = alerts.filter((a: any) => a.severidade === 'critico' && !a.lida).length;
 
-    const serverCost = servers.reduce((s: number, x: any) => s + (x.monthlyCost||0), 0);
-    const licCost = licenses.reduce((s: number, l: any) => {
-      const seats = l.totalLicenses || l.usedLicenses || 0;
-      const monthlyFactor = l.type === 'Mensal' ? 1 : 1 / 12;
-      return s + (l.costPerUnit || 0) * seats * monthlyFactor;
-    }, 0);
-    const domCost = domains.reduce((s: number, d: any) => s + (d.renewalCost||0)/12, 0);
-    this.monthlyCost = Math.round(serverCost + licCost + domCost);
-    this.updateKpiHints({ assets, domains, licenses, alerts, serverCost, licCost, domCost, days });
-
-    this.costByCategory = [
-      { label: 'Servidores', value: Math.round(serverCost), color: '#023ed8' },
-      { label: 'Licenças', value: Math.round(licCost), color: '#8b5cf6' },
-      { label: 'Domínios', value: Math.round(domCost), color: '#06b6d4' },
-    ].filter((d) => d.value > 0);
+    this.updateKpiHints({ assets, domains, licenses, alerts, days });
 
     const statusMap: any = {}; assets.forEach((a: any) => statusMap[a.status] = (statusMap[a.status]||0)+1);
     const statusColors: any = { 'Em uso':'#10b981','Estoque':'#3b82f6','Manutenção':'#f59e0b','Aposentado':'#9ca3af' };
@@ -276,28 +292,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
             { label: 'Ociosas', value: licIdle, color: '#c4b5fd' },
           ].filter((d) => d.value > 0)
         : [];
-
-    const expiredDomains = domains.filter((d: any) => d.status === 'Expirado').length;
-    const unassignedAssets = assets.filter((a: any) => a.status === 'Em uso' && !a.assignedTo).length;
-    const offlineServers = servers.filter((s: any) => ['offline', 'manutenção', 'manutencao'].includes(String(s.status || '').toLowerCase())).length;
-    const inUseAssets = Math.max(1, this.assetsInUse);
-
-    const penalties = [
-      { label: 'alertas críticos', value: Math.min(25, this.criticalAlerts * 5), count: this.criticalAlerts },
-      { label: 'domínios expirados', value: Math.min(25, expiredDomains * 12), count: expiredDomains },
-      { label: 'domínios a vencer', value: Math.min(15, this.domainsExpiring * 3), count: this.domainsExpiring },
-      { label: 'servidores indisponíveis', value: Math.min(20, offlineServers * 10), count: offlineServers },
-      { label: 'ativos sem responsável', value: Math.min(10, Math.round((unassignedAssets / inUseAssets) * 10)), count: unassignedAssets },
-    ];
-    const totalPenalty = penalties.reduce((sum, p) => sum + p.value, 0);
-    this.healthScore = Math.max(0, Math.min(100, Math.round(100 - totalPenalty)));
-
-    const mainFactor = penalties
-      .filter((p) => p.value > 0 && p.count > 0)
-      .sort((a, b) => b.value - a.value)[0];
-    this.healthHint = mainFactor
-      ? `Principal impacto: ${mainFactor.count} ${mainFactor.label}`
-      : 'Sem impactos críticos detectados';
   }
 
   async logout() { await this.authService.signOut(); }
@@ -307,24 +301,21 @@ export class DashboardComponent implements OnInit, OnDestroy {
     domains: any[];
     licenses: any[];
     alerts: any[];
-    serverCost: number;
-    licCost: number;
-    domCost: number;
     days: (date: string) => number;
   }) {
     const retiredAssets = ctx.assets.filter((a: any) => a.status === 'Aposentado').length;
     const expiredDomains = ctx.domains.filter((d: any) => d.expirationDate && ctx.days(d.expirationDate) <= 0).length;
     const licTotal = ctx.licenses.reduce((s: number, l: any) => s + (l.totalLicenses || 0), 0);
-    const unreadAlerts = ctx.alerts.filter((a: any) => !a.lida).length;
 
-    this.assetsHint = `${this.assetsInUse} de ${ctx.assets.length} ativo(s) em uso${retiredAssets ? ` · ${retiredAssets} aposentado(s)` : ''}`;
-    this.costHint = `Serv. ${this.brl(ctx.serverCost)} · Lic. ${this.brl(ctx.licCost)} · Dom. ${this.brl(ctx.domCost)}`;
+    if (retiredAssets) {
+      this.assetsHint = `${this.assetsInUse} de ${ctx.assets.length} ativo(s) em uso · ${retiredAssets} aposentado(s)`;
+    }
     this.domainsHint = expiredDomains
       ? `${expiredDomains} expirado(s) · ${this.domainsExpiring} vencem em até 30d`
       : `${this.domainsExpiring} vencem em até 30d`;
     this.licensesHint = licTotal
       ? `${this.unusedLicenses} de ${licTotal} assento(s) sem uso`
       : 'Nenhuma licença cadastrada';
-    this.alertsHint = `${this.criticalAlerts} crítico(s) não lido(s) · ${unreadAlerts} alerta(s) pendente(s)`;
+    this.costHint = this.ti?.operationalCostHint || this.costHint;
   }
 }

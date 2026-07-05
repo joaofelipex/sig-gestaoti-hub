@@ -8,24 +8,29 @@ import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent, DonutChartComponent } from '../../components/charts.component';
+import { TiContextStripComponent } from '../../components/ti-context-strip.component';
+import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
+import { healthScoreColor } from '../../utils/health.util';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-governance',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent, DonutChartComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent, DonutChartComponent, TiContextStripComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
         <div>
           <h1 class="app-page-title">Governança</h1>
-          <p class="app-page-sub">Matriz de acessos, riscos e indicadores de conformidade.</p>
+          <p class="app-page-sub">Matriz de acessos, riscos e conformidade — integrado ao índice TI unificado.</p>
         </div>
       </header>
 
+      <app-ti-context-strip highlight="governance"></app-ti-context-strip>
+
       <div class="sig-kpi-grid">
-        <app-kpi-card label="Índice de saúde de TI" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor"></app-kpi-card>
+        <app-kpi-card label="Saúde governança" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" [hint]="healthHint"></app-kpi-card>
         <app-kpi-card label="Acessos ativos" [value]="activeAccess" [icon]="icons.access" color="#10b981"></app-kpi-card>
         <app-kpi-card label="Riscos críticos" [value]="criticalRisks" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
         <app-kpi-card label="Riscos totais" [value]="risks.length" [icon]="icons.warning" color="#f59e0b"></app-kpi-card>
@@ -148,18 +153,27 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   modalA = false; modalR = false; confirmOpen = false; saving = false; deleting = false;
   formA: any = {}; formR: any = {};
   delType: 'access'|'risk' = 'access'; delId = '';
+  ti: TiMetrics | null = null;
+  healthHint = '';
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
-  ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.accessRecords = d.accessRecords; this.risks = d.risks; this.loading = d.loading; }); }
-  ngOnDestroy() { this.sub?.unsubscribe(); }
+  private metricsSub!: Subscription;
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService, private tiMetrics: TiMetricsService) {}
+  ngOnInit() {
+    this.sub = this.dashboard.data$.subscribe(d => { this.accessRecords = d.accessRecords; this.risks = d.risks; this.loading = d.loading; });
+    this.metricsSub = this.tiMetrics.metrics$.subscribe(m => {
+      this.ti = m;
+      if (!m.loading) this.healthHint = m.governanceHealthHint.replace(/^Governança · /, '');
+    });
+  }
+  ngOnDestroy() { this.sub?.unsubscribe(); this.metricsSub?.unsubscribe(); }
 
   get filteredAccess() { const q = this.searchA.toLowerCase(); return this.accessRecords.filter(r => (!q || r.user?.toLowerCase().includes(q) || r.resource?.toLowerCase().includes(q)) && (!this.filterA['nivel'] || r.accessLevel === this.filterA['nivel'])); }
   get filteredRisks() { const q = this.searchR.toLowerCase(); return this.risks.filter(r => (!q || r.title?.toLowerCase().includes(q)) && (!this.filterR['sev'] || r.severity === this.filterR['sev'])); }
 
   get activeAccess() { return this.accessRecords.filter(r => r.ativo).length; }
   get criticalRisks() { return this.risks.filter(r => r.severity === 'Crítico').length; }
-  get healthScore() { let s = 100; s -= this.criticalRisks * 15; s -= this.risks.filter(r => r.severity === 'Alto').length * 8; return Math.max(0, Math.min(100, s)); }
-  get healthColor() { return this.healthScore >= 80 ? '#10b981' : this.healthScore >= 50 ? '#f59e0b' : '#ef4444'; }
+  get healthScore() { return this.ti?.governanceHealthScore ?? 0; }
+  get healthColor() { return healthScoreColor(this.healthScore); }
   get deleteMessage() {
     if (this.delType === 'access') {
       const item = this.accessRecords.find((r) => r.id === this.delId);

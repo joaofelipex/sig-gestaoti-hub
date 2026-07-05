@@ -7,19 +7,20 @@ import { CrudService } from '../../services/crud.service';
 import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { KpiCardComponent } from '../../components/charts.component';
+import { TiContextStripComponent } from '../../components/ti-context-strip.component';
 import { ConfirmComponent } from '../../components/modal.component';
 import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
-  imports: [CommonModule, KpiCardComponent, ConfirmComponent],
+  imports: [CommonModule, KpiCardComponent, ConfirmComponent, TiContextStripComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
         <div>
           <h1 class="app-page-title">Alertas</h1>
-          <p class="app-page-sub">Notificações de domínios, licenças, pagamentos e infraestrutura.</p>
+          <p class="app-page-sub">Notificações de domínios, licenças, pagamentos e infraestrutura — impactam a saúde operacional do Painel.</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
           <button type="button" (click)="generate()" [disabled]="generating" class="btn btn-primary btn-sm">
@@ -31,6 +32,8 @@ import { SigIcons } from '../../core/sig-icons';
           </button>
         </div>
       </header>
+
+      <app-ti-context-strip highlight="alerts"></app-ti-context-strip>
 
       <div class="sig-kpi-grid">
         <app-kpi-card label="Não lidos" [value]="unreadCount" [icon]="icons.alert" color="#3b82f6"></app-kpi-card>

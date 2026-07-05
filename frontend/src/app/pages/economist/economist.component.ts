@@ -8,6 +8,9 @@ import {
   ActionItem,
   FinancialContract,
   License,
+  Server,
+  Domain,
+  Payment,
 } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
@@ -22,9 +25,22 @@ import {
 } from '../../components/charts.component';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
+import { TiContextStripComponent } from '../../components/ti-context-strip.component';
+import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
 import { SigIcons } from '../../core/sig-icons';
 import { SigBadge } from '../../utils/status-badge';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import {
+  classifySpendType,
+  consolidatedAnnualBase,
+  formatBrl,
+  operationalCostBreakdown,
+  paymentsYearTotal,
+} from '../../utils/financial.util';
+import {
+  computeFinancialHealth,
+  healthScoreColor,
+} from '../../utils/health.util';
 
 type TabId = 'visao' | 'orcamentos' | 'acoes';
 
@@ -42,15 +58,70 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
     DataToolbarComponent,
     ModalComponent,
     ConfirmComponent,
+    TiContextStripComponent,
   ],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
         <div>
           <h1 class="app-page-title">Visão Economista</h1>
-          <p class="app-page-sub">Análise financeira de TI — orçamentos, economia e ações estratégicas.</p>
+          <p class="app-page-sub">
+            Análise financeira integrada — orçamentos, custos operacionais (Painel) e ações de economia.
+          </p>
+        </div>
+        <div class="sig-page-header-actions">
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="goToBudgets()">
+            <i class="fas fa-plus me-1" aria-hidden="true"></i> Orçamento
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" (click)="goToActions()">
+            <i class="fas fa-bolt me-1" aria-hidden="true"></i> Nova ação
+          </button>
         </div>
       </header>
+
+      <app-ti-context-strip highlight="economist"></app-ti-context-strip>
+
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+
+      <ng-container *ngIf="!loading && hasData">
+        <div class="sig-kpi-grid sig-kpi-grid--5">
+          <app-kpi-card
+            label="Custo mensal TI"
+            [value]="brl(displayOperationalMonthly)"
+            [icon]="icons.cost"
+            color="#10b981"
+            [hint]="displayOperationalHint"
+          ></app-kpi-card>
+          <app-kpi-card
+            label="Orçamento planejado"
+            [value]="brl(displayBudget)"
+            [icon]="icons.budget"
+            color="#475569"
+            [hint]="displayBudgetHint"
+          ></app-kpi-card>
+          <app-kpi-card
+            label="Economia estimada"
+            [value]="brl(displaySavings)"
+            [icon]="icons.savings"
+            color="#10b981"
+            [hint]="savingsRateLabel"
+          ></app-kpi-card>
+          <app-kpi-card
+            label="ROI sobre base"
+            [value]="roiPct"
+            [icon]="icons.chart"
+            color="#8b5cf6"
+            [hint]="roiHint"
+          ></app-kpi-card>
+          <app-kpi-card
+            label="Saúde financeira"
+            [value]="displayFinancialHealth + '%'"
+            [icon]="icons.health"
+            [color]="displayFinancialHealthColor"
+            [hint]="displayFinancialHealthHint"
+          ></app-kpi-card>
+        </div>
+      </ng-container>
 
       <nav class="sig-tabs-nav" aria-label="Módulo economista">
         <button type="button" (click)="tab = 'visao'" [class.is-active]="tab === 'visao'">Painel financeiro</button>
@@ -61,8 +132,6 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
           Ações estratégicas ({{ actions.length }})
         </button>
       </nav>
-
-      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
 
       <!-- ========== PAINEL ========== -->
       <ng-container *ngIf="!loading && tab === 'visao'">
@@ -75,72 +144,63 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
             <i class="fas fa-chart-pie me-2" aria-hidden="true"></i>
             Sem dados financeiros ainda
           </p>
-          <p class="mb-2">Cadastre orçamentos anuais e ações de economia para ver indicadores, gráficos e priorização.</p>
+          <p class="mb-2">
+            Cadastre orçamentos e ações de economia, ou use os módulos de
+            <strong>Servidores</strong>, <strong>Licenças</strong> e <strong>Domínios</strong>
+            (mesma base de custo do Painel principal).
+          </p>
           <ul>
-            <li>Use a aba <strong>Orçamentos</strong> para linhas por categoria e centro de custo.</li>
-            <li>Use <strong>Ações estratégicas</strong> para iniciativas de otimização de custos com economia estimada.</li>
+            <li>Orçamentos anuais por categoria e centro de custo.</li>
+            <li>Ações estratégicas com economia estimada e prazo.</li>
+            <li>Custos operacionais calculados a partir do cadastro SAM.</li>
           </ul>
+          <div class="sig-econ-empty-actions">
+            <button type="button" class="btn btn-outline-primary btn-sm" (click)="goToBudgets()">
+              <i class="fas fa-wallet me-1" aria-hidden="true"></i> Criar orçamento
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" (click)="goToActions()">
+              <i class="fas fa-bolt me-1" aria-hidden="true"></i> Criar ação estratégica
+            </button>
+          </div>
         </div>
 
         <ng-container *ngIf="hasData">
-          <div class="sig-kpi-grid">
-            <app-kpi-card
-              label="Orçamento total"
-              [value]="brl(totalBudget)"
-              [icon]="icons.budget"
-              color="#475569"
-              [hint]="budgets.length + ' linha(s) orçamentária(s)'"
-            ></app-kpi-card>
-            <app-kpi-card
-              label="Economia estimada"
-              [value]="brl(totalSavings)"
-              [icon]="icons.savings"
-              color="#10b981"
-              [hint]="savingsRateLabel"
-            ></app-kpi-card>
-            <app-kpi-card
-              label="Potencial vs orçamento"
-              [value]="savingsRatePct"
-              [icon]="icons.chart"
-              [color]="brandHex"
-              hint="% das ações sobre o orçamento"
-            ></app-kpi-card>
-            <app-kpi-card
-              label="ROI estimado"
-              [value]="roiPct"
-              [icon]="icons.chart"
-              color="#8b5cf6"
-              [hint]="roiHint"
-            ></app-kpi-card>
-            <app-kpi-card
-              label="Ações em aberto"
-              [value]="openActions"
-              [icon]="icons.tasks"
-              color="#3b82f6"
-              [hint]="overdueCount + ' vencida(s)'"
-            ></app-kpi-card>
+          <div class="sig-econ-toolbar" *ngIf="yearOptions.length > 1">
+            <p class="sig-econ-toolbar__label mb-0">Período</p>
+            <select
+              class="sig-econ-toolbar__select"
+              [(ngModel)]="panelYear"
+              (ngModelChange)="onPanelYearChange()"
+            >
+              <option [ngValue]="'all'">Todos os anos</option>
+              <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
+            </select>
+            <span class="sig-chart-panel__meta ms-auto">{{ panelYearLabel }}</span>
           </div>
 
-          <div class="sig-metric-row">
-            <div class="sig-metric-tile">
-              <p class="sig-metric-tile__label">Concluídas</p>
-              <p class="sig-metric-tile__value">{{ doneActions }}</p>
-              <p class="sig-metric-tile__hint">{{ doneRateLabel }}</p>
+          <div class="sig-econ-hero">
+            <div>
+              <p class="sig-econ-hero__label">Base consolidada anual</p>
+              <p class="sig-econ-hero__value">{{ brl(financialBase) }}</p>
+              <p class="sig-econ-hero__sub">
+                Orçamento {{ brl(totalBudget) }} · Operacional {{ brl(operationalAnnual) }} · Contratos {{ brl(annualContractCost) }}
+              </p>
             </div>
-            <div class="sig-metric-tile">
-              <p class="sig-metric-tile__label">Economia realizada</p>
-              <p class="sig-metric-tile__value">{{ brl(doneSavings) }}</p>
-              <p class="sig-metric-tile__hint">Ações concluídas</p>
+            <div>
+              <div class="sig-econ-hero__progress-head">
+                <span>Captura de economia</span>
+                <strong>{{ savingsCapturePct }}</strong>
+              </div>
+              <div class="sig-progress-track" role="progressbar" [attr.aria-valuenow]="savingsCaptureRate" aria-valuemin="0" aria-valuemax="100">
+                <div class="sig-progress-fill" [style.width.%]="savingsCaptureRate"></div>
+              </div>
+              <p class="sig-econ-hero__progress-hint">
+                {{ brl(doneSavings) }} realizados de {{ brl(totalSavings) }} estimados · {{ openActions }} ação(ões) em aberto
+              </p>
             </div>
-            <div class="sig-metric-tile">
-              <p class="sig-metric-tile__label">Economia em aberto</p>
-              <p class="sig-metric-tile__value">{{ brl(openSavings) }}</p>
-              <p class="sig-metric-tile__hint">Economia ainda não capturada</p>
-            </div>
-            <div class="sig-metric-tile">
-              <p class="sig-metric-tile__label">Ano corrente</p>
-              <p class="sig-metric-tile__value">{{ brl(currentYearBudget) }}</p>
-              <p class="sig-metric-tile__hint">Orçado em {{ currentYear }}</p>
+            <div class="sig-econ-hero__score">
+              <p class="sig-econ-hero__score-value" [style.color]="healthColor">{{ savingsCaptureRate | number:'1.0-0' }}%</p>
+              <p class="sig-econ-hero__score-label">Economia capturada</p>
             </div>
           </div>
 
@@ -148,15 +208,44 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
             <div class="sig-chart-panel lg:col-span-2">
               <div class="sig-chart-panel__head">
                 <h3 class="sig-chart-title">Orçamento por categoria</h3>
-                <span class="sig-chart-panel__meta">Valores anuais (R$)</span>
+                <span class="sig-chart-panel__meta">Planejamento anual (R$)</span>
               </div>
               <app-bar-chart [data]="budgetChartData" prefix="R$ "></app-bar-chart>
             </div>
             <div class="sig-chart-panel">
               <div class="sig-chart-panel__head">
                 <h3 class="sig-chart-title">Ações por status</h3>
+                <span class="sig-chart-panel__meta">{{ panelActionCount }} ação(ões)</span>
               </div>
-              <app-donut-chart [data]="statusChartData"></app-donut-chart>
+              <app-donut-chart [data]="statusChartData" centerLabel="Ações"></app-donut-chart>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-3" *ngIf="operationalCostChart.length">
+            <div class="sig-chart-panel lg:col-span-2">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">Custos operacionais mensais</h3>
+                <span class="sig-chart-panel__meta">Mesma base do Painel · {{ brl(operationalMonthlyCost) }}/mês</span>
+              </div>
+              <app-bar-chart [data]="operationalCostChart" prefix="R$ "></app-bar-chart>
+            </div>
+            <div class="sig-chart-panel">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">Pagamentos {{ currentYear }}</h3>
+                <span class="sig-chart-panel__meta">Registros financeiros</span>
+              </div>
+              <div class="sig-metric-row mb-0">
+                <div class="sig-metric-tile">
+                  <p class="sig-metric-tile__label">Total registrado</p>
+                  <p class="sig-metric-tile__value">{{ brl(paymentsYearTotal) }}</p>
+                  <p class="sig-metric-tile__hint">{{ payments.length }} pagamento(s)</p>
+                </div>
+                <div class="sig-metric-tile">
+                  <p class="sig-metric-tile__label">vs. operacional anual</p>
+                  <p class="sig-metric-tile__value">{{ paymentsVsOperationalPct }}</p>
+                  <p class="sig-metric-tile__hint">Pagamentos / custo SAM anualizado</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -164,57 +253,41 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
             <div class="sig-chart-panel">
               <div class="sig-chart-panel__head">
                 <h3 class="sig-chart-title">Evolução do ROI</h3>
-                <span class="sig-chart-panel__meta">Economia estimada / base financeira anual</span>
+                <span class="sig-chart-panel__meta">Economia estimada / base financeira</span>
               </div>
               <app-line-chart [data]="roiTrendData" suffix="%" strokeColor="#8b5cf6"></app-line-chart>
             </div>
             <div class="sig-chart-panel">
               <div class="sig-chart-panel__head">
                 <h3 class="sig-chart-title">Evolução CAPEX x OPEX</h3>
-                <span class="sig-chart-panel__meta">Base anual por classificação</span>
+                <span class="sig-chart-panel__meta">Por ano · classificação automática</span>
               </div>
               <app-multi-line-chart [series]="capexOpexTrendSeries" prefix="R$ "></app-multi-line-chart>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 gap-4 lg:grid-cols-2" *ngIf="contractTypeChartData.length || capexOpexChartData.length">
-            <div class="sig-chart-panel" *ngIf="contractTypeChartData.length">
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-3" *ngIf="capexOpexChartData.length || contractTypeChartData.length">
+            <div class="sig-chart-panel" *ngIf="capexOpexChartData.length">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">CAPEX vs OPEX</h3>
+                <span class="sig-chart-panel__meta">{{ brl(capexOpexTotal) }} total</span>
+              </div>
+              <app-donut-chart [data]="capexOpexChartData" centerLabel="Base" [centerValue]="brl(capexOpexTotal)"></app-donut-chart>
+            </div>
+            <div class="sig-chart-panel" *ngIf="contractTypeChartData.length" [class.lg:col-span-2]="capexOpexChartData.length">
               <div class="sig-chart-panel__head">
                 <h3 class="sig-chart-title">Contratos anualizados por tipo</h3>
                 <span class="sig-chart-panel__meta">{{ brl(annualContractCost) }} em contratos</span>
               </div>
               <app-bar-chart [data]="contractTypeChartData" prefix="R$ "></app-bar-chart>
             </div>
-            <div class="sig-chart-panel" [class.lg:col-span-2]="!contractTypeChartData.length">
-              <div class="sig-chart-panel__head">
-                <h3 class="sig-chart-title">Base financeira anual</h3>
-                <span class="sig-chart-panel__meta">Orçamentos + contratos + licenças SAM</span>
-              </div>
-              <div class="sig-metric-row mb-0">
-                <div class="sig-metric-tile">
-                  <p class="sig-metric-tile__label">CAPEX</p>
-                  <p class="sig-metric-tile__value">{{ brl(capexTotal) }}</p>
-                  <p class="sig-metric-tile__hint">Aquisição e investimento</p>
-                </div>
-                <div class="sig-metric-tile">
-                  <p class="sig-metric-tile__label">OPEX</p>
-                  <p class="sig-metric-tile__value">{{ brl(opexTotal) }}</p>
-                  <p class="sig-metric-tile__hint">Operação, recorrência e SAM desde 01/01/2026</p>
-                </div>
-                <div class="sig-metric-tile">
-                  <p class="sig-metric-tile__label">Outros</p>
-                  <p class="sig-metric-tile__value">{{ brl(otherSpendTotal) }}</p>
-                  <p class="sig-metric-tile__hint">Sem classificação direta</p>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div class="sig-chart-panel">
               <div class="sig-chart-panel__head">
-                <h3 class="sig-chart-title">Economia estimada por categoria</h3>
-                <span class="sig-chart-panel__meta">Todas as ações</span>
+                <h3 class="sig-chart-title">Economia por categoria</h3>
+                <span class="sig-chart-panel__meta">{{ brl(openSavings) }} ainda em aberto</span>
               </div>
               <app-bar-chart [data]="savingsChartData" prefix="R$ "></app-bar-chart>
             </div>
@@ -226,10 +299,61 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
             </div>
           </div>
 
+          <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div class="sig-chart-panel lg:col-span-2" *ngIf="quickWins.length">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">Quick wins</h3>
+                <span class="sig-chart-panel__meta">Alto retorno · esforço S ou M</span>
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <article *ngFor="let a of quickWins" class="sig-econ-quick-win">
+                  <div>
+                    <p class="sig-econ-quick-win__title">{{ a.title }}</p>
+                    <p class="sig-econ-quick-win__meta">
+                      {{ a.category }} · Esforço {{ a.effort }} · {{ a.priority }}
+                      <span *ngIf="a.owner"> · {{ a.owner }}</span>
+                    </p>
+                  </div>
+                  <span class="sig-econ-quick-win__savings">{{ brl(a.estimatedSavings) }}</span>
+                </article>
+              </div>
+            </div>
+
+            <div class="sig-chart-panel" [class.lg:col-span-3]="!quickWins.length">
+              <div class="sig-chart-panel__head">
+                <h3 class="sig-chart-title">Matriz esforço × impacto</h3>
+                <span class="sig-chart-panel__meta">{{ openActions }} em aberto</span>
+              </div>
+              <div class="sig-econ-matrix">
+                <div class="sig-econ-matrix__cell is-highlight">
+                  <p class="sig-econ-matrix__title">Quick wins</p>
+                  <p class="sig-econ-matrix__count">{{ matrixQuick.count }}</p>
+                  <p class="sig-econ-matrix__savings">{{ brl(matrixQuick.savings) }}</p>
+                </div>
+                <div class="sig-econ-matrix__cell">
+                  <p class="sig-econ-matrix__title">Estratégicas</p>
+                  <p class="sig-econ-matrix__count">{{ matrixStrategic.count }}</p>
+                  <p class="sig-econ-matrix__savings">{{ brl(matrixStrategic.savings) }}</p>
+                </div>
+                <div class="sig-econ-matrix__cell">
+                  <p class="sig-econ-matrix__title">Complementares</p>
+                  <p class="sig-econ-matrix__count">{{ matrixFill.count }}</p>
+                  <p class="sig-econ-matrix__savings">{{ brl(matrixFill.savings) }}</p>
+                </div>
+                <div class="sig-econ-matrix__cell">
+                  <p class="sig-econ-matrix__title">Reavaliar</p>
+                  <p class="sig-econ-matrix__count">{{ matrixReconsider.count }}</p>
+                  <p class="sig-econ-matrix__savings">{{ brl(matrixReconsider.savings) }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div class="sig-chart-panel" *ngIf="upcomingActions.length">
               <div class="sig-chart-panel__head">
                 <h3 class="sig-chart-title">Próximos prazos (60 dias)</h3>
+                <span class="sig-chart-panel__meta">{{ overdueCount }} vencida(s)</span>
               </div>
               <div class="d-flex flex-column gap-2">
                 <article
@@ -240,7 +364,10 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
                 >
                   <p class="sig-action-card__title">{{ a.title }}</p>
                   <p class="sig-action-card__meta">
-                    {{ a.dueDate | date:'dd/MM/yyyy' }} · {{ a.priority }} · {{ brl(a.estimatedSavings) }}
+                    <span [class]="priorityBadge(a.priority)">{{ a.priority }}</span>
+                    · Esforço {{ a.effort }}
+                    · {{ a.dueDate | date:'dd/MM/yyyy' }}
+                    · {{ brl(a.estimatedSavings) }}
                     <span *ngIf="a._overdue"> · <strong class="text-danger">Vencida</strong></span>
                   </p>
                 </article>
@@ -248,33 +375,55 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
             </div>
             <div class="sig-chart-panel" [class.lg:col-span-2]="!upcomingActions.length">
               <div class="sig-chart-panel__head">
-                <h3 class="sig-chart-title">Resumo executivo</h3>
+                <h3 class="sig-chart-title">Insights executivos</h3>
               </div>
-              <ul class="mb-0 ps-3 text-sm" style="color: var(--sig-text-muted)">
-                <li class="mb-2">
-                  O orçamento de TI soma <strong>{{ brl(totalBudget) }}</strong> em
-                  <strong>{{ budgetCategories }}</strong> categoria(s).
-                </li>
-                <li class="mb-2">
-                  O potencial de economia totaliza <strong>{{ brl(totalSavings) }}</strong>
-                  ({{ savingsRateLabel }}).
-                </li>
-                <li class="mb-2" *ngIf="topCategory">
-                  Maior fatia orçamentária: <strong>{{ topCategory.label }}</strong>
-                  ({{ brl(topCategory.value) }}).
-                </li>
-                <li *ngIf="topSavingAction">
-                  Maior oportunidade: <strong>{{ topSavingAction.title }}</strong>
-                  ({{ brl(topSavingAction.estimatedSavings) }}).
-                </li>
-              </ul>
+              <div class="sig-econ-insights">
+                <article class="sig-econ-insight">
+                  <span class="sig-econ-insight__icon"><i class="fas fa-server" aria-hidden="true"></i></span>
+                  <p class="sig-econ-insight__text">
+                    Custo operacional mensal: <strong>{{ brl(operationalMonthlyCost) }}</strong>
+                    (Serv. {{ brl(operationalBreakdown.servers) }} · Lic. {{ brl(operationalBreakdown.licenses) }} · Dom. {{ brl(operationalBreakdown.domains) }})
+                    — alinhado ao Painel principal.
+                  </p>
+                </article>
+                <article class="sig-econ-insight">
+                  <span class="sig-econ-insight__icon"><i class="fas fa-wallet" aria-hidden="true"></i></span>
+                  <p class="sig-econ-insight__text">
+                    Orçamento planejado: <strong>{{ brl(totalBudget) }}</strong> em
+                    <strong>{{ budgetCategories }}</strong> categoria(s).
+                    <span *ngIf="topCategory"> Maior fatia: <strong>{{ topCategory.label }}</strong> ({{ brl(topCategory.value) }}).</span>
+                  </p>
+                </article>
+                <article class="sig-econ-insight">
+                  <span class="sig-econ-insight__icon"><i class="fas fa-piggy-bank" aria-hidden="true"></i></span>
+                  <p class="sig-econ-insight__text">
+                    Potencial de economia: <strong>{{ brl(totalSavings) }}</strong> ({{ savingsRateLabel }}).
+                    Já capturados <strong>{{ brl(doneSavings) }}</strong> ({{ savingsCapturePct }}).
+                  </p>
+                </article>
+                <article class="sig-econ-insight" *ngIf="topSavingAction">
+                  <span class="sig-econ-insight__icon"><i class="fas fa-bolt" aria-hidden="true"></i></span>
+                  <p class="sig-econ-insight__text">
+                    Maior oportunidade: <strong>{{ topSavingAction.title }}</strong>
+                    — {{ brl(topSavingAction.estimatedSavings) }} · {{ topSavingAction.priority }} · esforço {{ topSavingAction.effort }}.
+                  </p>
+                </article>
+                <article class="sig-econ-insight" *ngIf="capexOpexTotal">
+                  <span class="sig-econ-insight__icon"><i class="fas fa-balance-scale" aria-hidden="true"></i></span>
+                  <p class="sig-econ-insight__text">
+                    Mix CAPEX/OPEX: <strong>{{ brl(capexTotal) }}</strong> investimento vs
+                    <strong>{{ brl(opexTotal) }}</strong> operacional
+                    <span *ngIf="otherSpendTotal"> (+ {{ brl(otherSpendTotal) }} outros)</span>.
+                  </p>
+                </article>
+              </div>
             </div>
           </div>
 
           <div class="sig-list-card">
             <div class="sig-chart-panel__head px-3 pt-3">
               <h3 class="sig-chart-title mb-0">Top ações por economia estimada</h3>
-              <span class="sig-chart-panel__meta">{{ actions.length }} ações</span>
+              <span class="sig-chart-panel__meta">{{ panelActionCount }} ações · {{ brl(maxActionSavings) }} máx.</span>
             </div>
             <div class="sig-table-wrap">
               <table class="sig-table">
@@ -283,6 +432,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
                     <th>Ação</th>
                     <th>Categoria</th>
                     <th>Prioridade</th>
+                    <th>Esforço</th>
                     <th>Status</th>
                     <th>Prazo</th>
                     <th class="text-end">Economia</th>
@@ -293,12 +443,18 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
                     <td class="fw-medium">{{ a.title }}</td>
                     <td>{{ a.category }}</td>
                     <td><span [class]="priorityBadge(a.priority)">{{ a.priority }}</span></td>
+                    <td>{{ a.effort }}</td>
                     <td><span [class]="statusBadge(a.status)">{{ a.status }}</span></td>
                     <td>{{ a.dueDate ? (a.dueDate | date:'dd/MM/yyyy') : '—' }}</td>
-                    <td class="text-end fw-medium">{{ brl(a.estimatedSavings) }}</td>
+                    <td class="text-end fw-medium">
+                      <span class="sig-econ-savings-bar" aria-hidden="true">
+                        <span class="sig-econ-savings-bar__fill" [style.width.%]="savingsBarPct(a.estimatedSavings)"></span>
+                      </span>
+                      {{ brl(a.estimatedSavings) }}
+                    </td>
                   </tr>
                   <tr *ngIf="!topActions.length">
-                    <td colspan="6" class="sig-table-empty">Nenhuma ação cadastrada</td>
+                    <td colspan="7" class="sig-table-empty">Nenhuma ação cadastrada</td>
                   </tr>
                 </tbody>
               </table>
@@ -549,16 +705,31 @@ export class EconomistComponent implements OnInit, OnDestroy {
   readonly brandHex = '#023ed8';
 
   tab: TabId = 'visao';
+  panelYear: number | 'all' = 'all';
   budgets: Budget[] = [];
   actions: ActionItem[] = [];
   contracts: FinancialContract[] = [];
   licenses: License[] = [];
+  servers: Server[] = [];
+  domains: Domain[] = [];
+  payments: Payment[] = [];
+  ti: TiMetrics | null = null;
   loading = true;
   private sub!: Subscription;
+  private metricsSub!: Subscription;
 
   totalBudget = 0;
   totalSavings = 0;
   savingsRate = 0;
+  financialBase = 0;
+  operationalMonthlyCost = 0;
+  operationalAnnual = 0;
+  operationalCostHint = '';
+  paymentsYearTotal = 0;
+  savingsCaptureRate = 0;
+  healthScore = 0;
+  healthHint = '';
+  maxActionSavings = 0;
   openActions = 0;
   doneActions = 0;
   doneSavings = 0;
@@ -567,16 +738,19 @@ export class EconomistComponent implements OnInit, OnDestroy {
   currentYear = new Date().getFullYear();
   currentYearBudget = 0;
   budgetCategories = 0;
+  panelBudgetCount = 0;
+  panelActionCount = 0;
   roi = 0;
   realizedRoi = 0;
   annualContractCost = 0;
-  annualLicenseCost = 0;
   capexTotal = 0;
   opexTotal = 0;
   otherSpendTotal = 0;
   capexOpexTotal = 0;
+  operationalBreakdown = { servers: 0, licenses: 0, domains: 0 };
 
   budgetChartData: ChartDatum[] = [];
+  operationalCostChart: ChartDatum[] = [];
   savingsChartData: ChartDatum[] = [];
   statusChartData: ChartDatum[] = [];
   priorityChartData: ChartDatum[] = [];
@@ -586,9 +760,14 @@ export class EconomistComponent implements OnInit, OnDestroy {
   capexOpexTrendSeries: ChartSeries[] = [];
   contractTypeChartData: ChartDatum[] = [];
   topActions: ActionItem[] = [];
+  quickWins: ActionItem[] = [];
   upcomingActions: (ActionItem & { _overdue?: boolean; _soon?: boolean })[] = [];
   topCategory: ChartDatum | null = null;
   topSavingAction: ActionItem | null = null;
+  matrixQuick = { count: 0, savings: 0 };
+  matrixStrategic = { count: 0, savings: 0 };
+  matrixFill = { count: 0, savings: 0 };
+  matrixReconsider = { count: 0, savings: 0 };
 
   searchBudget = '';
   filterBudget: Record<string, string> = {};
@@ -637,12 +816,11 @@ export class EconomistComponent implements OnInit, OnDestroy {
     Cancelada: '#ef4444',
   };
 
-  private readonly samStartYear = 2026;
-
   constructor(
     private dashboard: DashboardService,
     private crud: CrudService,
     private ux: UxFeedbackService,
+    private tiMetrics: TiMetricsService,
   ) {}
 
   ngOnInit() {
@@ -651,17 +829,30 @@ export class EconomistComponent implements OnInit, OnDestroy {
       this.actions = d.actions;
       this.contracts = d.contracts || [];
       this.licenses = d.licenses || [];
+      this.servers = d.servers || [];
+      this.domains = d.domains || [];
+      this.payments = d.payments || [];
       this.loading = d.loading;
       if (!d.loading) this.compute();
     });
+    this.metricsSub = this.tiMetrics.metrics$.subscribe((m) => (this.ti = m));
   }
 
   ngOnDestroy() {
     this.sub?.unsubscribe();
+    this.metricsSub?.unsubscribe();
   }
 
   get hasData() {
-    return this.budgets.length > 0 || this.actions.length > 0 || this.contracts.length > 0 || this.licenses.length > 0;
+    return (
+      this.budgets.length > 0 ||
+      this.actions.length > 0 ||
+      this.contracts.length > 0 ||
+      this.licenses.length > 0 ||
+      this.servers.length > 0 ||
+      this.domains.length > 0 ||
+      this.payments.length > 0
+    );
   }
 
   get savingsRateLabel() {
@@ -670,6 +861,71 @@ export class EconomistComponent implements OnInit, OnDestroy {
 
   get savingsRatePct() {
     return `${this.savingsRate.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`;
+  }
+
+  get savingsCapturePct() {
+    return `${this.savingsCaptureRate.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%`;
+  }
+
+  get healthColor() {
+    return this.healthScore >= 80 ? '#10b981' : this.healthScore >= 50 ? '#f59e0b' : '#ef4444';
+  }
+
+  get paymentsVsOperationalPct() {
+    if (!this.operationalAnnual) return '—';
+    const pct = (this.paymentsYearTotal / this.operationalAnnual) * 100;
+    return `${pct.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%`;
+  }
+
+  get yearOptions(): number[] {
+    const years = new Set<number>();
+    this.budgets.forEach((b) => years.add(b.year));
+    this.actions.forEach((a) => years.add(this.actionYear(a)));
+    return Array.from(years).sort((a, b) => b - a);
+  }
+
+  get panelYearLabel(): string {
+    if (this.panelYear === 'all') return 'Consolidado · alinhado ao índice TI';
+    return `Filtrando ${this.panelYear} · KPIs do período`;
+  }
+
+  get useGlobalMetrics() {
+    return this.panelYear === 'all';
+  }
+
+  get displayOperationalMonthly() {
+    return this.useGlobalMetrics ? (this.ti?.operationalMonthlyCost ?? this.operationalMonthlyCost) : this.operationalMonthlyCost;
+  }
+
+  get displayOperationalHint() {
+    return this.useGlobalMetrics ? (this.ti?.operationalCostHint ?? this.operationalCostHint) : this.operationalCostHint;
+  }
+
+  get displayBudget() {
+    return this.useGlobalMetrics ? (this.ti?.totalBudget ?? this.totalBudget) : this.totalBudget;
+  }
+
+  get displayBudgetHint() {
+    return this.panelBudgetCount + ' linha(s) · ' + this.budgetCategories + ' categoria(s)';
+  }
+
+  get displaySavings() {
+    return this.useGlobalMetrics ? (this.ti?.totalSavings ?? this.totalSavings) : this.totalSavings;
+  }
+
+  get displayFinancialHealth() {
+    return this.useGlobalMetrics ? (this.ti?.financialHealthScore ?? this.healthScore) : this.healthScore;
+  }
+
+  get displayFinancialHealthColor() {
+    return healthScoreColor(this.displayFinancialHealth);
+  }
+
+  get displayFinancialHealthHint() {
+    if (this.useGlobalMetrics && this.ti) {
+      return this.ti.financialHealthHint.replace(/^Financeiro · /, '');
+    }
+    return this.healthHint;
   }
 
   get roiPct() {
@@ -737,7 +993,22 @@ export class EconomistComponent implements OnInit, OnDestroy {
   }
 
   brl(v: number) {
-    return 'R$ ' + (v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    return formatBrl(v);
+  }
+
+  savingsBarPct(v: number) {
+    if (!this.maxActionSavings) return 0;
+    return Math.max(8, (v / this.maxActionSavings) * 100);
+  }
+
+  goToBudgets() {
+    this.tab = 'orcamentos';
+    this.openNewBudget();
+  }
+
+  goToActions() {
+    this.tab = 'acoes';
+    this.openNewAction();
   }
 
   priorityBadge(p: string) {
@@ -766,32 +1037,75 @@ export class EconomistComponent implements OnInit, OnDestroy {
     return !this.isDone(status) && !(status || '').toLowerCase().includes('cancel');
   }
 
-  private compute() {
-    this.totalBudget = this.budgets.reduce((s, b) => s + (b.annualBudget || 0), 0);
-    this.totalSavings = this.actions.reduce((s, a) => s + (a.estimatedSavings || 0), 0);
-    this.savingsRate = this.totalBudget > 0 ? (this.totalSavings / this.totalBudget) * 100 : 0;
-    this.annualContractCost = this.contracts.reduce((s, c) => s + (c.monthlyCost || 0) * 12, 0);
-    this.annualLicenseCost = this.licenses.reduce((s, l) => s + this.licenseMonthlyCost(l) * 12, 0);
+  private budgetsForPanel(): Budget[] {
+    if (this.panelYear === 'all') return this.budgets;
+    return this.budgets.filter((b) => b.year === this.panelYear);
+  }
 
-    this.openActions = this.actions.filter((a) => this.isOpen(a.status)).length;
-    this.doneActions = this.actions.filter((a) => this.isDone(a.status)).length;
-    this.doneSavings = this.actions
+  private actionsForPanel(): ActionItem[] {
+    if (this.panelYear === 'all') return this.actions;
+    return this.actions.filter((a) => this.actionYear(a) === this.panelYear);
+  }
+
+  private includeRecurringCosts(): boolean {
+    return this.panelYear === 'all' || this.panelYear === this.currentYear;
+  }
+
+  onPanelYearChange() {
+    this.compute();
+  }
+
+  private compute() {
+    const budgets = this.budgetsForPanel();
+    const actions = this.actionsForPanel();
+    const includeRecurring = this.includeRecurringCosts();
+
+    this.totalBudget = budgets.reduce((s, b) => s + (b.annualBudget || 0), 0);
+    this.totalSavings = actions.reduce((s, a) => s + (a.estimatedSavings || 0), 0);
+    this.savingsRate = this.totalBudget > 0 ? (this.totalSavings / this.totalBudget) * 100 : 0;
+
+    this.operationalBreakdown = operationalCostBreakdown(this.servers, this.licenses, this.domains);
+
+    const consolidated = consolidatedAnnualBase(
+      budgets,
+      includeRecurring ? this.servers : [],
+      includeRecurring ? this.licenses : [],
+      includeRecurring ? this.domains : [],
+      includeRecurring ? this.contracts : [],
+    );
+    this.financialBase = consolidated.total;
+    this.operationalMonthlyCost = includeRecurring ? consolidated.monthlyOperational : 0;
+    this.operationalAnnual = includeRecurring ? consolidated.operationalAnnual : 0;
+    this.annualContractCost = includeRecurring ? consolidated.contractsAnnual : 0;
+    this.operationalCostHint = includeRecurring
+      ? `Serv. ${formatBrl(this.operationalBreakdown.servers)} · Lic. ${formatBrl(this.operationalBreakdown.licenses)} · Dom. ${formatBrl(this.operationalBreakdown.domains)}`
+      : 'Fora do período selecionado';
+    this.paymentsYearTotal = paymentsYearTotal(this.payments, this.currentYear);
+
+    this.openActions = actions.filter((a) => this.isOpen(a.status)).length;
+    this.doneActions = actions.filter((a) => this.isDone(a.status)).length;
+    this.doneSavings = actions
       .filter((a) => this.isDone(a.status))
       .reduce((s, a) => s + (a.estimatedSavings || 0), 0);
-    this.openSavings = this.actions
+    this.openSavings = actions
       .filter((a) => this.isOpen(a.status))
       .reduce((s, a) => s + (a.estimatedSavings || 0), 0);
+
+    this.savingsCaptureRate =
+      this.totalSavings > 0 ? Math.min(100, (this.doneSavings / this.totalSavings) * 100) : 0;
 
     this.currentYearBudget = this.budgets
       .filter((b) => b.year === this.currentYear)
       .reduce((s, b) => s + b.annualBudget, 0);
 
-    const roiBase = this.totalBudget + this.annualContractCost + this.annualLicenseCost;
+    const roiBase = this.financialBase;
     this.roi = roiBase > 0 ? (this.totalSavings / roiBase) * 100 : 0;
     this.realizedRoi = roiBase > 0 ? (this.doneSavings / roiBase) * 100 : 0;
 
-    const cats = new Set(this.budgets.map((b) => b.category));
+    const cats = new Set(budgets.map((b) => b.category));
     this.budgetCategories = cats.size;
+    this.panelBudgetCount = budgets.length;
+    this.panelActionCount = actions.length;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -799,7 +1113,7 @@ export class EconomistComponent implements OnInit, OnDestroy {
     in60.setDate(in60.getDate() + 60);
 
     this.overdueCount = 0;
-    this.upcomingActions = this.actions
+    this.upcomingActions = actions
       .filter((a) => this.isOpen(a.status) && a.dueDate)
       .map((a) => {
         const d = new Date(a.dueDate!);
@@ -812,31 +1126,52 @@ export class EconomistComponent implements OnInit, OnDestroy {
       .sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''))
       .slice(0, 5);
 
-    this.budgetChartData = this.groupChart(this.budgets, (b) => b.category, (b) => b.annualBudget);
+    const financial = computeFinancialHealth({
+      actions,
+      totalSavings: this.totalSavings,
+      doneSavings: this.doneSavings,
+      overdueCount: this.overdueCount,
+      isDone: (s) => this.isDone(s),
+      isOpen: (s) => this.isOpen(s),
+    });
+    this.healthScore = financial.score;
+    this.healthHint = financial.hint.replace(/^Financeiro · /, '');
+
+    this.operationalCostChart = includeRecurring
+      ? [
+          { label: 'Servidores', value: this.operationalBreakdown.servers, color: '#023ed8' },
+          { label: 'Licenças', value: this.operationalBreakdown.licenses, color: '#8b5cf6' },
+          { label: 'Domínios', value: this.operationalBreakdown.domains, color: '#06b6d4' },
+        ].filter((d) => d.value > 0)
+      : [];
+
+    this.budgetChartData = this.groupChart(budgets, (b) => b.category, (b) => b.annualBudget);
     this.savingsChartData = this.groupChart(
-      this.actions,
+      actions,
       (a) => a.category || 'Outros',
       (a) => a.estimatedSavings,
     );
-    this.roiChartData = this.buildRoiChart();
-    this.capexOpexChartData = this.buildCapexOpexChart();
-    this.roiTrendData = this.buildRoiTrend();
-    this.capexOpexTrendSeries = this.buildCapexOpexTrend();
-    this.contractTypeChartData = this.groupChart(
-      this.contracts,
-      (c) => c.type || 'Outros',
-      (c) => (c.monthlyCost || 0) * 12,
-    );
+    this.roiChartData = this.buildRoiChart(budgets, actions);
+    this.capexOpexChartData = this.buildCapexOpexChart(budgets, includeRecurring);
+    this.roiTrendData = this.buildRoiTrend(budgets, actions);
+    this.capexOpexTrendSeries = this.buildCapexOpexTrend(budgets);
+    this.contractTypeChartData = includeRecurring
+      ? this.groupChart(
+          this.contracts,
+          (c) => c.type || 'Outros',
+          (c) => (c.monthlyCost || 0) * 12,
+        )
+      : [];
     this.topCategory = this.budgetChartData[0] ?? null;
 
-    const statusMap = this.countMap(this.actions, (a) => a.status || 'Aberto');
+    const statusMap = this.countMap(actions, (a) => a.status || 'Aberto');
     this.statusChartData = Object.entries(statusMap).map(([label, value], i) => ({
       label,
       value,
       color: this.statusColors[label] || this.chartColors[i % this.chartColors.length],
     }));
 
-    const priMap = this.countMap(this.actions, (a) => a.priority || 'Média');
+    const priMap = this.countMap(actions, (a) => a.priority || 'Média');
     const priOrder = ['Alta', 'Média', 'Baixa'];
     this.priorityChartData = priOrder
       .filter((k) => priMap[k])
@@ -846,10 +1181,60 @@ export class EconomistComponent implements OnInit, OnDestroy {
         color: ['#ef4444', '#f59e0b', '#10b981'][i] || this.chartColors[i],
       }));
 
-    this.topActions = [...this.actions]
+    this.topActions = [...actions]
       .sort((a, b) => b.estimatedSavings - a.estimatedSavings)
       .slice(0, 8);
     this.topSavingAction = this.topActions[0] ?? null;
+    this.maxActionSavings = this.topActions[0]?.estimatedSavings || 0;
+
+    this.quickWins = actions
+      .filter(
+        (a) =>
+          this.isOpen(a.status) &&
+          (a.effort === 'S' || a.effort === 'M') &&
+          (a.estimatedSavings || 0) > 0,
+      )
+      .sort((a, b) => b.estimatedSavings - a.estimatedSavings)
+      .slice(0, 5);
+
+    this.buildPriorityMatrix(actions);
+  }
+
+  private buildPriorityMatrix(actions: ActionItem[]) {
+    const open = actions.filter((a) => this.isOpen(a.status));
+    const savingsValues = open.map((a) => a.estimatedSavings || 0).sort((a, b) => a - b);
+    const median = savingsValues.length ? savingsValues[Math.floor(savingsValues.length / 2)] : 0;
+
+    const buckets = {
+      quick: { count: 0, savings: 0 },
+      strategic: { count: 0, savings: 0 },
+      fill: { count: 0, savings: 0 },
+      reconsider: { count: 0, savings: 0 },
+    };
+
+    for (const a of open) {
+      const highImpact = (a.estimatedSavings || 0) >= median || a.priority === 'Alta';
+      const lowEffort = a.effort === 'S' || a.effort === 'M';
+      const savings = a.estimatedSavings || 0;
+      if (highImpact && lowEffort) {
+        buckets.quick.count++;
+        buckets.quick.savings += savings;
+      } else if (highImpact) {
+        buckets.strategic.count++;
+        buckets.strategic.savings += savings;
+      } else if (lowEffort) {
+        buckets.fill.count++;
+        buckets.fill.savings += savings;
+      } else {
+        buckets.reconsider.count++;
+        buckets.reconsider.savings += savings;
+      }
+    }
+
+    this.matrixQuick = buckets.quick;
+    this.matrixStrategic = buckets.strategic;
+    this.matrixFill = buckets.fill;
+    this.matrixReconsider = buckets.reconsider;
   }
 
   private groupChart<T>(
@@ -880,16 +1265,16 @@ export class EconomistComponent implements OnInit, OnDestroy {
     return out;
   }
 
-  private buildRoiChart(): ChartDatum[] {
+  private buildRoiChart(budgets: Budget[], actions: ActionItem[]): ChartDatum[] {
     const budgetByCategory = new Map<string, number>();
     const savingsByCategory = new Map<string, number>();
 
-    for (const b of this.budgets) {
+    for (const b of budgets) {
       const key = b.category || 'Outros';
       budgetByCategory.set(key, (budgetByCategory.get(key) || 0) + (b.annualBudget || 0));
     }
 
-    for (const a of this.actions) {
+    for (const a of actions) {
       const key = a.category || 'Outros';
       savingsByCategory.set(key, (savingsByCategory.get(key) || 0) + (a.estimatedSavings || 0));
     }
@@ -904,14 +1289,16 @@ export class EconomistComponent implements OnInit, OnDestroy {
       .sort((a, b) => b.value - a.value)
       .slice(0, 8);
 
-    if (!byCategory.length && this.totalBudget > 0 && this.totalSavings > 0) {
-      return [{ label: 'Carteira total', value: Math.round((this.totalSavings / this.totalBudget) * 100), color: this.brandHex }];
+    const totalBudget = budgets.reduce((s, b) => s + (b.annualBudget || 0), 0);
+    const totalSavings = actions.reduce((s, a) => s + (a.estimatedSavings || 0), 0);
+    if (!byCategory.length && totalBudget > 0 && totalSavings > 0) {
+      return [{ label: 'Carteira total', value: Math.round((totalSavings / totalBudget) * 100), color: this.brandHex }];
     }
 
     return byCategory;
   }
 
-  private buildCapexOpexChart(): ChartDatum[] {
+  private buildCapexOpexChart(budgets: Budget[], includeRecurring: boolean): ChartDatum[] {
     const spend = new Map<string, number>([
       ['CAPEX', 0],
       ['OPEX', 0],
@@ -922,15 +1309,17 @@ export class EconomistComponent implements OnInit, OnDestroy {
       spend.set(label, (spend.get(label) || 0) + (value || 0));
     };
 
-    for (const b of this.budgets) {
-      add(this.classifySpendType(`${b.category} ${b.costCenter} ${b.notes || ''}`), b.annualBudget || 0);
+    for (const b of budgets) {
+      add(classifySpendType(`${b.category} ${b.costCenter} ${b.notes || ''}`), b.annualBudget || 0);
     }
 
-    for (const c of this.contracts) {
-      add(this.classifySpendType(`${c.type} ${c.object} ${c.costCenter} ${c.supplier}`), (c.monthlyCost || 0) * 12);
+    if (includeRecurring) {
+      add('OPEX', this.operationalAnnual);
+      for (const c of this.contracts) {
+        add(classifySpendType(`${c.type} ${c.object} ${c.costCenter} ${c.supplier}`), (c.monthlyCost || 0) * 12);
+      }
+      if (this.paymentsYearTotal) add('OPEX', this.paymentsYearTotal);
     }
-
-    add('OPEX', this.annualLicenseCost);
 
     this.capexTotal = spend.get('CAPEX') || 0;
     this.opexTotal = spend.get('OPEX') || 0;
@@ -944,17 +1333,17 @@ export class EconomistComponent implements OnInit, OnDestroy {
     ].filter((d) => d.value > 0);
   }
 
-  private buildRoiTrend(): ChartDatum[] {
+  private buildRoiTrend(budgets: Budget[], actions: ActionItem[]): ChartDatum[] {
     return this.financialYears().map((year) => {
-      const budget = this.budgets
+      const budget = budgets
         .filter((b) => b.year === year)
         .reduce((sum, b) => sum + (b.annualBudget || 0), 0);
-      const savings = this.actions
+      const savings = actions
         .filter((a) => this.actionYear(a) === year)
         .reduce((sum, a) => sum + (a.estimatedSavings || 0), 0);
       const contractBase = year === this.currentYear ? this.annualContractCost : 0;
-      const licenseBase = year >= this.samStartYear ? this.annualLicenseCost : 0;
-      const base = budget + contractBase + licenseBase;
+      const operationalBase = year === this.currentYear ? this.operationalAnnual : 0;
+      const base = budget + contractBase + operationalBase;
 
       return {
         label: String(year),
@@ -964,26 +1353,26 @@ export class EconomistComponent implements OnInit, OnDestroy {
     });
   }
 
-  private buildCapexOpexTrend(): ChartSeries[] {
+  private buildCapexOpexTrend(budgets: Budget[]): ChartSeries[] {
     const years = this.financialYears();
     const capexByYear = new Map<number, number>();
     const opexByYear = new Map<number, number>();
+    const includeRecurring = this.includeRecurringCosts();
 
     const add = (year: number, type: 'CAPEX' | 'OPEX' | 'Outros', value: number) => {
       if (type === 'CAPEX') capexByYear.set(year, (capexByYear.get(year) || 0) + (value || 0));
       if (type === 'OPEX') opexByYear.set(year, (opexByYear.get(year) || 0) + (value || 0));
     };
 
-    for (const b of this.budgets) {
-      add(b.year, this.classifySpendType(`${b.category} ${b.costCenter} ${b.notes || ''}`), b.annualBudget || 0);
+    for (const b of budgets) {
+      add(b.year, classifySpendType(`${b.category} ${b.costCenter} ${b.notes || ''}`), b.annualBudget || 0);
     }
 
-    for (const c of this.contracts) {
-      add(this.currentYear, this.classifySpendType(`${c.type} ${c.object} ${c.costCenter} ${c.supplier}`), (c.monthlyCost || 0) * 12);
-    }
-
-    for (const year of years) {
-      if (year >= this.samStartYear) add(year, 'OPEX', this.annualLicenseCost);
+    if (includeRecurring) {
+      add(this.currentYear, 'OPEX', this.operationalAnnual);
+      for (const c of this.contracts) {
+        add(this.currentYear, classifySpendType(`${c.type} ${c.object} ${c.costCenter} ${c.supplier}`), (c.monthlyCost || 0) * 12);
+      }
     }
 
     return [
@@ -1004,64 +1393,17 @@ export class EconomistComponent implements OnInit, OnDestroy {
     const years = new Set<number>();
     this.budgets.forEach((b) => years.add(b.year));
     this.actions.forEach((a) => years.add(this.actionYear(a)));
-    if (this.contracts.length) years.add(this.currentYear);
-    if (this.licenses.length) years.add(Math.max(this.currentYear, this.samStartYear));
+    if (this.contracts.length || this.servers.length || this.licenses.length || this.domains.length) {
+      years.add(this.currentYear);
+    }
     if (!years.size) years.add(this.currentYear);
     return Array.from(years).sort((a, b) => a - b);
-  }
-
-  private licenseMonthlyCost(license: License): number {
-    const seats = license.totalLicenses || license.usedLicenses || 0;
-    const monthlyFactor = license.type === 'Mensal' ? 1 : 1 / 12;
-    return (license.costPerUnit || 0) * seats * monthlyFactor;
   }
 
   private actionYear(action: ActionItem): number {
     const rawDate = action.dueDate || action.createdAt;
     const year = rawDate ? new Date(rawDate).getFullYear() : NaN;
     return Number.isFinite(year) ? year : this.currentYear;
-  }
-
-  private classifySpendType(text: string): 'CAPEX' | 'OPEX' | 'Outros' {
-    const k = (text || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase();
-
-    if (k.includes('capex') || k.includes('capital')) {
-      return 'CAPEX';
-    }
-
-    if (
-      k.includes('opex') ||
-      k.includes('operacional') ||
-      k.includes('cloud') ||
-      k.includes('aws') ||
-      k.includes('hosped') ||
-      k.includes('licen') ||
-      k.includes('assinatura') ||
-      k.includes('contrato') ||
-      k.includes('suporte') ||
-      k.includes('manutenc') ||
-      k.includes('servico') ||
-      k.includes('servidor') ||
-      k.includes('dominio')
-    ) {
-      return 'OPEX';
-    }
-
-    if (
-      k.includes('aquisicao') ||
-      k.includes('equip') ||
-      k.includes('hardware') ||
-      k.includes('implantacao') ||
-      k.includes('projeto') ||
-      k.includes('infraestrutura')
-    ) {
-      return 'CAPEX';
-    }
-
-    return 'Outros';
   }
 
   openNewBudget() {

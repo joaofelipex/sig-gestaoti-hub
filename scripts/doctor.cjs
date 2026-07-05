@@ -37,6 +37,27 @@ async function main() {
     process.exit(1);
   }
 
+  const apiPort = parseInt(cfg.API_PORT, 10);
+  const webPort = parseInt(process.env.WEB_PORT || '8080', 10);
+  const apiUp = await tryPort('127.0.0.1', apiPort);
+  const webUp = await tryPort('127.0.0.1', webPort);
+
+  console.log('');
+  if (apiUp) {
+    console.log(`OK  API em 127.0.0.1:${apiPort}`);
+  } else {
+    console.log(`FALHA  API não responde em 127.0.0.1:${apiPort} — cd backend && npm run dev`);
+  }
+  if (webUp) {
+    console.log(`OK  Frontend em 127.0.0.1:${webPort}`);
+  } else {
+    console.log(`FALHA  Frontend não responde em 127.0.0.1:${webPort} — npm run dev (na raiz)`);
+  }
+
+  if (!apiUp || !webUp) {
+    process.exit(1);
+  }
+
   console.log('\nArranque:');
   console.log('  cd backend && npm start');
   console.log('  cd frontend && npm run dev');

@@ -1,12 +1,10 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
+import { AuthComponent } from './pages/auth/auth.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
-  {
-    path: 'auth',
-    loadComponent: () => import('./pages/auth/auth.component').then(m => m.AuthComponent),
-  },
+  { path: '', redirectTo: '/auth', pathMatch: 'full' },
+  { path: 'auth', component: AuthComponent },
   {
     path: '',
     loadComponent: () => import('./layout/app-layout.component').then(m => m.AppLayoutComponent),
@@ -25,7 +23,8 @@ export const routes: Routes = [
       { path: 'economista', loadComponent: () => import('./pages/economist/economist.component').then(m => m.EconomistComponent) },
       { path: 'governanca', loadComponent: () => import('./pages/governance/governance.component').then(m => m.GovernanceComponent) },
       { path: 'pagamentos', loadComponent: () => import('./pages/payments/payments.component').then(m => m.PaymentsComponent) },
+      { path: 'dados-base', loadComponent: () => import('./pages/dados-base/dados-base.component').then(m => m.DadosBaseComponent) },
     ]
   },
-  { path: '**', redirectTo: '/dashboard' }
+  { path: '**', redirectTo: '/auth' }
 ];

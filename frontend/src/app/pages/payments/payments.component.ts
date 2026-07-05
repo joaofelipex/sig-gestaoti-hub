@@ -8,27 +8,33 @@ import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent } from '../../components/charts.component';
+import { TiContextStripComponent } from '../../components/ti-context-strip.component';
+import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
+import { formatBrl } from '../../utils/financial.util';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-payments',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent, TiContextStripComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
         <div>
           <h1 class="app-page-title">Pagamentos</h1>
-          <p class="app-page-sub">Despesas recorrentes e faturas de TI.</p>
+          <p class="app-page-sub">Despesas registradas — confrontadas com o custo operacional do Painel e Economista.</p>
         </div>
       </header>
 
-      <div class="sig-kpi-grid">
+      <app-ti-context-strip highlight="payments"></app-ti-context-strip>
+
+      <div class="sig-kpi-grid sig-kpi-grid--5">
         <app-kpi-card label="Pendente" [value]="brl(totals.pendente)" [icon]="icons.pending" color="#f59e0b"></app-kpi-card>
         <app-kpi-card label="Atrasado" [value]="brl(totals.atrasado)" [icon]="icons.overdue" color="#ef4444"></app-kpi-card>
         <app-kpi-card label="Pago no mês" [value]="brl(totals.pago)" [icon]="icons.success" color="#10b981"></app-kpi-card>
         <app-kpi-card label="Total filtrado" [value]="brl(totals.total)" [icon]="icons.cost" color="#3b82f6"></app-kpi-card>
+        <app-kpi-card label="Custo mensal SAM" [value]="brl(ti?.operationalMonthlyCost ?? 0)" [icon]="icons.cost" color="#10b981" [hint]="samHint"></app-kpi-card>
       </div>
 
       <app-data-toolbar searchPlaceholder="Buscar nome, fornecedor..." [search]="search"
@@ -86,10 +92,21 @@ export class PaymentsComponent implements OnInit, OnDestroy {
   payments: Payment[] = []; loading = true; search = ''; filterValues: any = {};
   modalOpen = false; confirmOpen = false; saving = false; deleting = false; payingId: string | null = null; form: any = {}; toDelete: Payment | null = null;
   catOpts = [{value:'servidor',label:'Servidor'},{value:'licenca',label:'Licença'},{value:'dominio',label:'Domínio'},{value:'contrato',label:'Contrato'},{value:'outro',label:'Outro'}];
+  ti: TiMetrics | null = null;
+  samHint = '';
   private sub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
-  ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.payments = d.payments; this.loading = d.loading; }); }
-  ngOnDestroy() { this.sub?.unsubscribe(); }
+  private metricsSub!: Subscription;
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService, private tiMetrics: TiMetricsService) {}
+  ngOnInit() {
+    this.sub = this.dashboard.data$.subscribe(d => { this.payments = d.payments; this.loading = d.loading; });
+    this.metricsSub = this.tiMetrics.metrics$.subscribe(m => {
+      this.ti = m;
+      if (!m.loading) {
+        this.samHint = m.operationalCostHint + ' · base Painel/Economista';
+      }
+    });
+  }
+  ngOnDestroy() { this.sub?.unsubscribe(); this.metricsSub?.unsubscribe(); }
   get filtered() {
     const q = this.search.toLowerCase();
     return this.payments.filter(p =>
@@ -103,7 +120,7 @@ export class PaymentsComponent implements OnInit, OnDestroy {
     for (const p of this.filtered) { r.total += p.valor; (r as any)[p.status] = ((r as any)[p.status] || 0) + p.valor; }
     return r;
   }
-  brl(v: number) { return 'R$ ' + (v||0).toLocaleString('pt-BR', { maximumFractionDigits: 0 }); }
+  brl(v: number) { return formatBrl(v); }
   statusClass(s: string) { return s === 'pago' ? 'bg-green-100 text-green-800' : s === 'atrasado' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'; }
   openNew() { this.form = { categoria: 'outro', status: 'pendente', valor: 0, competencia: new Date().toISOString().slice(0,10) }; this.modalOpen = true; }
   openEdit(p: Payment) { this.form = { ...p }; this.modalOpen = true; }

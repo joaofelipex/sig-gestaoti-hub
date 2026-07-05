@@ -5,6 +5,7 @@ import { ApiService } from './api.service';
 import { DashboardService } from './dashboard.service';
 import { ToastService } from './toast.service';
 import { EmpresaService } from './empresa.service';
+import { PermissionService } from './permission.service';
 
 const TABLES_WITH_EMPRESA = new Set([
   'ativos',
@@ -35,6 +36,7 @@ export class CrudService {
     private dashboard: DashboardService,
     private toast: ToastService,
     private empresa: EmpresaService,
+    private permissions: PermissionService,
   ) {}
 
   private async getOrgId(): Promise<string | null> {
@@ -63,6 +65,14 @@ export class CrudService {
   }
 
   async upsert(table: string, payload: Record<string, unknown>): Promise<boolean> {
+    if (!this.permissions.canWrite) {
+      this.toast.show({
+        title: 'Sem permissão',
+        description: 'A sua conta tem acesso somente leitura.',
+        variant: 'destructive',
+      });
+      return false;
+    }
     const orgId = await this.getOrgId();
     if (!orgId) {
       this.toast.show({ title: 'Erro', description: 'Sessão inválida', variant: 'destructive' });
@@ -88,6 +98,14 @@ export class CrudService {
   }
 
   async remove(table: string, id: string): Promise<boolean> {
+    if (!this.permissions.canWrite) {
+      this.toast.show({
+        title: 'Sem permissão',
+        description: 'A sua conta tem acesso somente leitura.',
+        variant: 'destructive',
+      });
+      return false;
+    }
     try {
       await firstValueFrom(this.api.deleteTable(table, id));
       this.dashboard.applyTableMutation(table, id, 'delete');
@@ -101,6 +119,14 @@ export class CrudService {
   }
 
   async bulkInsert(table: string, rows: Record<string, unknown>[]): Promise<number> {
+    if (!this.permissions.canWrite) {
+      this.toast.show({
+        title: 'Sem permissão',
+        description: 'A sua conta tem acesso somente leitura.',
+        variant: 'destructive',
+      });
+      return 0;
+    }
     const orgId = await this.getOrgId();
     if (!orgId || !rows.length) return 0;
     const payload = rows.map((r) => this.withEmpresa(table, { ...r, org_id: orgId }));

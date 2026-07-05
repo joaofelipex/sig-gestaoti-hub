@@ -368,6 +368,409 @@
   color: var(--sig-text-muted);
 }
 
+/* —— Painel economista —— */
+.sig-page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sig-econ-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.875rem;
+  border: 1px solid var(--sig-table-border);
+  border-radius: var(--br-md);
+  background: var(--sig-page-bg);
+}
+
+.sig-econ-toolbar__label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sig-text-muted);
+}
+
+.sig-econ-toolbar__select {
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--sig-table-border);
+  border-radius: var(--br-sm);
+  background: var(--sig-page-bg);
+  font-size: 0.875rem;
+  color: var(--sig-text);
+}
+
+.sig-econ-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid rgba(var(--wl-background-color), 0.18);
+  border-radius: var(--br-lg);
+  background: linear-gradient(135deg, rgba(var(--wl-background-color), 0.06) 0%, var(--sig-page-bg) 55%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 768px) {
+  .sig-econ-hero {
+    grid-template-columns: 1.1fr 1.4fr auto;
+    align-items: center;
+  }
+}
+
+.sig-econ-hero__label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sig-text-muted);
+}
+
+.sig-econ-hero__value {
+  margin: 0.35rem 0 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--sig-text);
+  line-height: 1.15;
+}
+
+.sig-econ-hero__sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-econ-hero__progress-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+  font-size: 0.8125rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-econ-hero__progress-head strong {
+  font-size: 1rem;
+  color: var(--sig-text);
+}
+
+.sig-progress-track {
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--sig-chart-track);
+  overflow: hidden;
+}
+
+.sig-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  transition: width 0.35s ease;
+}
+
+.sig-progress-fill--brand {
+  background: linear-gradient(90deg, rgb(var(--wl-background-color)) 0%, rgba(var(--wl-background-color), 0.75) 100%);
+}
+
+.sig-econ-hero__progress-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-econ-hero__score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--br-md);
+  background: var(--sig-page-bg);
+  border: 1px solid var(--sig-table-border);
+}
+
+.sig-econ-hero__score-value {
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.sig-econ-hero__score-label {
+  margin: 0.3rem 0 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sig-text-muted);
+  text-align: center;
+}
+
+.sig-econ-matrix {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.sig-econ-matrix__cell {
+  border: 1px solid var(--sig-table-border);
+  border-radius: var(--br-md);
+  padding: 0.75rem 0.8rem;
+  background: var(--sig-page-bg);
+}
+
+.sig-econ-matrix__cell.is-highlight {
+  border-color: rgba(16, 185, 129, 0.45);
+  background: rgba(16, 185, 129, 0.06);
+}
+
+.sig-econ-matrix__title {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sig-text-muted);
+}
+
+.sig-econ-matrix__count {
+  margin: 0.3rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--sig-text);
+}
+
+.sig-econ-matrix__savings {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-econ-quick-win {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--sig-table-border);
+  border-radius: var(--br-md);
+  background: var(--sig-page-bg);
+}
+
+.sig-econ-quick-win__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--sig-text);
+}
+
+.sig-econ-quick-win__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-econ-quick-win__savings {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #10b981;
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-econ-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sig-econ-insight {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--sig-table-border);
+  border-radius: var(--br-md);
+  background: var(--sig-surface-2);
+}
+
+.sig-econ-insight__icon {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--br-sm);
+  background: rgba(var(--wl-background-color), 0.1);
+  color: rgb(var(--wl-background-color));
+  font-size: 0.875rem;
+}
+
+.sig-econ-insight__text {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--sig-text);
+}
+
+.sig-econ-insight__text strong {
+  color: var(--sig-text);
+}
+
+.sig-econ-savings-bar {
+  display: inline-block;
+  width: 4rem;
+  height: 0.35rem;
+  margin-right: 0.5rem;
+  border-radius: 999px;
+  background: var(--sig-chart-track);
+  vertical-align: middle;
+}
+
+.sig-econ-savings-bar__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+}
+
+.sig-econ-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.sig-kpi-grid--5 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .sig-kpi-grid--5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  .sig-kpi-grid--5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.sig-ti-context {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.875rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(var(--wl-background-color), 0.15);
+  border-radius: var(--br-lg);
+  background: linear-gradient(135deg, rgba(var(--wl-background-color), 0.04) 0%, var(--sig-page-bg) 60%);
+}
+
+@media (min-width: 992px) {
+  .sig-ti-context {
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+  }
+}
+
+.sig-ti-context__score-label {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sig-text-muted);
+}
+
+.sig-ti-context__score-value {
+  margin: 0.2rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-ti-context__score-hint {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  color: var(--sig-text-muted);
+  max-width: 14rem;
+}
+
+.sig-ti-context__axes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+}
+
+.sig-ti-context__axis {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 5.5rem;
+}
+
+.sig-ti-context__axis-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sig-text-muted);
+}
+
+.sig-ti-context__axis-value {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.sig-ti-context__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.85rem;
+  font-size: 0.8125rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-ti-context__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.65rem;
+}
+
+.sig-ti-context__nav a {
+  padding: 0.3rem 0.55rem;
+  border-radius: var(--br-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--sig-text-muted);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sig-ti-context__nav a:hover {
+  color: rgb(var(--wl-background-color));
+  background: rgba(var(--wl-background-color), 0.06);
+}
+
+.sig-ti-context__nav a.is-active {
+  color: rgb(var(--wl-background-color));
+  border-color: rgba(var(--wl-background-color), 0.25);
+  background: rgba(var(--wl-background-color), 0.08);
+}
+
 .sig-empresa-card {
   border: 1px solid var(--sig-table-border);
   border-radius: var(--br-lg);
@@ -1130,4 +1533,34 @@
 
 .sig-content .p-6.space-y-6.bg-gray-50 {
   background: transparent !important;
+}
+
+.sig-kpi-card__value--sm {
+  font-size: 1.1rem;
+}
+
+.sig-cmd-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.sig-cmd-list li {
+  font-size: 0.875rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-cmd-list code {
+  display: inline-block;
+  min-width: 12rem;
+  margin-right: 0.5rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--br-sm);
+  background: var(--sig-table-toolbar);
+  border: 1px solid var(--sig-table-border);
+  font-size: 0.8rem;
+  color: var(--sig-text);
 }
