@@ -1,14 +1,7 @@
 /**
- * Aplica ficheiros .sql de `database/migrations/` ao Postgres local (por defeito Docker 5432).
- *
- * - Cria papéis `authenticated`, `anon`, `service_role` se não existirem (policies RLS típicas).
- * - Regista ficheiros já aplicados em public._repo_migration_log (não reaplica).
- * - Por defeito ignora nomes com "baseline" (o schema base vem de database/init/01_schema.sql).
- *   Para incluir baseline: APPLY_BASELINE=true
- *
- * Uso:
- *   npm run db:apply-migrations
- *   DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/sig_gestao_ti" npm run db:apply-migrations
+ * Aplica TODOS os ficheiros .sql de `database/migrations/` (inclui baseline).
+ * SQL é tornado idempotente (IF NOT EXISTS, DROP IF EXISTS) para poder correr
+ * em bases já parcialmente criadas.
  */
 const fs = require('fs');
 const path = require('path');
@@ -59,16 +52,81 @@ function maskUrl(u) {
   }
 }
 
+/** Torna DDL reexecutável em bases que já têm parte do schema. */
+function makeIdempotentSql(sql) {
+  let s = sql.replace(/^\uFEFF/, '');
+
+  s = s.replace(
+    /^CREATE TYPE (public\.\w+) AS ENUM \(([\s\S]*?)\);$/gm,
+    (_, typeName, values) => `DO $$ BEGIN
+  CREATE TYPE ${typeName} AS ENUM (${values});
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;`,
+  );
+
+  s = s.replace(
+    /^CREATE TABLE (?!IF NOT EXISTS )(public\.\w+|auth\.\w+) \(/gm,
+    'CREATE TABLE IF NOT EXISTS $1 (',
+  );
+
+  s = s.replace(/^CREATE INDEX (?!IF NOT EXISTS )(\S+)/gm, 'CREATE INDEX IF NOT EXISTS $1');
+
+  s = s.replace(
+    /CREATE TRIGGER (\w+)\s+(BEFORE|AFTER)\s+UPDATE ON (public\.\w+|auth\.\w+)\s+FOR EACH ROW EXECUTE FUNCTION (public\.\w+\(\));/g,
+    (_, tname, when, table, fn) =>
+      `DROP TRIGGER IF EXISTS ${tname} ON ${table};\nCREATE TRIGGER ${tname} ${when} UPDATE ON ${table} FOR EACH ROW EXECUTE FUNCTION ${fn};`,
+  );
+
+  s = s.replace(
+    /CREATE POLICY "([^"]+)" ON (public\.\w+)/g,
+    (_, pname, table) => `DROP POLICY IF EXISTS "${pname}" ON ${table};\nCREATE POLICY "${pname}" ON ${table}`,
+  );
+
+  return s;
+}
+
+function tablesFromSql(content) {
+  const out = [];
+  const re = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(?:"?(\w+)"?\.)?"?(\w+)"?\s*\(/gi;
+  let m;
+  while ((m = re.exec(content)) !== null) {
+    out.push({ schema: (m[1] || 'public').toLowerCase(), table: m[2].toLowerCase() });
+  }
+  return out;
+}
+
+async function ensureMissingTables(client, files) {
+  for (const name of files) {
+    const raw = fs.readFileSync(path.join(MIGRATIONS_DIR, name), 'utf8');
+    for (const { schema, table } of tablesFromSql(raw)) {
+      const exists = await client.query(
+        `SELECT 1 FROM information_schema.tables WHERE table_schema = $1 AND table_name = $2`,
+        [schema, table],
+      );
+      if (exists.rowCount) continue;
+
+      const re = new RegExp(
+        `CREATE\\s+TABLE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?"?${schema}"?\\.?"?${table}"?\\s*\\([\\s\\S]*?\\);`,
+        'i',
+      );
+      const m = raw.match(re);
+      if (!m) continue;
+      const ddl = makeIdempotentSql(m[0]);
+      console.log(`>> A criar tabela em falta: ${schema}.${table} (de ${name})`);
+      await client.query(ddl);
+    }
+  }
+}
+
 async function main() {
   if (!fs.existsSync(MIGRATIONS_DIR)) {
     console.error('Pasta em falta:', MIGRATIONS_DIR);
     process.exit(1);
   }
-  const applyBaseline = String(process.env.APPLY_BASELINE || '').toLowerCase() === 'true';
+
   const files = fs
     .readdirSync(MIGRATIONS_DIR)
     .filter((f) => f.endsWith('.sql'))
-    .filter((f) => applyBaseline || !/baseline/i.test(f))
     .sort();
 
   if (!files.length) {
@@ -78,16 +136,14 @@ async function main() {
 
   const dbUrl = resolveDatabaseUrl();
   console.log('>> Base:', maskUrl(dbUrl));
-  console.log('>> Migrações:', files.join(', '));
+  console.log('>> Migrações (todas):', files.join(', '));
 
-  const client = new Client({
-    connectionString: dbUrl,
-    ssl: false,
-  });
+  const client = new Client({ connectionString: dbUrl, ssl: false });
   await client.connect();
 
   try {
     await client.query(PREAMBLE);
+    await ensureMissingTables(client, files);
 
     for (const name of files) {
       const check = await client.query('SELECT 1 FROM public._repo_migration_log WHERE name = $1', [name]);
@@ -95,7 +151,8 @@ async function main() {
         console.log('>> Já aplicado (ignorar):', name);
         continue;
       }
-      const sql = fs.readFileSync(path.join(MIGRATIONS_DIR, name), 'utf8');
+      const raw = fs.readFileSync(path.join(MIGRATIONS_DIR, name), 'utf8');
+      const sql = makeIdempotentSql(raw);
       console.log('>> A aplicar:', name);
       await client.query('BEGIN');
       try {

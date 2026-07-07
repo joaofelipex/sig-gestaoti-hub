@@ -18,6 +18,9 @@
     "start:processes": "concurrently -k -n api,web -c blue,green \"npm run api:internal\" \"npm run web:internal\"",
     "api:internal": "cd backend && (test -d node_modules || npm install --no-audit --no-fund) && npm start",
     "web:internal": "cd frontend && (test -d node_modules || npm install --no-audit --no-fund) && npm run dev",
+    "sync:stack": "node scripts/sync-stack.cjs",
+    "stack:bootstrap": "node scripts/stack-bootstrap.cjs",
+    "dev:stack": "node scripts/sync-stack.cjs --quiet && npm run dev",
     "doctor": "node scripts/doctor.cjs",
     "check:data": "node scripts/check-data.cjs",
     "user:attach-demo": "node scripts/attach-user-org.cjs",
@@ -29,6 +32,7 @@
     "db:seed": "node scripts/strip-db-sh.cjs && node scripts/run-with-stack.cjs bash scripts/seed-local-docker.sh",
     "db:import-csv": "node scripts/run-with-stack.cjs node scripts/import-csv-dir.cjs",
     "db:apply-migrations": "node scripts/run-with-stack.cjs node scripts/apply-repo-migrations.cjs",
+    "db:verify-schema": "node scripts/verify-schema-tables.cjs",
     "db:dedupe-empresas": "node scripts/dedupe-empresas.cjs",
     "db:gen-baseline": "node scripts/gen-baseline-migration.cjs"
   }

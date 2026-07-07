@@ -7,8 +7,15 @@ npm run db:apply-migrations
 ```
 
 - Ordem: **nome do ficheiro** (ordem lexicográfica).
-- Ficheiros cujo nome contém **`baseline`** são ignorados por defeito (o schema base já vem de `../init/01_schema.sql` no Docker). Para aplicar também o baseline: `APPLY_BASELINE=true npm run db:apply-migrations`.
+- **Todos** os ficheiros `.sql` são aplicados (inclui `baseline`).
 - Cada ficheiro corre **uma vez**; o registo fica em `public._repo_migration_log`.
+- O script torna o DDL idempotente (`IF NOT EXISTS`, etc.) para poder correr em bases já parcialmente criadas.
+
+Verificar tabelas:
+
+```bash
+npm run db:verify-schema
+```
 
 Para **regenerar** o baseline de referência a partir do init:
 
