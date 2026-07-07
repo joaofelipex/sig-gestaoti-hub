@@ -135,7 +135,7 @@ const ROLE_LABELS: Record<AppRole, string> = {
             </div>
             <ul class="sig-cmd-list">
               <li><code>npm run dev</code> — API (:3000) + Angular (:8080)</li>
-              <li><code>npm run db:up</code> — Sobe Postgres Docker (:5433)</li>
+              <li><code>npm run db:up</code> — Sobe Postgres Docker (:5432)</li>
               <li><code>npm run doctor</code> — Verifica Postgres + health da API</li>
               <li><code>npm run db:apply-migrations</code> — Aplica migrações SQL</li>
               <li><code>npm run db:seed</code> — Reaplica dados demo</li>

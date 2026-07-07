@@ -5,7 +5,7 @@ Tudo o que precisas para **PostgreSQL**, **API** e **dados** da aplicação num 
 ## Fluxo dos dados
 
 ```text
-Angular (8080)  →  HTTP + JWT  →  API Express (3000)  →  PostgreSQL (5433)
+Angular (8080)  →  HTTP + JWT  →  API Express (3000)  →  PostgreSQL (5432)
 ```
 
 A SPA **nunca** liga diretamente ao Postgres: só à API. A API valida o token e filtra por `org_id` do teu `profiles`.
@@ -15,7 +15,7 @@ A SPA **nunca** liga diretamente ao Postgres: só à API. A API valida o token e
 | Campo | Valor local típico |
 |-------|---------------------|
 | Host | `127.0.0.1` |
-| Porta | `5433` (`HOST_PG_PORT` no `scripts/db.sh`) |
+| Porta | `5432` (`HOST_PG_PORT` no `scripts/db.sh`) |
 | Utilizador | `postgres` |
 | Palavra-passe | `postgres` |
 | Base | `sig_gestao_ti` |

@@ -1,5 +1,5 @@
 /**
- * Aplica ficheiros .sql de `database/migrations/` ao Postgres local (por defeito Docker 5433).
+ * Aplica ficheiros .sql de `database/migrations/` ao Postgres local (por defeito Docker 5432).
  *
  * - Cria papéis `authenticated`, `anon`, `service_role` se não existirem (policies RLS típicas).
  * - Regista ficheiros já aplicados em public._repo_migration_log (não reaplica).
@@ -8,7 +8,7 @@
  *
  * Uso:
  *   npm run db:apply-migrations
- *   DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5433/sig_gestao_ti" npm run db:apply-migrations
+ *   DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/sig_gestao_ti" npm run db:apply-migrations
  */
 const fs = require('fs');
 const path = require('path');
@@ -44,7 +44,7 @@ function resolveDatabaseUrl() {
     process.env.PGURL ||
     process.env.PG_CONNECTION_STRING;
   if (u) return u.trim();
-  const port = process.env.HOST_PG_PORT || '5433';
+  const port = process.env.HOST_PG_PORT || '5432';
   const pw = process.env.LOCAL_POSTGRES_PASSWORD || 'postgres';
   return `postgresql://postgres:${encodeURIComponent(pw)}@127.0.0.1:${port}/sig_gestao_ti`;
 }

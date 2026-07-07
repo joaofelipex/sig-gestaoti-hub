@@ -38,7 +38,7 @@ Diferente da versão inicial do projeto, o Frontend **NÃO** possui mais depend�
 | **API (Backend)** | Node.js com Express 5. |
 | **Driver BD** | `pg` (node-postgres) para conexão direta e execução de SQL puro. |
 | **Segurança / Auth** | Autenticação baseada em JWT (`jsonwebtoken`) e senhas com Hash (`bcryptjs` / `pgcrypto`). |
-| **Banco de Dados** | PostgreSQL 16 executado em um contêiner Docker local (`:5433`). |
+| **Banco de Dados** | PostgreSQL 16 executado em um contêiner Docker local (`:5432`). |
 
 ## 4. Segurança e Autenticação Customizada
 
@@ -70,7 +70,7 @@ O controle de modificações ao longo do tempo é gerido pela tabela e scripts d
 
 ## 7. Fluxo de Desenvolvimento Diário
 
-1. **Banco:** `npm run db:up` (sobe o docker Postgres na 5433).
+1. **Banco:** `npm run db:up` (sobe o docker Postgres na 5432).
 2. **Ambiente Dev:** `npm run dev` na raiz inicia tanto a **API (3000)** quanto o **Frontend (8080)** simultaneamente.
 3. **Acesso:** `http://localhost:8080` (O usuário seed demo é `dev@local.imts` / senha `demo123456`).
 

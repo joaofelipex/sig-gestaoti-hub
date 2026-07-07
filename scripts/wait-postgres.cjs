@@ -34,7 +34,7 @@ function tryConnect(host, port) {
 async function main() {
   const rt = loadRuntime();
   const host = rt.DB_HOST || '127.0.0.1';
-  const port = rt.DB_PORT || rt.HOST_PG_PORT || 5433;
+  const port = rt.DB_PORT || rt.HOST_PG_PORT || 5432;
   const max = parseInt(process.env.WAIT_PG_SECONDS || '90', 10);
 
   for (let i = 0; i < max; i++) {

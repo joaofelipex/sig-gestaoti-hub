@@ -2,7 +2,7 @@
 # Aplica dados de demonstração (database/init/02_seed.sql) ao Postgres do Docker (porta HOST_PG_PORT).
 set -eu
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-HOST_PG_PORT="${HOST_PG_PORT:-5433}"
+HOST_PG_PORT="${HOST_PG_PORT:-5432}"
 export PGPASSWORD="${LOCAL_POSTGRES_PASSWORD:-postgres}"
 SQL="$ROOT/database/init/02_seed.sql"
 

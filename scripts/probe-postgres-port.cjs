@@ -36,7 +36,7 @@ async function findPostgres(preferredPort) {
   const win = wslWindowsHost();
   if (win) hosts.push(win);
 
-  const ports = [...new Set([preferredPort, 5433, 5432, 5233].filter(Boolean))];
+  const ports = [...new Set([preferredPort, 5432, 5432, 5233].filter(Boolean))];
 
   for (const host of hosts) {
     for (const port of ports) {

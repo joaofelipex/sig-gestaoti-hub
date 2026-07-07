@@ -10,7 +10,7 @@
 #   REMOTE_DATABASE_URL  — URI do Postgres remoto (sslmode=require se for na nuvem)
 #
 # Opcional:
-#   HOST_PG_PORT=5433
+#   HOST_PG_PORT=5432
 #   FULL_PUBLIC_SCHEMA=1  — em vez de só dados, faz dump+restore do schema public completo
 #
 set -eu
@@ -39,7 +39,7 @@ for cmd in pg_dump pg_restore psql; do
   }
 done
 
-HOST_PG_PORT="${HOST_PG_PORT:-5433}"
+HOST_PG_PORT="${HOST_PG_PORT:-5432}"
 LOCAL_URL="postgresql://postgres:${LOCAL_POSTGRES_PASSWORD:-postgres}@127.0.0.1:${HOST_PG_PORT}/sig_gestao_ti?sslmode=disable"
 export PGPASSWORD="${LOCAL_POSTGRES_PASSWORD:-postgres}"
 

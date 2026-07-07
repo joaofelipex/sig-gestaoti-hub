@@ -8,7 +8,7 @@ Console de gestão de TI para a holding IMTS (ativos, domínios, licenças, serv
 |--------|------------|
 | **Frontend** | Angular 21, Tailwind 4, `HttpClient` → API REST |
 | **API** | Node + Express + `pg` (JWT + bcrypt nas contas) |
-| **Base de dados** | PostgreSQL 16 (Docker local na porta **5433** por defeito) |
+| **Base de dados** | PostgreSQL 16 (Docker local na porta **5432** por defeito) |
 
 Não é necessário PostgREST nem serviço GoTrue externos: a app fala só com a **API** que por sua vez acede ao **PostgreSQL**.
 
@@ -48,7 +48,7 @@ Abre [http://localhost:8080](http://localhost:8080) → **Entrar** com **dev@loc
 
 ### Variáveis da API (`backend/.env`)
 
-Opcional: ficheiro `backend/.env` (ver `backend/.env.example`). Por defeito a API liga a `127.0.0.1:5433`.
+Opcional: ficheiro `backend/.env` (ver `backend/.env.example`). Por defeito a API liga a `127.0.0.1:5432`.
 
 ### Comandos úteis
 

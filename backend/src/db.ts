@@ -22,7 +22,7 @@ export function getPostgresTargetLabel(): string {
     }
   }
   const host = process.env.DB_HOST || '127.0.0.1';
-  const port = process.env.DB_PORT || '5433';
+  const port = process.env.DB_PORT || '5432';
   const db = process.env.DB_DATABASE || 'sig_gestao_ti';
   return `${host}:${port}/${db}`;
 }
@@ -34,7 +34,7 @@ function buildPoolConfig(): PoolConfig {
   }
   return {
     host: process.env.DB_HOST || '127.0.0.1',
-    port: parseInt(process.env.DB_PORT || '5433', 10),
+    port: parseInt(process.env.DB_PORT || '5432', 10),
     user: process.env.DB_USERNAME || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_DATABASE || 'sig_gestao_ti',

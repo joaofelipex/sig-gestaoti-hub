@@ -9,7 +9,7 @@ Passa a **URI** desse servidor. O script **apaga todas as linhas** do schema `pu
 **Windows (cmd):**
 
 ```bat
-set DATABASE_URL=postgresql://postgres:MINHASENHA@127.0.0.1:5433/sig_gestao_ti
+set DATABASE_URL=postgresql://postgres:MINHASENHA@127.0.0.1:5432/sig_gestao_ti
 set CSV_DIR=C:\Users\Infraestrutura-IMTS\Downloads
 npm run db:import-csv
 ```
@@ -17,7 +17,7 @@ npm run db:import-csv
 **WSL / Linux:**
 
 ```bash
-export DATABASE_URL="postgresql://postgres:MINHASENHA@127.0.0.1:5433/sig_gestao_ti"
+export DATABASE_URL="postgresql://postgres:MINHASENHA@127.0.0.1:5432/sig_gestao_ti"
 export CSV_DIR="/mnt/c/Users/Infraestrutura-IMTS/Downloads"
 npm run db:import-csv
 ```
@@ -26,14 +26,14 @@ A base tem de ter o **mesmo modelo de tabelas** que o projeto (`database/init/01
 
 Também podes usar: `POSTGRES_URL` em vez de `DATABASE_URL`.
 
-## Postgres Docker (porta 5433, sem DATABASE_URL)
+## Postgres Docker (porta 5432, sem DATABASE_URL)
 
 ```bash
 npm run db:up
 CSV_DIR="..." npm run db:import-csv
 ```
 
-Por defeito o script usa `TARGET=docker` (porta `HOST_PG_PORT`, default 5433).
+Por defeito o script usa `TARGET=docker` (porta `HOST_PG_PORT`, default 5432).
 
 ## Ficheiros duplicados (`orcamentos-export-...` várias vezes)
 

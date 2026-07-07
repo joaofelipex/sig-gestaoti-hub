@@ -16,7 +16,7 @@ cd "$ROOT"
 CONTAINER_NAME="sig-gestao-ti-db"
 VOLUME_NAME="sig_gestao_ti_pgdata"
 # Porta no teu PC (evita outro Postgres que já use 5432). Dentro do contentor continua 5432.
-HOST_PG_PORT="${HOST_PG_PORT:-5433}"
+HOST_PG_PORT="${HOST_PG_PORT:-5432}"
 
 compose_plugin() {
   docker compose version >/dev/null 2>&1

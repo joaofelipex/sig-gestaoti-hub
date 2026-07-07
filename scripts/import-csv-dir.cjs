@@ -1,11 +1,11 @@
 /**
  * Importa CSV de exportação (delimitador ';', nomes *-export-*.csv) para PostgreSQL.
  *
- * Uso (Postgres a correr — cola a URI ou usa Docker na 5433):
+ * Uso (Postgres a correr — cola a URI ou usa Docker na 5432):
  *   DATABASE_URL="postgresql://USER:SENHA@HOST:PORTA/NOME_BD" CSV_DIR="C:/Users/.../Downloads" npm run db:import-csv
  *
  * Variáveis de ambiente:
- *   DATABASE_URL ou POSTGRES_URL — se omitido, usa TARGET=docker (Postgres local na porta HOST_PG_PORT, default 5433)
+ *   DATABASE_URL ou POSTGRES_URL — se omitido, usa TARGET=docker (Postgres local na porta HOST_PG_PORT, default 5432)
  *   CSV_DIR — pasta com *-export-*.csv (ou 1º argumento: node scripts/import-csv-dir.cjs "C:/.../Downloads")
  *   TARGET=docker — só usado quando não passas DATABASE_URL (ligação ao contentor local)
  *   AUTH_MODE=auto | full | docker | none — auto: auth.identities → full; só auth.users → docker
@@ -87,13 +87,13 @@ function resolveDatabaseUrl(target) {
     process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.PGURL || process.env.PG_CONNECTION_STRING;
   if (explicit) return explicit.trim();
   if (target === 'docker') {
-    const port = process.env.HOST_PG_PORT || '5433';
+    const port = process.env.HOST_PG_PORT || '5432';
     const pw = process.env.LOCAL_POSTGRES_PASSWORD || 'postgres';
     return `postgresql://postgres:${encodeURIComponent(pw)}@127.0.0.1:${port}/sig_gestao_ti`;
   }
   throw new Error(
-    'Define DATABASE_URL (ou POSTGRES_URL) ou corre com TARGET=docker e Postgres local na porta HOST_PG_PORT (default 5433). Ex.:\n' +
-      '  DATABASE_URL="postgresql://postgres:senha@127.0.0.1:5433/sig_gestao_ti" CSV_DIR="..." npm run db:import-csv'
+    'Define DATABASE_URL (ou POSTGRES_URL) ou corre com TARGET=docker e Postgres local na porta HOST_PG_PORT (default 5432). Ex.:\n' +
+      '  DATABASE_URL="postgresql://postgres:senha@127.0.0.1:5432/sig_gestao_ti" CSV_DIR="..." npm run db:import-csv'
   );
 }
 

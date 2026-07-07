@@ -40,7 +40,7 @@ function buildDatabaseUrl(cfg) {
   const u = encodeURIComponent(cfg.DB_USERNAME || 'postgres');
   const p = encodeURIComponent(cfg.DB_PASSWORD || 'postgres');
   const h = cfg.DB_HOST || '127.0.0.1';
-  const port = cfg.DB_PORT || '5433';
+  const port = cfg.DB_PORT || '5432';
   const db = cfg.DB_DATABASE || 'sig_gestao_ti';
   return `postgresql://${u}:${p}@${h}:${port}/${db}`;
 }
@@ -60,7 +60,7 @@ function mergeStack() {
   const cfg = { ...defaults, ...over };
 
   cfg.STACK = cfg.STACK || 'local';
-  cfg.HOST_PG_PORT = cfg.HOST_PG_PORT || '5433';
+  cfg.HOST_PG_PORT = cfg.HOST_PG_PORT || '5432';
   cfg.API_PORT = cfg.API_PORT || '3000';
   cfg.DB_HOST = cfg.DB_HOST || '127.0.0.1';
   cfg.DB_PORT = cfg.DB_PORT || cfg.HOST_PG_PORT;
