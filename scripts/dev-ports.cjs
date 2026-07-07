@@ -22,9 +22,22 @@ function isPortInUse(port) {
 }
 
 function findPidsOnPort(port) {
+  const pids = new Set();
+  if (process.platform === 'win32') {
+    const r = spawnSync('netstat', ['-ano'], { encoding: 'utf8', shell: true });
+    if (r.status !== 0) return [];
+    const portRe = new RegExp(`:${port}\\s`);
+    for (const line of r.stdout.split('\n')) {
+      if (!line.includes('LISTENING') || !portRe.test(line)) continue;
+      const parts = line.trim().split(/\s+/);
+      const pid = parseInt(parts[parts.length - 1], 10);
+      if (Number.isFinite(pid) && pid > 0) pids.add(pid);
+    }
+    return [...pids];
+  }
+
   const r = spawnSync('ss', ['-tlnp'], { encoding: 'utf8' });
   if (r.status !== 0) return [];
-  const pids = new Set();
   const portRe = new RegExp(`:${port}\\s`);
   for (const line of r.stdout.split('\n')) {
     if (!portRe.test(line)) continue;
@@ -36,6 +49,14 @@ function findPidsOnPort(port) {
 }
 
 function getCmdline(pid) {
+  if (process.platform === 'win32') {
+    const r = spawnSync('wmic', ['process', 'where', `ProcessId=${pid}`, 'get', 'CommandLine', '/value'], {
+      encoding: 'utf8',
+      shell: true,
+    });
+    const m = r.stdout.match(/CommandLine=(.+)/);
+    return m ? m[1].trim() : '';
+  }
   try {
     return fs.readFileSync(`/proc/${pid}/cmdline`, 'utf8').replace(/\0/g, ' ').trim();
   } catch {
@@ -44,12 +65,16 @@ function getCmdline(pid) {
 }
 
 function isDevProcess(cmdline) {
-  return /ng\.js serve|ng serve|ts-node-dev|start-dev\.cjs|start:processes|concurrently|sig-heartbeat-hub/.test(
+  return /ng\.js serve|ng serve|ts-node-dev|start-dev\.cjs|start:processes|concurrently|sig-heartbeat-hub|node.*backend|node.*frontend|@angular\/cli/.test(
     cmdline,
   );
 }
 
 function killPid(pid) {
+  if (process.platform === 'win32') {
+    const r = spawnSync('taskkill', ['/PID', String(pid), '/T', '/F'], { encoding: 'utf8', shell: true });
+    return r.status === 0;
+  }
   try {
     process.kill(pid, 'SIGTERM');
     return true;
