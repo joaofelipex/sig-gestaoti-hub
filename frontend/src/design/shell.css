@@ -86,6 +86,11 @@
   width: 28px;
   height: 28px;
   border-radius: var(--br-sm);
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.sig-header__logo-icon:not(img) {
   background: rgba(var(--wl-background-color), 0.12);
   color: rgb(var(--wl-background-color));
   font-weight: 800;
@@ -582,4 +587,136 @@
   border-radius: 999px;
   background: var(--sig-danger);
   color: #fff;
+}
+
+/* —— Menu do utilizador (header) —— */
+.sig-user-menu {
+  position: relative;
+}
+
+.sig-user-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  border: 1px solid rgba(var(--wl-background-color), 0.15);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--sig-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sig-user-menu__trigger:hover,
+.sig-user-menu.is-open .sig-user-menu__trigger {
+  background: rgba(var(--wl-background-color), 0.08);
+  border-color: rgba(var(--wl-background-color), 0.25);
+}
+
+.sig-user-menu__avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--wl-background-color), 0.12);
+  color: rgb(var(--wl-background-color));
+  font-size: 0.65rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.sig-user-menu__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sig-user-menu__name {
+  max-width: 7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sig-user-menu__chevron {
+  font-size: 0.6rem;
+  opacity: 0.65;
+  transition: transform 0.15s;
+}
+
+.sig-user-menu.is-open .sig-user-menu__chevron {
+  transform: rotate(180deg);
+}
+
+.sig-user-menu__dropdown {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 1050;
+  min-width: 12.5rem;
+  padding: 0.5rem 0;
+  border-radius: var(--br-md);
+  border: 1px solid var(--sig-table-border);
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.sig-user-menu__info {
+  padding: 0.5rem 0.85rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.sig-user-menu__info strong {
+  font-size: 0.875rem;
+  color: var(--sig-text);
+}
+
+.sig-user-menu__info small {
+  font-size: 0.75rem;
+  color: var(--sig-text-muted);
+  word-break: break-all;
+}
+
+.sig-user-menu__dropdown hr {
+  margin: 0;
+  border: none;
+  border-top: 1px solid var(--sig-table-border);
+}
+
+.sig-user-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.55rem 0.85rem;
+  border: none;
+  background: transparent;
+  color: var(--sig-text);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.sig-user-menu__item:hover {
+  background: rgba(var(--wl-background-color), 0.06);
+}
+
+.sig-user-menu__item--danger:hover {
+  background: rgba(220, 53, 69, 0.08);
+  color: var(--sig-danger);
+}
+
+.sig-user-menu__item i {
+  width: 1rem;
+  text-align: center;
+  opacity: 0.75;
 }

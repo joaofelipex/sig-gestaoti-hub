@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { WhiteLabelService } from '../services/white-label.service';
 import { EmpresaSelectorComponent } from '../components/empresa-selector.component';
 import { AlertsHeaderButtonComponent } from '../components/alerts-header-button.component';
+import { UserMenuComponent } from '../components/user-menu.component';
 import { ToastService } from '../services/toast.service';
 
 export interface SigTab {
@@ -16,13 +17,19 @@ export interface SigTab {
 @Component({
   selector: 'app-shell-header',
   standalone: true,
-  imports: [CommonModule, RouterModule, EmpresaSelectorComponent, AlertsHeaderButtonComponent],
+  imports: [CommonModule, RouterModule, EmpresaSelectorComponent, AlertsHeaderButtonComponent, UserMenuComponent],
   template: `
     <header class="sig-header">
       <div class="sig-header__row">
         <a routerLink="/dashboard" class="sig-header__brand">
           <img *ngIf="wl.logoHorizontal" [src]="wl.logoHorizontal" [alt]="wl.brandName" class="sig-header__logo" />
-          <span *ngIf="!wl.logoHorizontal" class="sig-header__logo-icon">{{ initials }}</span>
+          <img
+            *ngIf="!wl.logoHorizontal && wl.logoIcon"
+            [src]="wl.logoIcon"
+            [alt]="wl.brandName"
+            class="sig-header__logo-icon"
+          />
+          <span *ngIf="!wl.logoHorizontal && !wl.logoIcon" class="sig-header__logo-icon">{{ initials }}</span>
         </a>
 
         <button type="button" class="sig-header__menu-btn" (click)="menuToggle.emit()" aria-label="Abrir menu">
@@ -45,6 +52,7 @@ export interface SigTab {
         <div class="sig-header__tools">
           <app-empresa-selector />
           <app-alerts-header-button />
+          <app-user-menu />
         </div>
       </div>
 
@@ -84,6 +92,8 @@ export class AppShellHeaderComponent {
     { to: '/manutencao', title: 'Manutenção', subtitle: 'Operações' },
     { to: '/movimentacoes', title: 'Movimentações', subtitle: 'Operações' },
     { to: '/estoque', title: 'Estoque', subtitle: 'Operações' },
+    { to: '/dados-base', title: 'Dados & base', subtitle: 'Sistema' },
+    { to: '/configuracoes', title: 'Configurações', subtitle: 'Conta' },
   ];
 
   constructor(readonly wl: WhiteLabelService, private router: Router, private toast: ToastService) {}

@@ -68,6 +68,7 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
       org_nome: prof.org_nome,
       nome: prof.nome,
       email: prof.email,
+      avatar_url: prof.avatar_url,
       role: prof.role,
     },
     permissions: {
@@ -86,6 +87,132 @@ r.get('/me', requireAuth, async (req: AuthedRequest, res) => {
 });
 
 r.post('/logout', (_req, res) => {
+  res.json({ ok: true });
+});
+
+r.patch('/me', requireAuth, async (req: AuthedRequest, res) => {
+  const uid = req.userId!;
+  const body = req.body ?? {};
+  const hasNome = Object.prototype.hasOwnProperty.call(body, 'nome');
+  const hasEmail = Object.prototype.hasOwnProperty.call(body, 'email');
+  const hasAvatar = Object.prototype.hasOwnProperty.call(body, 'avatar_url');
+
+  if (!hasNome && !hasEmail && !hasAvatar) {
+    res.status(400).json({ error: 'Nenhum campo para atualizar' });
+    return;
+  }
+
+  const nome = hasNome ? String(body.nome ?? '').trim() : undefined;
+  const email = hasEmail
+    ? String(body.email ?? '')
+        .trim()
+        .toLowerCase()
+    : undefined;
+  const avatar_url = hasAvatar ? (body.avatar_url ? String(body.avatar_url).trim() : null) : undefined;
+
+  if (nome !== undefined && !nome) {
+    res.status(400).json({ error: 'Nome é obrigatório' });
+    return;
+  }
+  if (email !== undefined) {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      res.status(400).json({ error: 'E-mail inválido' });
+      return;
+    }
+    const exists = await pool.query(`SELECT 1 FROM auth.users WHERE lower(coalesce(email,'')) = $1 AND id <> $2`, [
+      email,
+      uid,
+    ]);
+    if (exists.rowCount) {
+      res.status(409).json({ error: 'E-mail já utilizado por outra conta' });
+      return;
+    }
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    if (email !== undefined) {
+      await client.query(`UPDATE auth.users SET email = $1 WHERE id = $2`, [email, uid]);
+    }
+    const sets: string[] = [];
+    const params: unknown[] = [];
+    let i = 1;
+    if (nome !== undefined) {
+      sets.push(`nome = $${i++}`);
+      params.push(nome);
+    }
+    if (email !== undefined) {
+      sets.push(`email = $${i++}`);
+      params.push(email);
+    }
+    if (avatar_url !== undefined) {
+      sets.push(`avatar_url = $${i++}`);
+      params.push(avatar_url);
+    }
+    params.push(uid);
+    await client.query(`UPDATE public.profiles SET ${sets.join(', ')} WHERE user_id = $${i}`, params);
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    console.error('patch /me:', e);
+    res.status(500).json({ error: 'Erro ao atualizar perfil' });
+    return;
+  } finally {
+    client.release();
+  }
+
+  const prof = await getProfileOrg(uid);
+  if (!prof) {
+    res.status(404).json({ error: 'Perfil não encontrado' });
+    return;
+  }
+  res.json({
+    profile: {
+      org_id: prof.org_id,
+      org_nome: prof.org_nome,
+      nome: prof.nome,
+      email: prof.email,
+      avatar_url: prof.avatar_url,
+      role: prof.role,
+    },
+  });
+});
+
+r.post('/change-password', requireAuth, async (req: AuthedRequest, res) => {
+  const uid = req.userId!;
+  const currentPassword = String(req.body?.currentPassword ?? '');
+  const newPassword = String(req.body?.newPassword ?? '');
+
+  if (!currentPassword || !newPassword) {
+    res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias' });
+    return;
+  }
+  if (newPassword.length < 6) {
+    res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
+    return;
+  }
+
+  const check = await pool.query(
+    `SELECT 1 FROM auth.users
+     WHERE id = $1
+       AND encrypted_password IS NOT NULL
+       AND crypt($2::text, encrypted_password::text) = encrypted_password`,
+    [uid, currentPassword],
+  );
+  if (!check.rowCount) {
+    res.status(401).json({ error: 'Senha atual incorreta' });
+    return;
+  }
+
+  const hashRow = await pool.query<{ hash: string }>(`SELECT crypt($1::text, gen_salt('bf')) AS hash`, [newPassword]);
+  const hash = hashRow.rows[0]?.hash;
+  if (!hash) {
+    res.status(500).json({ error: 'Erro ao processar nova senha' });
+    return;
+  }
+
+  await pool.query(`UPDATE auth.users SET encrypted_password = $1 WHERE id = $2`, [hash, uid]);
   res.json({ ok: true });
 });
 

@@ -11,6 +11,7 @@ export interface MeResponse {
     org_nome?: string;
     nome: string;
     email: string;
+    avatar_url?: string | null;
     role?: 'admin' | 'gestor' | 'usuario';
   };
   permissions?: { canWrite: boolean };
@@ -74,6 +75,14 @@ export class ApiService {
 
   me(): Observable<MeResponse> {
     return this.http.get<MeResponse>(this.api('/auth/me'));
+  }
+
+  patchProfile(body: { nome?: string; email?: string; avatar_url?: string | null }): Observable<{ profile: MeResponse['profile'] }> {
+    return this.http.patch<{ profile: MeResponse['profile'] }>(this.api('/auth/me'), body);
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(this.api('/auth/change-password'), { currentPassword, newPassword });
   }
 
   logout(): Observable<{ ok: boolean }> {

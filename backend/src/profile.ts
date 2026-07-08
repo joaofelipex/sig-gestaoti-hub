@@ -6,6 +6,7 @@ export interface ProfileOrg {
   org_id: string;
   email: string;
   nome: string;
+  avatar_url: string | null;
   org_nome: string;
   role: AppRole;
 }
@@ -16,7 +17,7 @@ export function canWrite(role: AppRole): boolean {
 
 export async function getProfileOrg(userId: string): Promise<ProfileOrg | undefined> {
   const q = await pool.query(
-    `SELECT p.org_id, p.email, p.nome, o.nome AS org_nome,
+    `SELECT p.org_id, p.email, p.nome, p.avatar_url, o.nome AS org_nome,
             COALESCE(ur.role, 'usuario'::public.app_role) AS role
      FROM public.profiles p
      JOIN public.organizations o ON o.id = p.org_id

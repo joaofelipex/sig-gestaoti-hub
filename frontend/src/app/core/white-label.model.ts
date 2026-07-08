@@ -30,7 +30,7 @@ export const SIG_DEFAULT_WHITELABEL: Required<
   brandName: 'IMTS',
   brandSubtitle: 'Gestão TI',
   logoUrl: null,
-  logoIconUrl: null,
+  logoIconUrl: '/icon-imts.png',
   logoLoginUrl: null,
 };
 
