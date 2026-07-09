@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { DashboardService, Domain } from '../../services/dashboard.service';
+import { DashboardService, Domain, DnsRecord } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
@@ -91,6 +91,51 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="md:col-span-2 text-sm flex items-center gap-2">
           <input type="checkbox" [(ngModel)]="form.auto_renovacao" /> Renovação automática
         </label>
+        <label class="md:col-span-2 text-sm">Observações
+          <textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm"></textarea>
+        </label>
+      </div>
+
+      <div *ngIf="form.id" class="mt-4 pt-4 border-top">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3 class="h6 mb-0">Registos DNS</h3>
+          <button type="button" class="btn btn-outline-primary btn-sm" (click)="openNewDns()">Adicionar registo</button>
+        </div>
+        <table class="sig-table sig-table--compact w-full" *ngIf="domainDns.length">
+          <thead><tr><th>Tipo</th><th>Nome</th><th>Valor</th><th>TTL</th><th class="text-end">Ações</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let r of domainDns">
+              <td>{{ r.tipo }}</td><td>{{ r.nome }}</td><td>{{ r.valor }}</td><td>{{ r.ttl }}</td>
+              <td class="text-end">
+                <button type="button" class="sig-link-action me-2" (click)="openEditDns(r)">Editar</button>
+                <button type="button" class="sig-link-action sig-link-action--danger" (click)="removeDns(r)">Excluir</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="!domainDns.length" class="text-sm text-muted mb-0">Nenhum registo DNS para este domínio.</p>
+      </div>
+    </app-modal>
+
+    <app-modal [open]="dnsModalOpen" [title]="dnsForm.id ? 'Editar registo DNS' : 'Novo registo DNS'" [saving]="dnsSaving" (close)="dnsModalOpen=false" (save)="saveDns()">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="text-sm">Tipo *
+          <select [(ngModel)]="dnsForm.tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
+            <option>A</option><option>AAAA</option><option>CNAME</option><option>MX</option><option>TXT</option><option>NS</option>
+          </select>
+        </label>
+        <label class="text-sm">Nome *
+          <input [(ngModel)]="dnsForm.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" placeholder="@ ou subdomínio" />
+        </label>
+        <label class="text-sm md:col-span-2">Valor *
+          <input [(ngModel)]="dnsForm.valor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+        </label>
+        <label class="text-sm">TTL
+          <input type="number" [(ngModel)]="dnsForm.ttl" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+        </label>
+        <label class="text-sm">Prioridade
+          <input type="number" [(ngModel)]="dnsForm.prioridade" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+        </label>
       </div>
     </app-modal>
 
@@ -99,20 +144,35 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 })
 export class DomainsComponent implements OnInit, OnDestroy {
   domains: Domain[] = [];
+  dnsRecords: DnsRecord[] = [];
   loading = true;
   search = '';
   filterValues: Record<string, string> = {};
   modalOpen = false;
+  dnsModalOpen = false;
   confirmOpen = false;
   saving = false;
+  dnsSaving = false;
   deleting = false;
   form: any = {};
+  dnsForm: any = {};
   toDelete: Domain | null = null;
   private sub!: Subscription;
 
   constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
-  ngOnInit() { this.sub = this.dashboard.data$.subscribe(d => { this.domains = d.domains; this.loading = d.loading; }); }
+  ngOnInit() {
+    this.sub = this.dashboard.data$.subscribe((d) => {
+      this.domains = d.domains;
+      this.dnsRecords = d.dnsRecords || [];
+      this.loading = d.loading;
+    });
+  }
   ngOnDestroy() { this.sub?.unsubscribe(); }
+
+  get domainDns(): DnsRecord[] {
+    if (!this.form.id) return [];
+    return this.dnsRecords.filter((r) => r.dominio_id === this.form.id);
+  }
 
   get filtered() {
     const q = this.search.toLowerCase();
@@ -128,7 +188,18 @@ export class DomainsComponent implements OnInit, OnDestroy {
 
   openNew() { this.form = { auto_renovacao: true, status: 'Ativo', custo_renovacao: 0 }; this.modalOpen = true; }
   openEdit(d: Domain) {
-    this.form = { id: d.id, nome: d.url, registrar: d.registrar, dns_provider: d.dnsProvider, data_vencimento: d.expirationDate, ssl_vencimento: d.sslExpiration, custo_renovacao: d.renewalCost, status: d.status, auto_renovacao: d.autoRenew };
+    this.form = {
+      id: d.id,
+      nome: d.url,
+      registrar: d.registrar,
+      dns_provider: d.dnsProvider,
+      data_vencimento: d.expirationDate,
+      ssl_vencimento: d.sslExpiration,
+      custo_renovacao: d.renewalCost,
+      status: d.status,
+      auto_renovacao: d.autoRenew,
+      observacoes: d.observacoes || '',
+    };
     this.modalOpen = true;
   }
   async save() {
@@ -179,5 +250,30 @@ export class DomainsComponent implements OnInit, OnDestroy {
     const out: any = { ...o };
     ['data_vencimento', 'ssl_vencimento'].forEach(k => { if (!out[k]) out[k] = null; });
     return out;
+  }
+
+  openNewDns() {
+    this.dnsForm = { dominio_id: this.form.id, tipo: 'A', nome: '@', valor: '', ttl: 3600, prioridade: null };
+    this.dnsModalOpen = true;
+  }
+
+  openEditDns(r: DnsRecord) {
+    this.dnsForm = { id: r.id, dominio_id: r.dominio_id, tipo: r.tipo, nome: r.nome, valor: r.valor, ttl: r.ttl, prioridade: r.prioridade };
+    this.dnsModalOpen = true;
+  }
+
+  async saveDns() {
+    if (!this.ux.requireAll([[this.dnsForm.nome, 'o nome'], [this.dnsForm.valor, 'o valor']])) return;
+    this.dnsSaving = true;
+    try {
+      const ok = await this.crud.upsert('dns_records', { ...this.dnsForm });
+      if (ok) this.dnsModalOpen = false;
+    } finally {
+      this.dnsSaving = false;
+    }
+  }
+
+  async removeDns(r: DnsRecord) {
+    await this.crud.remove('dns_records', r.id);
   }
 }

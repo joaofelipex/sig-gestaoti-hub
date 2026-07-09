@@ -28,6 +28,7 @@ const DASHBOARD_TABLES = [
   'registros_acesso',
   'riscos',
   'pagamentos',
+  'dns_records',
 ] as const;
 
 type DashboardTable = (typeof DASHBOARD_TABLES)[number];
@@ -37,14 +38,14 @@ const DASHBOARD_SELECT: Partial<Record<DashboardTable, string>> = {
   ativos: `id, org_id, empresa_id, tipo, status, marca, modelo, numero_serie,
     data_aquisicao, warranty_end, department_nome, assigned_to, valor_aquisicao`,
   dominios: `id, org_id, empresa_id, nome, registrar, data_vencimento, custo_renovacao,
-    custo_anual, auto_renovacao, dns_provider, hosting_provider, ssl_vencimento, status`,
+    custo_anual, auto_renovacao, dns_provider, hosting_provider, ssl_vencimento, status, observacoes`,
   licencas: `id, org_id, empresa_id, nome, tipo, total_licencas, qtd_usuarios,
     chave_ativacao, custo_unitario, data_renovacao, fornecedor, categoria`,
   servidores: `id, org_id, empresa_id, nome, provedor, tipo, regiao, ip_publico,
     sistema_operacional, cpu, ram, armazenamento, status, uptime_pct, custo_mensal,
     finalidade, equipe_responsavel, contrato_fim, ultimo_backup, url_monitoramento,
     ssl_vencimento, observacoes`,
-  contratos: `id, org_id, empresa_id, supplier, object, type, cost_center, monthly_cost`,
+  contratos: `id, org_id, empresa_id, supplier, object, type, status, cost_center, monthly_cost, end_date`,
   manutencoes: `id, org_id, empresa_id, ativo_id, tipo, status, data_abertura,
     data_conclusao, custo, fornecedor, descricao`,
   movimentacoes: `id, org_id, empresa_id, ativo_id, ativo_label, tipo, data,
@@ -61,6 +62,7 @@ const DASHBOARD_SELECT: Partial<Record<DashboardTable, string>> = {
   riscos: `id, org_id, empresa_id, title, severity, owner, mitigation`,
   pagamentos: `id, org_id, empresa_id, nome, categoria, competencia, valor, status,
     vencimento, data_pagamento, fornecedor, observacoes`,
+  dns_records: `id, org_id, empresa_id, dominio_id, tipo, nome, valor, ttl, prioridade, observacoes`,
 };
 
 function parseDashboardTables(raw: unknown): DashboardTable[] {

@@ -1,9 +1,10 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { ApiStatusBannerComponent } from '../components/api-status-banner.component';
 import { AppShellHeaderComponent } from './app-shell-header.component';
 import { AppShellSidebarComponent } from './app-shell-sidebar.component';
+import { AlertGenerationService } from '../services/alert-generation.service';
 
 @Component({
   selector: 'app-layout',
@@ -39,9 +40,19 @@ import { AppShellSidebarComponent } from './app-shell-sidebar.component';
     </div>
   `,
 })
-export class AppLayoutComponent {
+export class AppLayoutComponent implements OnInit, OnDestroy {
   sidebarCollapsed = false;
   mobileNavOpen = false;
+
+  constructor(private alertGen: AlertGenerationService) {}
+
+  ngOnInit(): void {
+    this.alertGen.startAutoSync();
+  }
+
+  ngOnDestroy(): void {
+    this.alertGen.stopAutoSync();
+  }
 
   toggleMobileNav(): void {
     this.mobileNavOpen = !this.mobileNavOpen;

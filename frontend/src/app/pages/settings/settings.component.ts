@@ -3,14 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { ApiService, MeResponse } from '../../services/api.service';
-import { PermissionService, AppRole } from '../../services/permission.service';
 import { SweetAlertService } from '../../services/sweetalert.service';
-
-const ROLE_LABELS: Record<AppRole, string> = {
-  admin: 'Administrador',
-  gestor: 'Gestor',
-  usuario: 'Utilizador (leitura)',
-};
 
 @Component({
   selector: 'app-settings',
@@ -83,12 +76,8 @@ const ROLE_LABELS: Record<AppRole, string> = {
                 <dd>{{ me.profile.org_nome || '—' }}</dd>
               </div>
               <div>
-                <dt>Papel</dt>
-                <dd>{{ roleLabel }}</dd>
-              </div>
-              <div>
-                <dt>Permissões</dt>
-                <dd>{{ canWrite ? 'Leitura e escrita' : 'Somente leitura' }}</dd>
+                <dt>E-mail da conta</dt>
+                <dd>{{ me.profile.email }}</dd>
               </div>
               <div>
                 <dt>ID do utilizador</dt>
@@ -148,7 +137,6 @@ export class SettingsComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private api: ApiService,
-    private permissions: PermissionService,
     private swal: SweetAlertService,
   ) {
     this.profileForm = this.fb.group({
@@ -179,15 +167,6 @@ export class SettingsComponent implements OnInit {
     return parts[0].slice(0, 2).toUpperCase();
   }
 
-  get roleLabel(): string {
-    const role = this.me?.profile?.role ?? 'usuario';
-    return ROLE_LABELS[role] ?? role;
-  }
-
-  get canWrite(): boolean {
-    return this.permissions.canWrite;
-  }
-
   private passwordMatchValidator(group: FormGroup): { mismatch: boolean } | null {
     const np = group.get('newPassword')?.value;
     const cp = group.get('confirmPassword')?.value;
@@ -198,7 +177,6 @@ export class SettingsComponent implements OnInit {
     this.loading = true;
     try {
       this.me = await firstValueFrom(this.api.me());
-      await this.permissions.refresh();
       this.profileForm.patchValue({
         nome: this.me.profile.nome,
         email: this.me.profile.email,

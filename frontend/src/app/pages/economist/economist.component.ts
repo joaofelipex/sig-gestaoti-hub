@@ -42,7 +42,7 @@ import {
   healthScoreColor,
 } from '../../utils/health.util';
 
-type TabId = 'visao' | 'orcamentos' | 'acoes';
+type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
 
 @Component({
   selector: 'app-economist',
@@ -130,6 +130,9 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
         </button>
         <button type="button" (click)="tab = 'acoes'" [class.is-active]="tab === 'acoes'">
           Ações estratégicas ({{ actions.length }})
+        </button>
+        <button type="button" (click)="tab = 'contratos'" [class.is-active]="tab === 'contratos'">
+          Contratos ({{ contracts.length }})
         </button>
       </nav>
 
@@ -577,6 +580,58 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
           </div>
         </div>
       </ng-container>
+
+      <!-- ========== CONTRATOS ========== -->
+      <ng-container *ngIf="!loading && tab === 'contratos'">
+        <app-data-toolbar
+          searchPlaceholder="Buscar fornecedor, objeto, tipo..."
+          [search]="searchContract"
+          [filters]="contractFilters"
+          [filterValues]="filterContract"
+          (searchChange)="searchContract = $event"
+          (filterChange)="filterContract[$event.key] = $event.value"
+          (newClick)="openNewContract()"
+          (exportClick)="exportContracts()"
+          (importFile)="importContracts($event)"
+        ></app-data-toolbar>
+
+        <div class="sig-list-card">
+          <div class="sig-table-wrap">
+            <table class="sig-table">
+              <thead>
+                <tr>
+                  <th>Fornecedor</th>
+                  <th>Objeto</th>
+                  <th>Tipo</th>
+                  <th>Status</th>
+                  <th>Centro de custo</th>
+                  <th>Vencimento</th>
+                  <th class="text-end">Custo mensal</th>
+                  <th class="text-end">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let c of filteredContracts">
+                  <td class="fw-medium">{{ c.supplier }}</td>
+                  <td>{{ c.object }}</td>
+                  <td>{{ c.type }}</td>
+                  <td><span [class]="contractStatusBadge(c.status)">{{ c.status }}</span></td>
+                  <td>{{ c.costCenter || '—' }}</td>
+                  <td>{{ c.endDate ? (c.endDate | date:'dd/MM/yyyy') : '—' }}</td>
+                  <td class="text-end fw-medium">{{ brl(c.monthlyCost) }}</td>
+                  <td class="text-end">
+                    <button type="button" (click)="openEditContract(c)" class="sig-link-action me-2">Editar</button>
+                    <button type="button" (click)="askDeleteContract(c)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                  </td>
+                </tr>
+                <tr *ngIf="!filteredContracts.length">
+                  <td colspan="8" class="sig-table-empty">Nenhum contrato — alimenta o painel financeiro e os alertas</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </ng-container>
     </section>
 
     <!-- Modal orçamento -->
@@ -698,6 +753,58 @@ type TabId = 'visao' | 'orcamentos' | 'acoes';
       (cancel)="confirmAction = false"
       (confirm)="doDeleteAction()"
     ></app-confirm>
+
+    <app-modal
+      [open]="contractModal"
+      [title]="contractForm.id ? 'Editar contrato' : 'Novo contrato'"
+      [saving]="saving"
+      (close)="contractModal = false"
+      (save)="saveContract()"
+    >
+      <div class="sig-modal-form grid grid-cols-1 md:grid-cols-2 gap-4">
+        <label class="text-sm md:col-span-2">
+          Fornecedor *
+          <input [(ngModel)]="contractForm.supplier" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+        </label>
+        <label class="text-sm md:col-span-2">
+          Objeto *
+          <input [(ngModel)]="contractForm.object" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+        </label>
+        <label class="text-sm">
+          Tipo *
+          <select [(ngModel)]="contractForm.type" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
+            <option *ngFor="let t of contractTypeOptions" [value]="t">{{ t }}</option>
+          </select>
+        </label>
+        <label class="text-sm">
+          Status
+          <select [(ngModel)]="contractForm.status" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
+            <option *ngFor="let s of contractStatusOptions" [value]="s">{{ s }}</option>
+          </select>
+        </label>
+        <label class="text-sm">
+          Centro de custo
+          <input [(ngModel)]="contractForm.cost_center" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+        </label>
+        <label class="text-sm">
+          Vencimento
+          <input type="date" [(ngModel)]="contractForm.end_date" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+        </label>
+        <label class="text-sm md:col-span-2">
+          Custo mensal (R$)
+          <input type="number" step="0.01" [(ngModel)]="contractForm.monthly_cost" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+        </label>
+      </div>
+    </app-modal>
+
+    <app-confirm
+      [open]="confirmContract"
+      title="Excluir contrato"
+      [message]="'Excluir contrato de ' + (toDeleteContract?.supplier || 'fornecedor') + '?'"
+      [confirming]="deletingContract"
+      (cancel)="confirmContract = false"
+      (confirm)="doDeleteContract()"
+    ></app-confirm>
   `,
 })
 export class EconomistComponent implements OnInit, OnDestroy {
@@ -773,19 +880,26 @@ export class EconomistComponent implements OnInit, OnDestroy {
   filterBudget: Record<string, string> = {};
   searchAction = '';
   filterAction: Record<string, string> = {};
+  searchContract = '';
+  filterContract: Record<string, string> = {};
 
   budgetModal = false;
   actionModal = false;
+  contractModal = false;
   confirmBudget = false;
   confirmAction = false;
+  confirmContract = false;
   saving = false;
   deletingBudget = false;
   deletingAction = false;
+  deletingContract = false;
   actionDoneId: string | null = null;
   budgetForm: any = {};
   actionForm: any = {};
+  contractForm: any = {};
   toDeleteBudget: Budget | null = null;
   toDeleteAction: ActionItem | null = null;
+  toDeleteContract: FinancialContract | null = null;
 
   readonly statusOptions = ['Aberto', 'Em andamento', 'Concluída', 'Cancelada', 'Pendente'];
   readonly categoryOptions = [
@@ -797,6 +911,8 @@ export class EconomistComponent implements OnInit, OnDestroy {
     'Contratos',
     'Outros',
   ];
+  readonly contractTypeOptions = ['SaaS', 'Suporte', 'Cloud', 'Telecom', 'Licenciamento', 'Outros'];
+  readonly contractStatusOptions = ['Ativo', 'Renovando', 'Encerrado', 'Suspenso'];
 
   private readonly chartColors = [
     '#023ed8',
@@ -992,6 +1108,34 @@ export class EconomistComponent implements OnInit, OnDestroy {
     );
   }
 
+  get contractFilters() {
+    return [
+      {
+        key: 'status',
+        label: 'Status',
+        options: this.contractStatusOptions.map((s) => ({ value: s, label: s })),
+      },
+      {
+        key: 'type',
+        label: 'Tipo',
+        options: this.contractTypeOptions.map((t) => ({ value: t, label: t })),
+      },
+    ];
+  }
+
+  get filteredContracts() {
+    const q = this.searchContract.toLowerCase();
+    return this.contracts.filter(
+      (c) =>
+        (!q ||
+          c.supplier?.toLowerCase().includes(q) ||
+          c.object?.toLowerCase().includes(q) ||
+          c.type?.toLowerCase().includes(q)) &&
+        (!this.filterContract['status'] || c.status === this.filterContract['status']) &&
+        (!this.filterContract['type'] || c.type === this.filterContract['type']),
+    );
+  }
+
   brl(v: number) {
     return formatBrl(v);
   }
@@ -1025,6 +1169,14 @@ export class EconomistComponent implements OnInit, OnDestroy {
     if (k.includes('cancel')) return SigBadge.danger;
     if (k.includes('andamento')) return SigBadge.brand;
     if (k.includes('aberto') || k.includes('pendente')) return SigBadge.warning;
+    return SigBadge.neutral;
+  }
+
+  contractStatusBadge(s: string) {
+    const k = (s || '').toLowerCase();
+    if (k.includes('ativo')) return SigBadge.success;
+    if (k.includes('renov')) return SigBadge.warning;
+    if (k.includes('encerr') || k.includes('susp')) return SigBadge.danger;
     return SigBadge.neutral;
   }
 
@@ -1581,5 +1733,97 @@ export class EconomistComponent implements OnInit, OnDestroy {
       .filter((r) => r.title);
     if (payload.length) await this.crud.bulkInsert('acoes_economista', payload);
     else this.ux.noImportRows('ações');
+  }
+
+  openNewContract() {
+    this.contractForm = {
+      supplier: '',
+      object: '',
+      type: 'SaaS',
+      status: 'Ativo',
+      cost_center: 'CC-TI',
+      end_date: '',
+      monthly_cost: 0,
+    };
+    this.contractModal = true;
+  }
+
+  openEditContract(c: FinancialContract) {
+    this.contractForm = {
+      id: c.id,
+      supplier: c.supplier,
+      object: c.object,
+      type: c.type,
+      status: c.status,
+      cost_center: c.costCenter,
+      end_date: c.endDate || '',
+      monthly_cost: c.monthlyCost,
+    };
+    this.contractModal = true;
+  }
+
+  async saveContract() {
+    if (!this.ux.requireAll([
+      [this.contractForm.supplier, 'o fornecedor'],
+      [this.contractForm.object, 'o objeto'],
+      [this.contractForm.type, 'o tipo'],
+    ])) return;
+    this.saving = true;
+    try {
+      const payload = { ...this.contractForm };
+      if (!payload.end_date) payload.end_date = null;
+      const ok = await this.crud.upsert('contratos', payload);
+      if (ok) this.contractModal = false;
+    } finally {
+      this.saving = false;
+    }
+  }
+
+  askDeleteContract(c: FinancialContract) {
+    this.toDeleteContract = c;
+    this.confirmContract = true;
+  }
+
+  async doDeleteContract() {
+    if (!this.toDeleteContract || this.deletingContract) return;
+    this.deletingContract = true;
+    const ok = await this.crud.remove('contratos', this.toDeleteContract.id);
+    this.deletingContract = false;
+    if (ok) {
+      this.confirmContract = false;
+      this.toDeleteContract = null;
+    }
+  }
+
+  exportContracts() {
+    exportToCSV(
+      this.filteredContracts.map((c) => ({
+        Fornecedor: c.supplier,
+        Objeto: c.object,
+        Tipo: c.type,
+        Status: c.status,
+        CentroCusto: c.costCenter,
+        Vencimento: c.endDate,
+        CustoMensal: c.monthlyCost,
+      })),
+      'contratos',
+    );
+  }
+
+  async importContracts(f: File) {
+    const rows = parseCSV(await readFileAsText(f));
+    const payload = rows
+      .map((r) => ({
+        supplier: r['Fornecedor'] || r['supplier'],
+        object: r['Objeto'] || r['object'],
+        type: r['Tipo'] || r['type'] || 'Outros',
+        status: r['Status'] || r['status'] || 'Ativo',
+        cost_center: r['CentroCusto'] || r['cost_center'] || 'CC-TI',
+        end_date: r['Vencimento'] || r['end_date'] || null,
+        monthly_cost: Number(r['CustoMensal'] || r['monthly_cost'] || 0),
+      }))
+      .filter((r) => r.supplier && r.object);
+    if (payload.length) await this.crud.bulkInsert('contratos', payload);
+    else this.ux.noImportRows('contratos');
   }
 }

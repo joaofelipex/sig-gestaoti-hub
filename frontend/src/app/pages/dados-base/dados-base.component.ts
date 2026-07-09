@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiService, DataStatusResponse, MeResponse } from '../../services/api.service';
-import { PermissionService, AppRole } from '../../services/permission.service';
 
 interface HealthState {
   ok: boolean;
@@ -30,12 +29,7 @@ const TABLE_LABELS: Record<string, string> = {
   registros_acesso: 'Registos de acesso',
   riscos: 'Riscos',
   pagamentos: 'Pagamentos',
-};
-
-const ROLE_LABELS: Record<AppRole, string> = {
-  admin: 'Administrador',
-  gestor: 'Gestor',
-  usuario: 'Utilizador (leitura)',
+  dns_records: 'Registos DNS',
 };
 
 @Component({
@@ -96,11 +90,11 @@ const ROLE_LABELS: Record<AppRole, string> = {
           <article class="sig-kpi-card">
             <div class="sig-kpi-card__body">
               <div>
-                <p class="sig-kpi-card__label">Papel</p>
-                <p class="sig-kpi-card__value sig-kpi-card__value--sm">{{ roleLabel }}</p>
-                <p class="sig-kpi-card__hint">{{ canWrite ? 'Leitura e escrita' : 'Somente leitura' }}</p>
+                <p class="sig-kpi-card__label">Utilizador</p>
+                <p class="sig-kpi-card__value sig-kpi-card__value--sm">{{ me?.profile?.nome || '—' }}</p>
+                <p class="sig-kpi-card__hint">{{ me?.profile?.email || '—' }}</p>
               </div>
-              <i class="fas fa-user-shield sig-kpi-card__icon" aria-hidden="true"></i>
+              <i class="fas fa-user sig-kpi-card__icon" aria-hidden="true"></i>
             </div>
           </article>
         </div>
@@ -155,12 +149,8 @@ export class DadosBaseComponent implements OnInit {
   me: MeResponse | null = null;
   status: DataStatusResponse | null = null;
   apiUrl = environment.apiUrl;
-  canWrite = false;
 
-  constructor(
-    private api: ApiService,
-    private permissions: PermissionService,
-  ) {}
+  constructor(private api: ApiService) {}
 
   ngOnInit() {
     void this.refresh();
@@ -186,11 +176,6 @@ export class DadosBaseComponent implements OnInit {
     return scope === 'org' ? 'Organização (isolado)' : 'Global (dev)';
   }
 
-  get roleLabel(): string {
-    const role = this.status?.role ?? this.me?.profile?.role ?? 'usuario';
-    return ROLE_LABELS[role] ?? role;
-  }
-
   get tableRows(): { label: string; count: number }[] {
     if (!this.status?.tableCounts) return [];
     return Object.entries(this.status.tableCounts)
@@ -204,7 +189,6 @@ export class DadosBaseComponent implements OnInit {
 
   async refresh() {
     this.loading = true;
-    this.canWrite = this.permissions.canWrite;
     try {
       const [health, me, status] = await Promise.all([
         firstValueFrom(this.api.getHealth()).catch(() => null),
@@ -214,8 +198,6 @@ export class DadosBaseComponent implements OnInit {
       this.health = health ?? { ok: false, error: 'API inacessível' };
       this.me = me;
       this.status = status;
-      await this.permissions.refresh();
-      this.canWrite = this.permissions.canWrite;
     } finally {
       this.loading = false;
     }

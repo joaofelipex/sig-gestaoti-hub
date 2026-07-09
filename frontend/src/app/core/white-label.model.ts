@@ -20,9 +20,9 @@ export interface WhiteLabelConfig {
 export const SIG_DEFAULT_WHITELABEL: Required<
   Pick<WhiteLabelConfig, 'backgroundColor' | 'textColor' | 'backgroundImage' | 'brandName' | 'brandSubtitle'>
 > & {
-  logoUrl: null;
-  logoIconUrl: null;
-  logoLoginUrl: null;
+  logoUrl: string | null;
+  logoIconUrl: string | null;
+  logoLoginUrl: string | null;
 } = {
   backgroundColor: '2, 62, 216',
   textColor: '255, 255, 255',

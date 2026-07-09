@@ -118,7 +118,11 @@ export class CrudService {
     }
   }
 
-  async bulkInsert(table: string, rows: Record<string, unknown>[]): Promise<number> {
+  async bulkInsert(
+    table: string,
+    rows: Record<string, unknown>[],
+    options: { silent?: boolean } = {},
+  ): Promise<number> {
     if (!this.permissions.canWrite) {
       this.toast.show({
         title: 'Sem permissão',
@@ -139,7 +143,9 @@ export class CrudService {
         this.dashboard.applyTableMutation(table, data, 'upsert');
       }
       void this.dashboard.refreshAfterMutation();
-      this.toast.show({ title: 'Importação concluída', description: `${n} registros importados` });
+      if (!options.silent) {
+        this.toast.show({ title: 'Importação concluída', description: `${n} registros importados` });
+      }
       return n;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro na importação', description: this.errMsg(e), variant: 'destructive' });

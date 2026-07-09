@@ -36,6 +36,7 @@ export interface Domain {
   hostingProvider: string;
   sslExpiration: string;
   status: string;
+  observacoes?: string;
 }
 
 export interface License {
@@ -189,8 +190,21 @@ export interface FinancialContract {
   supplier: string;
   object: string;
   type: string;
+  status: string;
   costCenter: string;
   monthlyCost: number;
+  endDate: string;
+}
+
+export interface DnsRecord {
+  id: string;
+  dominio_id: string;
+  tipo: string;
+  nome: string;
+  valor: string;
+  ttl: number;
+  prioridade: number | null;
+  observacoes: string | null;
 }
 
 @Injectable({
@@ -212,11 +226,12 @@ export class DashboardService {
     accessRecords: AccessRecord[];
     risks: RiskItem[];
     payments: Payment[];
+    dnsRecords: DnsRecord[];
     loading: boolean;
   }>({
     assets: [], domains: [], licenses: [], servers: [], contracts: [],
     maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
-    actions: [], accessRecords: [], risks: [], payments: [], loading: false
+    actions: [], accessRecords: [], risks: [], payments: [], dnsRecords: [], loading: false
   });
 
   private loadInFlight: Promise<void> | null = null;
@@ -244,6 +259,7 @@ export class DashboardService {
     'acoes_economista',
     'registros_acesso',
     'riscos',
+    'dns_records',
   ] as const;
 
   private static readonly TABLE_STATE_KEYS: Record<string, string> = {
@@ -261,6 +277,7 @@ export class DashboardService {
     registros_acesso: 'accessRecords',
     riscos: 'risks',
     pagamentos: 'payments',
+    dns_records: 'dnsRecords',
   };
 
   /** Populated in the constructor so `empresa` (a ctor parameter) exists before use. */
@@ -292,6 +309,7 @@ export class DashboardService {
           accessRecords: f(raw.accessRecords),
           risks: f(raw.risks),
           payments: f(raw.payments),
+          dnsRecords: f(raw.dnsRecords),
         };
         const rawTotal = this.totalRows(raw);
         const filteredTotal = this.totalRows(filtered);
@@ -307,7 +325,7 @@ export class DashboardService {
         this._raw.next({
           assets: [], domains: [], licenses: [], servers: [], contracts: [],
           maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
-          actions: [], accessRecords: [], risks: [], payments: [], loading: false
+          actions: [], accessRecords: [], risks: [], payments: [], dnsRecords: [], loading: false
         });
         this.lastFetchAt = 0;
         this.fetchComplete = false;
@@ -412,6 +430,7 @@ export class DashboardService {
     accessRecords: unknown[];
     risks: unknown[];
     payments: unknown[];
+    dnsRecords: unknown[];
   }): number {
     return (
       v.assets.length +
@@ -427,7 +446,8 @@ export class DashboardService {
       v.actions.length +
       v.accessRecords.length +
       v.risks.length +
-      v.payments.length
+      v.payments.length +
+      v.dnsRecords.length
     );
   }
 
@@ -451,6 +471,7 @@ export class DashboardService {
     }
     if (d['riscos'] !== undefined) out.risks = attach(d['riscos'], this.mapRisk);
     if (d['pagamentos'] !== undefined) out.payments = attach(d['pagamentos'], this.mapPayment);
+    if (d['dns_records'] !== undefined) out.dnsRecords = attach(d['dns_records'], this.mapDnsRecord);
     return out;
   }
 
@@ -459,7 +480,7 @@ export class DashboardService {
       this._raw.next({
         assets: [], domains: [], licenses: [], servers: [], contracts: [],
         maintenance: [], movements: [], inventory: [], alerts: [], budgets: [],
-        actions: [], accessRecords: [], risks: [], payments: [], loading: false
+        actions: [], accessRecords: [], risks: [], payments: [], dnsRecords: [], loading: false
       });
       this.lastFetchAt = 0;
       this.fetchComplete = false;
@@ -580,6 +601,7 @@ export class DashboardService {
       hostingProvider: r.hosting_provider || '',
       sslExpiration: r.ssl_vencimento || '',
       status: r.status || '',
+      observacoes: r.observacoes || '',
     };
   }
 
@@ -629,8 +651,23 @@ export class DashboardService {
       supplier: r.supplier,
       object: r.object,
       type: r.type || '',
+      status: r.status || 'Ativo',
       costCenter: r.cost_center || '',
       monthlyCost: Number(r.monthly_cost || 0),
+      endDate: r.end_date || '',
+    };
+  }
+
+  private mapDnsRecord(r: any): DnsRecord {
+    return {
+      id: r.id,
+      dominio_id: r.dominio_id,
+      tipo: r.tipo || 'A',
+      nome: r.nome || '',
+      valor: r.valor || '',
+      ttl: Number(r.ttl ?? 3600),
+      prioridade: r.prioridade != null ? Number(r.prioridade) : null,
+      observacoes: r.observacoes ?? null,
     };
   }
 
