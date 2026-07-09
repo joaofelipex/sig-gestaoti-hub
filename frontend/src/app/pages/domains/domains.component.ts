@@ -8,6 +8,7 @@ import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { SigBadge } from '../../utils/status-badge';
 
 @Component({
   selector: 'app-domains',
@@ -99,7 +100,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
       <div *ngIf="form.id" class="mt-4 pt-4 border-top">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <h3 class="h6 mb-0">Registos DNS</h3>
-          <button type="button" class="btn btn-outline-primary btn-sm" (click)="openNewDns()">Adicionar registo</button>
+          <button type="button" class="sig-link-action" (click)="openNewDns()">Adicionar registo</button>
         </div>
         <table class="sig-table sig-table--compact w-full" *ngIf="domainDns.length">
           <thead><tr><th>Tipo</th><th>Nome</th><th>Valor</th><th>TTL</th><th class="text-end">Ações</th></tr></thead>
@@ -183,7 +184,7 @@ export class DomainsComponent implements OnInit, OnDestroy {
   }
 
   statusClass(s: string) {
-    return s === 'Ativo' ? 'bg-green-100 text-green-800' : s === 'Expirando' ? 'bg-yellow-100 text-yellow-800' : s === 'Expirado' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800';
+    return s === 'Ativo' ? SigBadge.success : s === 'Expirando' ? SigBadge.warning : s === 'Expirado' ? SigBadge.danger : SigBadge.neutral;
   }
 
   openNew() { this.form = { auto_renovacao: true, status: 'Ativo', custo_renovacao: 0 }; this.modalOpen = true; }
@@ -206,10 +207,9 @@ export class DomainsComponent implements OnInit, OnDestroy {
     if (!this.ux.require(this.form.nome, 'o domínio')) return;
     const payload = this.cleanDates(this.form);
     this.saving = true;
-    this.modalOpen = false;
     try {
       const ok = await this.crud.upsert('dominios', payload);
-      if (!ok) this.modalOpen = true;
+      if (ok) this.modalOpen = false;
     } finally {
       this.saving = false;
     }

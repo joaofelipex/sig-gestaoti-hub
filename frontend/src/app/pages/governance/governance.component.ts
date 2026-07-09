@@ -12,6 +12,7 @@ import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
 import { healthScoreColor } from '../../utils/health.util';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigIcons } from '../../core/sig-icons';
+import { SigBadge } from '../../utils/status-badge';
 
 @Component({
   selector: 'app-governance',
@@ -54,7 +55,8 @@ import { SigIcons } from '../../core/sig-icons';
           [filters]="[{key:'nivel',label:'Nível',options:[{value:'Administrador',label:'Admin'},{value:'Escrita',label:'Escrita'},{value:'Leitura',label:'Leitura'}]}]"
           [filterValues]="filterA" (searchChange)="searchA=$event" (filterChange)="filterA[$event.key]=$event.value"
           (newClick)="openNewAccess()" (exportClick)="exportAccess()" (importFile)="importAccess($event)"></app-data-toolbar>
-        <div class="sig-list-card">
+        <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+        <div *ngIf="!loading" class="sig-list-card">
           <div class="sig-table-wrap">
           <table class="sig-table">
             <thead><tr>
@@ -72,13 +74,14 @@ import { SigIcons } from '../../core/sig-icons';
                 <td>{{ r.resource }}</td>
                 <td>{{ r.resourceType }}</td>
                 <td><span [class]="accessClass(r.accessLevel)">{{ r.accessLevel }}</span></td>
-                <td><span [class]="r.ativo ? 'sig-badge sig-badge--success' : 'sig-badge sig-badge--danger'">{{ r.ativo ? 'Ativo' : 'Inativo' }}</span></td>
+                <td><span [class]="r.ativo ? SigBadge.success : SigBadge.danger">{{ r.ativo ? 'Ativo' : 'Inativo' }}</span></td>
                 <td>{{ r.lastAccess | date:'dd/MM/yyyy' }}</td>
                 <td class="text-end">
                   <button type="button" (click)="openEditAccess(r)" class="sig-link-action me-3">Editar</button>
                   <button type="button" (click)="askDelete('access', r.id)" class="sig-link-action sig-link-action--danger">Excluir</button>
                 </td>
               </tr>
+              <tr *ngIf="!filteredAccess.length"><td colspan="7" class="sig-table-empty">Nenhum acesso</td></tr>
             </tbody>
           </table>
           </div>
@@ -90,7 +93,8 @@ import { SigIcons } from '../../core/sig-icons';
           [filters]="[{key:'sev',label:'Severidade',options:[{value:'Crítico',label:'Crítico'},{value:'Alto',label:'Alto'},{value:'Médio',label:'Médio'},{value:'Baixo',label:'Baixo'}]}]"
           [filterValues]="filterR" (searchChange)="searchR=$event" (filterChange)="filterR[$event.key]=$event.value"
           (newClick)="openNewRisk()" (exportClick)="exportRisks()" (importFile)="importRisks($event)"></app-data-toolbar>
-        <div class="sig-list-card">
+        <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+        <div *ngIf="!loading" class="sig-list-card">
           <div class="sig-table-wrap">
           <table class="sig-table">
             <thead><tr>
@@ -111,6 +115,7 @@ import { SigIcons } from '../../core/sig-icons';
                   <button type="button" (click)="askDelete('risk', r.id)" class="sig-link-action sig-link-action--danger">Excluir</button>
                 </td>
               </tr>
+              <tr *ngIf="!filteredRisks.length"><td colspan="5" class="sig-table-empty">Nenhum risco</td></tr>
             </tbody>
           </table>
           </div>
@@ -145,6 +150,7 @@ import { SigIcons } from '../../core/sig-icons';
 })
 export class GovernanceComponent implements OnInit, OnDestroy {
   readonly icons = SigIcons;
+  readonly SigBadge = SigBadge;
   accessRecords: AccessRecord[] = []; risks: RiskItem[] = []; loading = true; tab: 'access'|'risks' = 'access';
   searchA = ''; filterA: any = {}; searchR = ''; filterR: any = {};
   modalA = false; modalR = false; confirmOpen = false; saving = false; deleting = false;
@@ -182,8 +188,12 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   get riskDistribution() { const map: any = { Crítico:'#ef4444', Alto:'#f97316', Médio:'#f59e0b', Baixo:'#10b981' }; const counts: any = {}; this.risks.forEach(r => counts[r.severity] = (counts[r.severity]||0)+1); return Object.entries(counts).map(([k,v]:any) => ({ label: k, value: v as number, color: map[k] })); }
   get accessDistribution() { const counts: any = {}; this.accessRecords.forEach(r => counts[r.accessLevel] = (counts[r.accessLevel]||0)+1); return Object.entries(counts).map(([k,v]:any) => ({ label: k, value: v as number })); }
 
-  accessClass(l: string) { return l === 'Administrador' ? 'bg-red-100 text-red-800' : l === 'Escrita' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'; }
-  sevClass(s: string) { return s === 'Crítico' ? 'bg-red-100 text-red-800' : s === 'Alto' ? 'bg-orange-100 text-orange-800' : s === 'Médio' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'; }
+  accessClass(l: string) {
+    return l === 'Administrador' ? SigBadge.danger : l === 'Escrita' ? SigBadge.warning : SigBadge.success;
+  }
+  sevClass(s: string) {
+    return s === 'Crítico' ? SigBadge.danger : s === 'Alto' ? SigBadge.warning : s === 'Médio' ? SigBadge.info : SigBadge.success;
+  }
 
   openNewAccess() { this.formA = { ativo: true, nivel_acesso: 'Leitura', recurso_tipo: 'Aplicação', sistema: 'IMTS', data_concessao: new Date().toISOString().slice(0,10) }; this.modalA = true; }
   openEditAccess(r: AccessRecord) { this.formA = { id: r.id, user_label: r.user, recurso: r.resource, recurso_tipo: r.resourceType, nivel_acesso: r.accessLevel, ativo: r.ativo, data_concessao: r.grantedDate, ultimo_acesso: r.lastAccess, sistema: 'IMTS' }; this.modalA = true; }

@@ -8,6 +8,7 @@ import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { SigBadge } from '../../utils/status-badge';
 
 @Component({
   selector: 'app-inventory',
@@ -88,7 +89,9 @@ export class InventoryComponent implements OnInit, OnDestroy {
       (this.filterValues['lowStock'] !== 'low' || i.quantity <= i.min_quantity)
     );
   }
-  qtyClass(i: Inventory) { return i.quantity <= i.min_quantity ? 'bg-red-100 text-red-800' : i.quantity <= i.min_quantity * 1.5 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'; }
+  qtyClass(i: Inventory) {
+    return i.quantity <= i.min_quantity ? SigBadge.danger : i.quantity <= i.min_quantity * 1.5 ? SigBadge.warning : SigBadge.success;
+  }
   openNew() { this.form = { categoria: 'Outros', unit: 'un', quantity: 0, min_quantity: 0, unit_cost: 0 }; this.modalOpen = true; }
   openEdit(i: Inventory) { this.form = { ...i }; this.modalOpen = true; }
   async save() { if (!this.ux.require(this.form.nome, 'o nome do item')) return; this.saving = true; try { const ok = await this.crud.upsert('inventario', this.form); if (ok) this.modalOpen = false; } finally { this.saving = false; } }

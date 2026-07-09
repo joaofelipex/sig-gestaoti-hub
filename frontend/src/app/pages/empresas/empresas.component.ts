@@ -4,63 +4,69 @@ import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { EmpresaService, Empresa } from '../../services/empresa.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
+import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
+import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { SigBadge } from '../../utils/status-badge';
 
 @Component({
   selector: 'app-empresas',
   standalone: true,
-  imports: [CommonModule, FormsModule, ModalComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
   template: `
-    <section class="sig-page p-3 p-md-4">
-      <div class="app-page-header">
+    <section class="sig-page">
+      <header class="app-page-header">
         <div>
           <h1 class="app-page-title">Empresas da Holding</h1>
-          <p class="app-page-sub">{{ loading ? 'Carregando…' : empresas.length + ' empresa(s) únicas' }}</p>
+          <p class="app-page-sub">Cadastro e seleção de empresas do grupo.</p>
         </div>
-        <button type="button" (click)="openNew()" class="btn btn-primary btn-sm">+ Nova Empresa</button>
-      </div>
+      </header>
 
-      <div *ngIf="loading" class="sig-page-loading">Carregando empresas…</div>
+      <app-data-toolbar
+        searchPlaceholder="Buscar nome, CNPJ, segmento..."
+        [search]="search"
+        [filters]="[{key:'status',label:'Status',options:[{value:'ativa',label:'Ativa'},{value:'inativa',label:'Inativa'}]}]"
+        [filterValues]="filterValues"
+        (searchChange)="search=$event"
+        (filterChange)="filterValues[$event.key]=$event.value"
+        (newClick)="openNew()"
+        (exportClick)="exportCSV()"
+        (importFile)="importCSV($event)"
+      ></app-data-toolbar>
 
-      <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <article *ngFor="let e of empresas; trackBy: trackById"
-          class="sig-empresa-card"
-          [class.is-selected]="selectedId === e.id">
-          <div class="flex items-start justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <div class="sig-empresa-avatar">
-                {{ initials(e.nome) }}
-              </div>
-              <div>
-                <h3 class="font-semibold text-gray-900 text-sm">{{ e.nome }}</h3>
-                <p class="text-xs text-gray-500">{{ e.cnpj || 'CNPJ não informado' }}</p>
-              </div>
-            </div>
-            <span class="text-xs px-2 py-0.5 rounded-full" [class]="e.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">
-              {{ e.ativo ? 'Ativa' : 'Inativa' }}
-            </span>
-          </div>
-          <div class="text-xs text-gray-600 space-y-1 mb-3">
-            <div *ngIf="e.segmento"><span class="text-gray-400">Segmento:</span> {{ e.segmento }}</div>
-            <div *ngIf="e.responsavel"><span class="text-gray-400">Responsável:</span> {{ e.responsavel }}</div>
-          </div>
-          <div class="flex items-center justify-between pt-3 border-t border-gray-100">
-            <button type="button" (click)="select(e)" class="sig-link-action text-xs">
-              <i class="fas" [class.fa-check-circle]="selectedId === e.id" [class.fa-filter]="selectedId !== e.id" aria-hidden="true"></i>
-              {{ selectedId === e.id ? 'Selecionada' : 'Filtrar por esta' }}
-            </button>
-            <div class="flex gap-2">
-              <button type="button" (click)="openEdit(e)" class="sig-icon-btn" title="Editar">
-                <i class="fas fa-pen" aria-hidden="true"></i>
-              </button>
-              <button type="button" (click)="askDelete(e)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir">
-                <i class="fas fa-trash" aria-hidden="true"></i>
-              </button>
-            </div>
-          </div>
-        </article>
-        <div *ngIf="!empresas.length" class="col-span-full sig-table-empty">
-          Nenhuma empresa cadastrada
+      <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
+
+      <div *ngIf="!loading" class="sig-list-card">
+        <div class="sig-table-wrap">
+          <table class="sig-table">
+            <thead>
+              <tr>
+                <th>Empresa</th>
+                <th>CNPJ</th>
+                <th>Segmento</th>
+                <th>Responsável</th>
+                <th>Status</th>
+                <th class="text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let e of filtered; trackBy: trackById" [class.sig-row-selected]="selectedId === e.id">
+                <td class="fw-medium">{{ e.nome }}</td>
+                <td>{{ e.cnpj || '—' }}</td>
+                <td>{{ e.segmento || '—' }}</td>
+                <td>{{ e.responsavel || '—' }}</td>
+                <td><span [class]="statusClass(e)">{{ e.ativo ? 'Ativa' : 'Inativa' }}</span></td>
+                <td class="text-end">
+                  <button type="button" (click)="select(e)" class="sig-link-action me-3">
+                    {{ selectedId === e.id ? 'Selecionada' : 'Filtrar' }}
+                  </button>
+                  <button type="button" (click)="openEdit(e)" class="sig-link-action me-3">Editar</button>
+                  <button type="button" (click)="askDelete(e)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                </td>
+              </tr>
+              <tr *ngIf="!filtered.length"><td colspan="6" class="sig-table-empty">Nenhuma empresa</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </section>
@@ -86,23 +92,69 @@ import { ModalComponent, ConfirmComponent } from '../../components/modal.compone
 export class EmpresasComponent implements OnInit, OnDestroy {
   empresas: Empresa[] = [];
   loading = true;
+  search = '';
+  filterValues: Record<string, string> = {};
   selectedId: string | null = null;
-  modalOpen = false; confirmOpen = false; saving = false; deleting = false;
-  form: any = {}; toDelete: Empresa | null = null;
+  modalOpen = false;
+  confirmOpen = false;
+  saving = false;
+  deleting = false;
+  form: any = {};
+  toDelete: Empresa | null = null;
   private subs: Subscription[] = [];
+
   constructor(private svc: EmpresaService, private ux: UxFeedbackService) {}
+
   ngOnInit() {
-    this.subs.push(this.svc.list$.subscribe(l => this.empresas = l));
-    this.subs.push(this.svc.loading$.subscribe(v => this.loading = v));
-    this.subs.push(this.svc.selected$.subscribe(id => this.selectedId = id));
+    this.subs.push(this.svc.list$.subscribe((l) => (this.empresas = l)));
+    this.subs.push(this.svc.loading$.subscribe((v) => (this.loading = v)));
+    this.subs.push(this.svc.selected$.subscribe((id) => (this.selectedId = id)));
     void this.svc.load();
   }
-  ngOnDestroy() { this.subs.forEach(s => s.unsubscribe()); }
-  trackById(_: number, e: Empresa) { return e.id; }
-  initials(n: string) { return n.split(/\s+/).slice(0,2).map(s=>s[0]).join('').toUpperCase(); }
-  select(e: Empresa) { this.svc.setSelected(this.selectedId === e.id ? null : e.id); }
-  openNew() { this.form = { ativo: true }; this.modalOpen = true; }
-  openEdit(e: Empresa) { this.form = { ...e }; this.modalOpen = true; }
+
+  ngOnDestroy() {
+    this.subs.forEach((s) => s.unsubscribe());
+  }
+
+  get filtered() {
+    const q = this.search.toLowerCase();
+    return this.empresas.filter((e) => {
+      const matchesSearch =
+        !q ||
+        e.nome?.toLowerCase().includes(q) ||
+        e.cnpj?.toLowerCase().includes(q) ||
+        e.segmento?.toLowerCase().includes(q) ||
+        e.responsavel?.toLowerCase().includes(q);
+      const matchesStatus =
+        !this.filterValues['status'] ||
+        (this.filterValues['status'] === 'ativa' && e.ativo) ||
+        (this.filterValues['status'] === 'inativa' && !e.ativo);
+      return matchesSearch && matchesStatus;
+    });
+  }
+
+  trackById(_: number, e: Empresa) {
+    return e.id;
+  }
+
+  statusClass(e: Empresa) {
+    return e.ativo ? SigBadge.success : SigBadge.neutral;
+  }
+
+  select(e: Empresa) {
+    this.svc.setSelected(this.selectedId === e.id ? null : e.id);
+  }
+
+  openNew() {
+    this.form = { ativo: true };
+    this.modalOpen = true;
+  }
+
+  openEdit(e: Empresa) {
+    this.form = { ...e };
+    this.modalOpen = true;
+  }
+
   async save() {
     if (!this.ux.require(this.form.nome, 'o nome da empresa')) return;
     this.saving = true;
@@ -113,6 +165,53 @@ export class EmpresasComponent implements OnInit, OnDestroy {
       this.saving = false;
     }
   }
-  askDelete(e: Empresa) { this.toDelete = e; this.confirmOpen = true; }
-  async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.svc.remove(this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
+
+  askDelete(e: Empresa) {
+    this.toDelete = e;
+    this.confirmOpen = true;
+  }
+
+  async doDelete() {
+    if (!this.toDelete || this.deleting) return;
+    this.deleting = true;
+    const ok = await this.svc.remove(this.toDelete.id);
+    this.deleting = false;
+    if (ok) {
+      this.confirmOpen = false;
+      this.toDelete = null;
+    }
+  }
+
+  exportCSV() {
+    exportToCSV(
+      this.filtered.map((e) => ({
+        Nome: e.nome,
+        CNPJ: e.cnpj,
+        Segmento: e.segmento,
+        Responsavel: e.responsavel,
+        Status: e.ativo ? 'Ativa' : 'Inativa',
+        Observacoes: e.observacoes,
+      })),
+      'empresas',
+    );
+  }
+
+  async importCSV(f: File) {
+    const rows = parseCSV(await readFileAsText(f));
+    let imported = 0;
+    for (const r of rows) {
+      const nome = r['Nome'] || r['nome'];
+      if (!nome) continue;
+      const ok = await this.svc.upsert({
+        nome,
+        cnpj: r['CNPJ'] || r['cnpj'] || null,
+        segmento: r['Segmento'] || r['segmento'] || null,
+        responsavel: r['Responsavel'] || r['Responsável'] || r['responsavel'] || null,
+        ativo: String(r['Status'] || 'Ativa').toLowerCase().startsWith('a'),
+        observacoes: r['Observacoes'] || r['Observações'] || null,
+      });
+      if (ok) imported++;
+    }
+    if (!imported) this.ux.noImportRows('empresas');
+  }
 }

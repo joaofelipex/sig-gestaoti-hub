@@ -8,6 +8,7 @@ import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { SigBadge } from '../../utils/status-badge';
 
 @Component({
   selector: 'app-maintenance',
@@ -37,7 +38,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
             <tr *ngFor="let m of filtered">
               <td class="fw-medium">{{ assetLabel(m.ativo_id) }}</td>
               <td>{{ m.tipo }}</td>
-              <td><span [class]="statusClass(m.status)">{{ m.status }}</span></td>
+              <td><span [class]="statusClass(m.status)">{{ statusLabel(m.status) }}</span></td>
               <td>{{ m.data_abertura | date:'dd/MM/yyyy' }}</td>
               <td>{{ m.data_conclusao ? (m.data_conclusao | date:'dd/MM/yyyy') : '—' }}</td>
               <td>{{ m.fornecedor || '—' }}</td>
@@ -89,7 +90,12 @@ export class MaintenanceComponent implements OnInit, OnDestroy {
     );
   }
   assetLabel(id: string) { const a = this.assets.find(x => x.id === id); return a ? `${a.brand} ${a.model}` : id?.slice(0, 8) || '—'; }
-  statusClass(s: string) { return s === 'concluida' ? 'bg-green-100 text-green-800' : s === 'em_andamento' ? 'bg-blue-100 text-blue-800' : s === 'aberta' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'; }
+  statusLabel(s: string) {
+    return s === 'em_andamento' ? 'Em andamento' : s === 'concluida' ? 'Concluída' : s === 'cancelada' ? 'Cancelada' : 'Aberta';
+  }
+  statusClass(s: string) {
+    return s === 'concluida' ? SigBadge.success : s === 'em_andamento' ? SigBadge.info : s === 'aberta' ? SigBadge.warning : SigBadge.neutral;
+  }
   openNew() { this.form = { tipo: 'Preventiva', status: 'aberta', data_abertura: new Date().toISOString().slice(0,10) }; this.modalOpen = true; }
   openEdit(m: Maintenance) { this.form = { ...m }; this.modalOpen = true; }
   async save() { if (!this.ux.requireAll([[this.form.ativo_id, 'o ativo'], [this.form.tipo, 'o tipo da manutenção']])) return; this.saving = true; try { const o = { ...this.form }; if (!o.data_conclusao) o.data_conclusao = null; if (!o.custo) o.custo = null; const ok = await this.crud.upsert('manutencoes', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }

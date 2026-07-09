@@ -6,19 +6,16 @@ import { DashboardService, Payment } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
-import { TablePagerComponent } from '../../components/table-pager.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
-import { KpiCardComponent } from '../../components/charts.component';
-import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
 import { formatBrl } from '../../utils/financial.util';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { mapPaymentCsvRows, paymentExportColumns } from '../../utils/payments-csv.util';
-import { SigIcons } from '../../core/sig-icons';
+import { SigBadge } from '../../utils/status-badge';
 
 @Component({
   selector: 'app-payments',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, TablePagerComponent, ModalComponent, ConfirmComponent, KpiCardComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -28,17 +25,9 @@ import { SigIcons } from '../../core/sig-icons';
         </div>
       </header>
 
-      <div class="sig-kpi-grid sig-kpi-grid--5">
-        <app-kpi-card label="Pendente" [value]="brl(totals.pendente)" [icon]="icons.pending" color="#f59e0b"></app-kpi-card>
-        <app-kpi-card label="Atrasado" [value]="brl(totals.atrasado)" [icon]="icons.overdue" color="#ef4444"></app-kpi-card>
-        <app-kpi-card label="Pago no mês" [value]="brl(totals.pago)" [icon]="icons.success" color="#10b981"></app-kpi-card>
-        <app-kpi-card label="Total filtrado" [value]="brl(totals.total)" [icon]="icons.cost" color="#3b82f6"></app-kpi-card>
-        <app-kpi-card label="Custo mensal SAM" [value]="brl(ti?.operationalMonthlyCost ?? 0)" [icon]="icons.cost" color="#10b981" [hint]="samHint"></app-kpi-card>
-      </div>
-
       <app-data-toolbar searchPlaceholder="Buscar nome, fornecedor..." [search]="search"
         [filters]="[{key:'status',label:'Status',options:[{value:'pendente',label:'Pendente'},{value:'pago',label:'Pago'},{value:'atrasado',label:'Atrasado'}]},{key:'categoria',label:'Categoria',options:catOpts}]"
-        [filterValues]="filterValues" (searchChange)="onSearchChange($event)" (filterChange)="onFilterChange($event)"
+        [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
         (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"></app-data-toolbar>
 
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
@@ -50,13 +39,13 @@ import { SigIcons } from '../../core/sig-icons';
             <th class="text-end">Ações</th>
           </tr></thead>
           <tbody>
-            <tr *ngFor="let p of paged">
+            <tr *ngFor="let p of filtered">
               <td class="fw-medium">{{ p.nome }}</td>
               <td>{{ p.categoria }}</td>
               <td>{{ p.competencia | date:'MM/yyyy' }}</td>
               <td>{{ p.vencimento ? (p.vencimento | date:'dd/MM/yyyy') : '—' }}</td>
               <td class="fw-medium">{{ brl(p.valor) }}</td>
-              <td><span [class]="statusClass(p.status)">{{ p.status }}</span></td>
+              <td><span [class]="statusClass(p.status)">{{ statusLabel(p.status) }}</span></td>
               <td class="text-end">
                 <button *ngIf="p.status !== 'pago'" type="button" (click)="markPaid(p)" [disabled]="payingId === p.id" class="sig-link-action sig-link-action--success me-3">{{ payingId === p.id ? 'Pagando...' : 'Pagar' }}</button>
                 <button type="button" (click)="openEdit(p)" class="sig-link-action me-3">Editar</button>
@@ -67,14 +56,6 @@ import { SigIcons } from '../../core/sig-icons';
           </tbody>
         </table>
         </div>
-        <app-table-pager
-          [total]="filtered.length"
-          [pageIndex]="pageIndex"
-          [pageSize]="pageSize"
-          [pageSizeOptions]="pageSizeOptions"
-          (pageIndexChange)="pageIndex = $event"
-          (pageSizeChange)="onPageSizeChange($event)"
-        ></app-table-pager>
       </div>
     </section>
 
@@ -95,32 +76,18 @@ import { SigIcons } from '../../core/sig-icons';
   `
 })
 export class PaymentsComponent implements OnInit, OnDestroy {
-  readonly icons = SigIcons;
   payments: Payment[] = []; loading = true; search = ''; filterValues: any = {};
-  pageIndex = 0;
-  pageSize = 25;
-  readonly pageSizeOptions = [10, 25, 50, 100, 0];
   modalOpen = false; confirmOpen = false; saving = false; deleting = false; payingId: string | null = null; form: any = {}; toDelete: Payment | null = null;
   catOpts = [{value:'servidor',label:'Servidor'},{value:'licenca',label:'Licença'},{value:'dominio',label:'Domínio'},{value:'contrato',label:'Contrato'},{value:'outro',label:'Outro'}];
-  ti: TiMetrics | null = null;
-  samHint = '';
   private sub!: Subscription;
-  private metricsSub!: Subscription;
-  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService, private tiMetrics: TiMetricsService) {}
+  constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService) {}
   ngOnInit() {
     this.sub = this.dashboard.data$.subscribe(d => {
       this.payments = d.payments;
       this.loading = d.loading;
-      this.clampPageIndex();
-    });
-    this.metricsSub = this.tiMetrics.metrics$.subscribe(m => {
-      this.ti = m;
-      if (!m.loading) {
-        this.samHint = m.operationalCostHint + ' · base Painel/Economista';
-      }
     });
   }
-  ngOnDestroy() { this.sub?.unsubscribe(); this.metricsSub?.unsubscribe(); }
+  ngOnDestroy() { this.sub?.unsubscribe(); }
   get filtered() {
     const q = this.search.toLowerCase();
     return this.payments.filter(p =>
@@ -129,39 +96,13 @@ export class PaymentsComponent implements OnInit, OnDestroy {
       (!this.filterValues['categoria'] || p.categoria === this.filterValues['categoria'])
     );
   }
-  get paged(): Payment[] {
-    const items = this.filtered;
-    if (!this.pageSize) return items;
-    const start = this.pageIndex * this.pageSize;
-    return items.slice(start, start + this.pageSize);
-  }
-  get totals() {
-    const r = { pendente: 0, atrasado: 0, pago: 0, total: 0 };
-    for (const p of this.filtered) { r.total += p.valor; (r as any)[p.status] = ((r as any)[p.status] || 0) + p.valor; }
-    return r;
-  }
   brl(v: number) { return formatBrl(v); }
-  onSearchChange(value: string) {
-    this.search = value;
-    this.pageIndex = 0;
+  statusLabel(s: string) {
+    return s === 'pago' ? 'Pago' : s === 'atrasado' ? 'Atrasado' : 'Pendente';
   }
-  onFilterChange(event: { key: string; value: string }) {
-    this.filterValues[event.key] = event.value;
-    this.pageIndex = 0;
+  statusClass(s: string) {
+    return s === 'pago' ? SigBadge.success : s === 'atrasado' ? SigBadge.danger : SigBadge.warning;
   }
-  onPageSizeChange(size: number) {
-    this.pageSize = size;
-    this.pageIndex = 0;
-  }
-  private clampPageIndex() {
-    if (!this.pageSize) {
-      this.pageIndex = 0;
-      return;
-    }
-    const maxPage = Math.max(0, Math.ceil(this.filtered.length / this.pageSize) - 1);
-    if (this.pageIndex > maxPage) this.pageIndex = maxPage;
-  }
-  statusClass(s: string) { return s === 'pago' ? 'bg-green-100 text-green-800' : s === 'atrasado' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'; }
   openNew() { this.form = { categoria: 'outro', status: 'pendente', valor: 0, competencia: new Date().toISOString().slice(0,10) }; this.modalOpen = true; }
   openEdit(p: Payment) { this.form = { ...p }; this.modalOpen = true; }
   async markPaid(p: Payment) { if (this.payingId) return; this.payingId = p.id; try { await this.crud.upsert('pagamentos', { id: p.id, status: 'pago', data_pagamento: new Date().toISOString().slice(0,10) }); } finally { this.payingId = null; } }

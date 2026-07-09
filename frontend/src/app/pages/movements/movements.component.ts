@@ -43,8 +43,8 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
               <td class="fw-medium">{{ m.ativo_label || assetLabel(m.ativo_id) }}</td>
               <td>{{ m.tipo }}</td>
               <td>{{ m.data | date:'dd/MM/yyyy' }}</td>
-              <td class="small text-muted"><div *ngIf="m.from_user">{{ m.from_user }}</div><div *ngIf="m.from_department" class="text-gray-400">{{ m.from_department }}</div></td>
-              <td class="small text-muted"><div *ngIf="m.to_user">{{ m.to_user }}</div><div *ngIf="m.to_department" class="text-gray-400">{{ m.to_department }}</div><div *ngIf="m.recipient">{{ m.recipient }}</div></td>
+              <td>{{ m.from_user || m.from_department || '—' }}</td>
+              <td>{{ m.to_user || m.to_department || m.recipient || '—' }}</td>
               <td>{{ m.responsible || '—' }}</td>
               <td class="text-end">
                 <button type="button" (click)="openEdit(m)" class="sig-link-action me-3">Editar</button>
