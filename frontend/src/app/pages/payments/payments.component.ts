@@ -6,18 +6,19 @@ import { DashboardService, Payment } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { TablePagerComponent } from '../../components/table-pager.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent } from '../../components/charts.component';
-import { TiContextStripComponent } from '../../components/ti-context-strip.component';
 import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
 import { formatBrl } from '../../utils/financial.util';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { mapPaymentCsvRows, paymentExportColumns } from '../../utils/payments-csv.util';
 import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-payments',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent, TiContextStripComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, TablePagerComponent, ModalComponent, ConfirmComponent, KpiCardComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -26,8 +27,6 @@ import { SigIcons } from '../../core/sig-icons';
           <p class="app-page-sub">Despesas registradas — confrontadas com o custo operacional do Painel e Economista.</p>
         </div>
       </header>
-
-      <app-ti-context-strip highlight="payments"></app-ti-context-strip>
 
       <div class="sig-kpi-grid sig-kpi-grid--5">
         <app-kpi-card label="Pendente" [value]="brl(totals.pendente)" [icon]="icons.pending" color="#f59e0b"></app-kpi-card>
@@ -39,7 +38,7 @@ import { SigIcons } from '../../core/sig-icons';
 
       <app-data-toolbar searchPlaceholder="Buscar nome, fornecedor..." [search]="search"
         [filters]="[{key:'status',label:'Status',options:[{value:'pendente',label:'Pendente'},{value:'pago',label:'Pago'},{value:'atrasado',label:'Atrasado'}]},{key:'categoria',label:'Categoria',options:catOpts}]"
-        [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
+        [filterValues]="filterValues" (searchChange)="onSearchChange($event)" (filterChange)="onFilterChange($event)"
         (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"></app-data-toolbar>
 
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
@@ -51,7 +50,7 @@ import { SigIcons } from '../../core/sig-icons';
             <th class="text-end">Ações</th>
           </tr></thead>
           <tbody>
-            <tr *ngFor="let p of filtered">
+            <tr *ngFor="let p of paged">
               <td class="fw-medium">{{ p.nome }}</td>
               <td>{{ p.categoria }}</td>
               <td>{{ p.competencia | date:'MM/yyyy' }}</td>
@@ -68,6 +67,14 @@ import { SigIcons } from '../../core/sig-icons';
           </tbody>
         </table>
         </div>
+        <app-table-pager
+          [total]="filtered.length"
+          [pageIndex]="pageIndex"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          (pageIndexChange)="pageIndex = $event"
+          (pageSizeChange)="onPageSizeChange($event)"
+        ></app-table-pager>
       </div>
     </section>
 
@@ -90,6 +97,9 @@ import { SigIcons } from '../../core/sig-icons';
 export class PaymentsComponent implements OnInit, OnDestroy {
   readonly icons = SigIcons;
   payments: Payment[] = []; loading = true; search = ''; filterValues: any = {};
+  pageIndex = 0;
+  pageSize = 25;
+  readonly pageSizeOptions = [10, 25, 50, 100, 0];
   modalOpen = false; confirmOpen = false; saving = false; deleting = false; payingId: string | null = null; form: any = {}; toDelete: Payment | null = null;
   catOpts = [{value:'servidor',label:'Servidor'},{value:'licenca',label:'Licença'},{value:'dominio',label:'Domínio'},{value:'contrato',label:'Contrato'},{value:'outro',label:'Outro'}];
   ti: TiMetrics | null = null;
@@ -98,7 +108,11 @@ export class PaymentsComponent implements OnInit, OnDestroy {
   private metricsSub!: Subscription;
   constructor(private dashboard: DashboardService, private crud: CrudService, private ux: UxFeedbackService, private tiMetrics: TiMetricsService) {}
   ngOnInit() {
-    this.sub = this.dashboard.data$.subscribe(d => { this.payments = d.payments; this.loading = d.loading; });
+    this.sub = this.dashboard.data$.subscribe(d => {
+      this.payments = d.payments;
+      this.loading = d.loading;
+      this.clampPageIndex();
+    });
     this.metricsSub = this.tiMetrics.metrics$.subscribe(m => {
       this.ti = m;
       if (!m.loading) {
@@ -115,12 +129,38 @@ export class PaymentsComponent implements OnInit, OnDestroy {
       (!this.filterValues['categoria'] || p.categoria === this.filterValues['categoria'])
     );
   }
+  get paged(): Payment[] {
+    const items = this.filtered;
+    if (!this.pageSize) return items;
+    const start = this.pageIndex * this.pageSize;
+    return items.slice(start, start + this.pageSize);
+  }
   get totals() {
     const r = { pendente: 0, atrasado: 0, pago: 0, total: 0 };
     for (const p of this.filtered) { r.total += p.valor; (r as any)[p.status] = ((r as any)[p.status] || 0) + p.valor; }
     return r;
   }
   brl(v: number) { return formatBrl(v); }
+  onSearchChange(value: string) {
+    this.search = value;
+    this.pageIndex = 0;
+  }
+  onFilterChange(event: { key: string; value: string }) {
+    this.filterValues[event.key] = event.value;
+    this.pageIndex = 0;
+  }
+  onPageSizeChange(size: number) {
+    this.pageSize = size;
+    this.pageIndex = 0;
+  }
+  private clampPageIndex() {
+    if (!this.pageSize) {
+      this.pageIndex = 0;
+      return;
+    }
+    const maxPage = Math.max(0, Math.ceil(this.filtered.length / this.pageSize) - 1);
+    if (this.pageIndex > maxPage) this.pageIndex = maxPage;
+  }
   statusClass(s: string) { return s === 'pago' ? 'bg-green-100 text-green-800' : s === 'atrasado' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'; }
   openNew() { this.form = { categoria: 'outro', status: 'pendente', valor: 0, competencia: new Date().toISOString().slice(0,10) }; this.modalOpen = true; }
   openEdit(p: Payment) { this.form = { ...p }; this.modalOpen = true; }
@@ -128,10 +168,13 @@ export class PaymentsComponent implements OnInit, OnDestroy {
   async save() { if (!this.ux.require(this.form.nome, 'o nome do pagamento')) return; this.saving = true; try { const o = { ...this.form }; ['vencimento','data_pagamento','competencia'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('pagamentos', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(p: Payment) { this.toDelete = p; this.confirmOpen = true; }
   async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('pagamentos', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
-  exportCSV() { exportToCSV(this.filtered.map(p => ({ Nome: p.nome, Categoria: p.categoria, Competencia: p.competencia, Vencimento: p.vencimento, Valor: p.valor, Status: p.status, Fornecedor: p.fornecedor })), 'pagamentos'); }
+  exportCSV() {
+    exportToCSV(this.filtered.map((p) => paymentExportColumns(p)), 'pagamentos');
+  }
+
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
-    const payload = rows.map(r => ({ nome: r['Nome'], categoria: r['Categoria']||'outro', competencia: r['Competencia']||new Date().toISOString().slice(0,10), vencimento: r['Vencimento']||null, valor: Number(r['Valor']||0), status: r['Status']||'pendente', fornecedor: r['Fornecedor']||null })).filter(r => r.nome);
+    const payload = mapPaymentCsvRows(rows);
     if (payload.length) await this.crud.bulkInsert('pagamentos', payload);
     else this.ux.noImportRows('pagamentos');
   }

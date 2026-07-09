@@ -25,7 +25,6 @@ import {
 } from '../../components/charts.component';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
-import { TiContextStripComponent } from '../../components/ti-context-strip.component';
 import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
 import { SigIcons } from '../../core/sig-icons';
 import { SigBadge } from '../../utils/status-badge';
@@ -58,7 +57,6 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
     DataToolbarComponent,
     ModalComponent,
     ConfirmComponent,
-    TiContextStripComponent,
   ],
   template: `
     <section class="sig-page">
@@ -78,8 +76,6 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
           </button>
         </div>
       </header>
-
-      <app-ti-context-strip highlight="economist"></app-ti-context-strip>
 
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
 

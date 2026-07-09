@@ -50,13 +50,21 @@
 @media (max-width: 575.98px) {
   .sig-content .grid.grid-cols-2,
   .sig-content .grid.grid-cols-2.md\:grid-cols-4,
+  .sig-content .grid.grid-cols-1.md\:grid-cols-2,
+  .sig-content .grid.grid-cols-1.lg\:grid-cols-2,
+  .sig-content .grid.grid-cols-1.lg\:grid-cols-3,
+  .sig-content .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3,
   .app-modal-body .grid.grid-cols-2,
-  .app-modal-body .sig-modal-form.grid.grid-cols-2 {
+  .app-modal-body .grid.grid-cols-1.md\:grid-cols-2,
+  .app-modal-body .sig-modal-form.grid.grid-cols-2,
+  .app-modal-body .sig-modal-form.grid.grid-cols-1.md\:grid-cols-2 {
     grid-template-columns: 1fr !important;
   }
 
   .sig-content .grid .col-span-2,
-  .app-modal-body .grid .col-span-2 {
+  .sig-content .grid .md\:col-span-2,
+  .app-modal-body .grid .col-span-2,
+  .app-modal-body .grid .md\:col-span-2 {
     grid-column: span 1 !important;
   }
 
@@ -89,9 +97,27 @@
   }
 
   .sig-kpi-grid,
+  .sig-kpi-grid--5,
   .sig-kpi-grid--6,
   .sig-metric-row {
     grid-template-columns: 1fr !important;
+  }
+
+  .sig-page {
+    gap: 1rem;
+  }
+
+  .app-page-header .d-flex,
+  .app-page-header .sig-page-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app-page-header .d-flex .btn,
+  .app-page-header .sig-page-header-actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .app-card {
@@ -113,9 +139,13 @@
   }
 
   .sig-tabs-nav button,
-  .sig-filter-tabs button {
+  .sig-filter-tabs button,
+  .sig-tabs .sig-tab {
     flex: 0 0 auto;
-    white-space: nowrap;
+  }
+
+  .sig-tabs .sig-tab__subtitle {
+    display: none;
   }
 }
 
@@ -131,6 +161,96 @@
 
   .sig-content {
     padding-top: 0.875rem;
+  }
+
+  .sig-tabs-nav {
+    flex-wrap: nowrap;
+    gap: 0 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .sig-tabs-nav button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .sig-ti-context {
+    padding: 0.875rem;
+  }
+
+  .sig-ti-context__score-value {
+    font-size: 1.35rem;
+  }
+
+  .sig-ti-context__nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    width: 100%;
+    padding-bottom: 0.15rem;
+  }
+
+  .sig-ti-context__nav a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .sig-econ-toolbar {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .sig-econ-toolbar__select {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .sig-econ-toolbar .sig-chart-panel__meta.ms-auto {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  .sig-econ-matrix {
+    grid-template-columns: 1fr;
+  }
+
+  .sig-econ-quick-win {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sig-econ-empty-actions {
+    flex-direction: column;
+  }
+
+  .sig-econ-empty-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sig-alert-item__actions {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .sig-table-wrap td.text-end {
+    white-space: normal;
+  }
+
+  .sig-table-wrap td.text-end .sig-link-action {
+    display: inline-flex;
+    margin: 0.15rem 0.35rem 0.15rem 0;
+  }
+
+  .sig-chart-panel > table,
+  .sig-chart-panel > .table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -157,6 +277,32 @@
   .sig-table-wrap td .sig-link-action {
     display: inline-flex;
     align-items: center;
+  }
+
+  .sig-list-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sig-list-footer__actions {
+    justify-content: space-between;
+  }
+
+  .sig-list-footer__nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .sig-list-footer__nav .sig-toolbar-btn {
+    flex: 1;
+  }
+
+  .sig-chart-panel > table,
+  .sig-chart-panel > .table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -310,6 +456,32 @@
 
 /* —— Header / navegação —— */
 @media (max-width: 575.98px) {
+  .sig-api-banner {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .sig-api-banner code {
+    word-break: break-all;
+  }
+
+  .app-toast-host {
+    left: max(0.75rem, env(safe-area-inset-left));
+    right: max(0.75rem, env(safe-area-inset-right));
+    max-width: none;
+  }
+
+  .app-toast {
+    width: 100%;
+  }
+
+  .sig-user-menu__dropdown {
+    right: 0;
+    left: auto;
+    width: min(18rem, calc(100vw - 1.5rem));
+    max-width: calc(100vw - 1.5rem);
+  }
+
   .sig-header__brand {
     min-width: 0;
   }
@@ -378,6 +550,23 @@
   }
 }
 
+/* —— Tablet: grids intermediários —— */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .sig-kpi-grid--5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .sig-content .grid.lg\:grid-cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sig-content .grid.lg\:grid-cols-3 > .lg\:col-span-2 {
+    grid-column: span 2;
+  }
+}
+
 /* Safe area (telemóveis com notch) */
 @supports (padding: max(0px)) {
   .sig-content {
@@ -387,5 +576,13 @@
   .sig-header__row {
     padding-left: max(1rem, env(safe-area-inset-left));
     padding-right: max(0.75rem, env(safe-area-inset-right));
+  }
+
+  .sig-sidebar {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .app-modal-dialog {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

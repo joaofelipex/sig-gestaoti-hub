@@ -31,7 +31,7 @@ import { healthScoreColor } from '../../utils/health.util';
         </button>
       </div>
 
-      <app-ti-context-strip highlight="dashboard"></app-ti-context-strip>
+      <app-ti-context-strip></app-ti-context-strip>
 
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
 

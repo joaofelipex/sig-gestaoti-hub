@@ -118,10 +118,55 @@
 
 .sig-pagination {
   font-size: 0.8125rem;
-  color: #718096;
+  color: var(--sig-text-muted);
 }
 
 .sig-pagination .active {
   color: rgb(var(--wl-background-color));
   font-weight: 700;
+}
+
+/* Rodapé de listagens — espelha sig-list-toolbar */
+.sig-list-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.65rem 1rem;
+  background: var(--sig-table-toolbar);
+  border-top: 1px solid var(--sig-table-border);
+}
+
+.sig-list-footer__meta {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--sig-text-muted);
+}
+
+.sig-list-footer__meta strong {
+  color: var(--sig-text);
+  font-weight: 700;
+}
+
+.sig-list-footer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sig-list-footer__size {
+  min-width: 9.5rem;
+}
+
+.sig-list-footer__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sig-list-footer__page {
+  min-width: 3.5rem;
+  justify-content: center;
 }

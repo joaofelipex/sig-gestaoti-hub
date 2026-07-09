@@ -8,7 +8,6 @@ import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent, DonutChartComponent } from '../../components/charts.component';
-import { TiContextStripComponent } from '../../components/ti-context-strip.component';
 import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
 import { healthScoreColor } from '../../utils/health.util';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -17,17 +16,15 @@ import { SigIcons } from '../../core/sig-icons';
 @Component({
   selector: 'app-governance',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent, DonutChartComponent, TiContextStripComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent, DonutChartComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
         <div>
           <h1 class="app-page-title">Governança</h1>
-          <p class="app-page-sub">Matriz de acessos, riscos e conformidade — integrado ao índice TI unificado.</p>
+          <p class="app-page-sub">Matriz de acessos, riscos e conformidade da organização.</p>
         </div>
       </header>
-
-      <app-ti-context-strip highlight="governance"></app-ti-context-strip>
 
       <div class="sig-kpi-grid">
         <app-kpi-card label="Saúde governança" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" [hint]="healthHint"></app-kpi-card>

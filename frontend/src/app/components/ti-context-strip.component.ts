@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -6,6 +6,7 @@ import { TiMetricsService, TiMetrics } from '../services/ti-metrics.service';
 import { formatBrl } from '../utils/financial.util';
 import { healthScoreColor } from '../utils/health.util';
 
+/** Visão integrada de TI — exibida apenas no Painel geral. */
 @Component({
   selector: 'app-ti-context-strip',
   standalone: true,
@@ -59,8 +60,6 @@ import { healthScoreColor } from '../utils/health.util';
   `,
 })
 export class TiContextStripComponent implements OnInit, OnDestroy {
-  @Input() highlight: 'dashboard' | 'economist' | 'payments' | 'governance' | 'alerts' | null = null;
-
   m: TiMetrics | null = null;
   readonly formatBrl = formatBrl;
   readonly healthScoreColor = healthScoreColor;

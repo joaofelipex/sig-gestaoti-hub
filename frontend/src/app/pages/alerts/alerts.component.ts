@@ -8,14 +8,13 @@ import { ApiService } from '../../services/api.service';
 import { ToastService } from '../../services/toast.service';
 import { AlertGenerationService } from '../../services/alert-generation.service';
 import { KpiCardComponent } from '../../components/charts.component';
-import { TiContextStripComponent } from '../../components/ti-context-strip.component';
 import { ConfirmComponent } from '../../components/modal.component';
 import { SigIcons } from '../../core/sig-icons';
 
 @Component({
   selector: 'app-alerts',
   standalone: true,
-  imports: [CommonModule, RouterModule, KpiCardComponent, ConfirmComponent, TiContextStripComponent],
+  imports: [CommonModule, RouterModule, KpiCardComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -33,8 +32,6 @@ import { SigIcons } from '../../core/sig-icons';
           </button>
         </div>
       </header>
-
-      <app-ti-context-strip highlight="alerts"></app-ti-context-strip>
 
       <div class="sig-kpi-grid">
         <app-kpi-card label="Não lidos" [value]="unreadCount" [icon]="icons.alert" color="#3b82f6"></app-kpi-card>

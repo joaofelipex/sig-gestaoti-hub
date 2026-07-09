@@ -1120,6 +1120,12 @@
   border-color: rgba(var(--wl-background-color), 0.25);
 }
 
+.sig-toolbar-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .sig-toolbar-btn--primary {
   border: 1px solid rgb(var(--wl-background-color));
   background-color: rgb(var(--wl-background-color));

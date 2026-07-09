@@ -38,6 +38,8 @@ export const SigIcons = {
   external: 'fas fa-external-link-alt',
   eye: 'fas fa-eye',
   pencil: 'fas fa-pen',
+  chevronLeft: 'fas fa-chevron-left',
+  chevronRight: 'fas fa-chevron-right',
 } as const;
 
 export type SigIconClass = (typeof SigIcons)[keyof typeof SigIcons];
