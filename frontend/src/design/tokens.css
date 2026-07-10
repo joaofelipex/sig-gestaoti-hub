@@ -46,6 +46,7 @@
 
   /* Layout */
   --header-height: 56px;
+  --sig-tabs-height: 38px;
   --sidebar-width: 240px;
   --sidebar-collapsed: 64px;
   --tab-content-padding: 1.25rem;

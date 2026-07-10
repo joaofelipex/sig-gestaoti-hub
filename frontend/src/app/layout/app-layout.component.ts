@@ -64,14 +64,19 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.alertGen.stopAutoSync();
     this.routerSub?.unsubscribe();
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+    }
   }
 
   toggleMobileNav(): void {
     this.mobileNavOpen = !this.mobileNavOpen;
+    this.syncBodyScrollLock();
   }
 
   closeMobileNav(): void {
     this.mobileNavOpen = false;
+    this.syncBodyScrollLock();
   }
 
   @HostListener('window:resize')
@@ -79,5 +84,17 @@ export class AppLayoutComponent implements OnInit, OnDestroy {
     if (typeof window !== 'undefined' && window.innerWidth >= 768 && this.mobileNavOpen) {
       this.closeMobileNav();
     }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.mobileNavOpen) {
+      this.closeMobileNav();
+    }
+  }
+
+  private syncBodyScrollLock(): void {
+    if (typeof document === 'undefined') return;
+    document.body.style.overflow = this.mobileNavOpen ? 'hidden' : '';
   }
 }

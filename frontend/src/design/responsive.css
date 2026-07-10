@@ -1,6 +1,13 @@
 /**
  * Responsividade SIG — mobile-first, tablet e desktop
+ * Breakpoints: xs ≤575 · sm ≤767 · md ≤991 · lg ≤1199 · xl ≥1200
  */
+
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
 
 /* —— Tokens por breakpoint —— */
 @media (max-width: 767.98px) {
@@ -156,7 +163,7 @@
 
   .sig-sidebar,
   .sig-backdrop {
-    top: calc(var(--header-height) + 36px);
+    top: calc(var(--header-height) + var(--sig-tabs-height));
   }
 
   .sig-content {
@@ -358,7 +365,7 @@
   .sig-toolbar-standalone .sig-toolbar-filter,
   .sig-list-toolbar select.app-field {
     width: 100%;
-    min-width: 0;
+    min-width: 0 !important;
   }
 
   .sig-toolbar-standalone .sig-toolbar-filter__menu {
@@ -534,6 +541,65 @@
 
   .sig-login__card {
     padding: 1.5rem 1.25rem;
+  }
+}
+
+/* —— Painéis e formulários —— */
+@media (max-width: 767.98px) {
+  .sig-settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sig-settings-form--password {
+    grid-template-columns: 1fr;
+  }
+
+  .sig-settings-actions {
+    justify-content: stretch;
+  }
+
+  .sig-settings-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sig-econ-hero {
+    padding: 1rem;
+  }
+
+  .sig-econ-hero__value {
+    font-size: 1.35rem;
+  }
+
+  .sig-chart-panel__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .sig-chart-panel__meta {
+    width: 100%;
+  }
+
+  .sig-ti-context__metrics {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.85rem;
+  }
+
+  .sig-kpi-card__value--sm {
+    font-size: 1rem;
+    word-break: break-word;
+  }
+
+  .sig-cmd-list code {
+    display: block;
+    min-width: 0;
+    width: 100%;
+    margin: 0 0 0.35rem;
+    word-break: break-all;
+  }
+
+  .app-page-sub {
+    word-break: break-word;
   }
 }
 

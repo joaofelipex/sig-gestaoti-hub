@@ -153,7 +153,7 @@
   overflow-x: auto;
   scrollbar-width: thin;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
-  min-height: 38px;
+  min-height: var(--sig-tabs-height);
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.02) 0%, rgba(255, 255, 255, 0.65) 100%);
 }
 
