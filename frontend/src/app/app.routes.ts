@@ -23,7 +23,6 @@ export const routes: Routes = [
       { path: 'economista', loadComponent: () => import('./pages/economist/economist.component').then(m => m.EconomistComponent) },
       { path: 'governanca', loadComponent: () => import('./pages/governance/governance.component').then(m => m.GovernanceComponent) },
       { path: 'pagamentos', loadComponent: () => import('./pages/payments/payments.component').then(m => m.PaymentsComponent) },
-      { path: 'dados-base', loadComponent: () => import('./pages/dados-base/dados-base.component').then(m => m.DadosBaseComponent) },
       { path: 'configuracoes', loadComponent: () => import('./pages/settings/settings.component').then(m => m.SettingsComponent) },
     ]
   },

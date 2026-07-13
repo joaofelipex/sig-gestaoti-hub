@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { ApplicationRef, Injectable, NgZone } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
@@ -37,7 +37,23 @@ export class CrudService {
     private toast: ToastService,
     private empresa: EmpresaService,
     private permissions: PermissionService,
+    private appRef: ApplicationRef,
+    private zone: NgZone,
   ) {}
+
+  /** Garante redesenho imediato após await HTTP (fecha modal/toast sem precisar de clique). */
+  private flushUi(): void {
+    // setTimeout: roda depois do caller setar modalOpen=false / saving=false
+    setTimeout(() => {
+      this.zone.run(() => {
+        try {
+          this.appRef.tick();
+        } catch {
+          /* ignore during teardown */
+        }
+      });
+    }, 0);
+  }
 
   private async getOrgId(): Promise<string | null> {
     try {
@@ -90,9 +106,11 @@ export class CrudService {
       this.dashboard.applyTableMutation(table, saved, 'upsert');
       void this.dashboard.refreshAfterMutation();
       this.toast.show({ title: row['id'] ? 'Atualizado' : 'Criado', description: 'Registro salvo com sucesso' });
+      this.flushUi();
       return true;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro', description: this.errMsg(e), variant: 'destructive' });
+      this.flushUi();
       return false;
     }
   }
@@ -111,9 +129,11 @@ export class CrudService {
       this.dashboard.applyTableMutation(table, id, 'delete');
       void this.dashboard.refreshAfterMutation();
       this.toast.show({ title: 'Excluído', description: 'Registro removido' });
+      this.flushUi();
       return true;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro', description: this.errMsg(e), variant: 'destructive' });
+      this.flushUi();
       return false;
     }
   }
@@ -146,9 +166,11 @@ export class CrudService {
       if (!options.silent) {
         this.toast.show({ title: 'Importação concluída', description: `${n} registros importados` });
       }
+      this.flushUi();
       return n;
     } catch (e: unknown) {
       this.toast.show({ title: 'Erro na importação', description: this.errMsg(e), variant: 'destructive' });
+      this.flushUi();
       return 0;
     }
   }

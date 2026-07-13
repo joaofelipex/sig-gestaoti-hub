@@ -47,6 +47,8 @@ export interface License {
   usedLicenses: number;
   activationKey: string;
   costPerUnit: number;
+  /** Custo mensal explícito (coluna custo_mensal), quando cadastrado. */
+  monthlyCost?: number;
   renewalDate: string;
   vendor: string;
   category: string;
@@ -614,6 +616,7 @@ export class DashboardService {
       usedLicenses: r.qtd_usuarios || 0,
       activationKey: r.chave_ativacao || '',
       costPerUnit: Number(r.custo_unitario || 0),
+      monthlyCost: Number(r.custo_mensal || 0),
       renewalDate: r.data_renovacao || '',
       vendor: r.fornecedor || '',
       category: r.categoria || '',

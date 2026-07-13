@@ -2,6 +2,7 @@ import { Component, EventEmitter, HostListener, Input, Output } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SigIcons } from '../core/sig-icons';
+import { PermissionService } from '../services/permission.service';
 
 export interface FilterDef {
   key: string;
@@ -71,7 +72,12 @@ export interface FilterDef {
           class="sig-toolbar-file"
           (change)="onFileSelected($event)"
         />
-        <button type="button" class="sig-toolbar-btn sig-toolbar-btn--ghost" (click)="importInput.click()">
+        <button
+          *ngIf="permissions.canWrite"
+          type="button"
+          class="sig-toolbar-btn sig-toolbar-btn--ghost"
+          (click)="importInput.click()"
+        >
           <i [class]="icons.import" aria-hidden="true"></i>
           Importar
         </button>
@@ -82,7 +88,12 @@ export interface FilterDef {
         <button *ngIf="hasActiveInput" type="button" class="sig-toolbar-btn sig-toolbar-btn--ghost" (click)="clearAll()">
           Limpar
         </button>
-        <button *ngIf="showNew" type="button" class="sig-toolbar-btn sig-toolbar-btn--primary" (click)="newClick.emit()">
+        <button
+          *ngIf="showNew && permissions.canWrite"
+          type="button"
+          class="sig-toolbar-btn sig-toolbar-btn--primary"
+          (click)="newClick.emit()"
+        >
           <i [class]="icons.plus" aria-hidden="true"></i>
           Novo
         </button>
@@ -104,6 +115,8 @@ export class DataToolbarComponent {
   @Output() newClick = new EventEmitter<void>();
   @Output() exportClick = new EventEmitter<void>();
   @Output() importFile = new EventEmitter<File>();
+
+  constructor(readonly permissions: PermissionService) {}
 
   onFilterChange(key: string, value: string) {
     this.filterChange.emit({ key, value });

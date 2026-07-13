@@ -5,6 +5,13 @@ export function healthScoreColor(score: number): string {
 }
 
 /** Saúde operacional — mesma lógica do Painel principal. */
+function daysUntil(date: string | null | undefined): number {
+  if (!date) return 999;
+  const ms = new Date(date).getTime() - Date.now();
+  if (Number.isNaN(ms)) return 999;
+  return Math.ceil(ms / 86400000);
+}
+
 export function computeOperationalHealth(input: {
   assets: Asset[];
   domains: Domain[];
@@ -15,7 +22,11 @@ export function computeOperationalHealth(input: {
   domainsExpiring: number;
 }): { score: number; hint: string } {
   const { assets, domains, servers, assetsInUse, criticalAlerts, domainsExpiring } = input;
-  const expiredDomains = domains.filter((d) => d.status === 'Expirado').length;
+  // Conta por data de vencimento (status no cadastro costuma ficar desatualizado).
+  const expiredDomains = domains.filter((d) => {
+    if (d.expirationDate) return daysUntil(d.expirationDate) <= 0;
+    return String(d.status || '').toLowerCase() === 'expirado';
+  }).length;
   const unassignedAssets = assets.filter((a) => a.status === 'Em uso' && !a.assignedTo).length;
   const offlineServers = servers.filter((s) =>
     ['offline', 'manutenção', 'manutencao'].includes(String(s.status || '').toLowerCase()),
@@ -44,10 +55,24 @@ export function computeOperationalHealth(input: {
   return { score, hint };
 }
 
+/** Normaliza severidade de risco (seed/formulários usam Alta/Alto/Crítico). */
+export function normalizeRiskSeverity(raw: string | null | undefined): string {
+  const k = String(raw || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+  if (['critico', 'critical', 'crit'].includes(k)) return 'Crítico';
+  if (['alto', 'alta', 'high'].includes(k)) return 'Alto';
+  if (['medio', 'media', 'medium'].includes(k)) return 'Médio';
+  if (['baixo', 'baixa', 'low'].includes(k)) return 'Baixo';
+  return String(raw || '').trim() || 'Médio';
+}
+
 /** Saúde de governança — riscos e conformidade. */
 export function computeGovernanceHealth(risks: RiskItem[]): { score: number; hint: string } {
-  const critical = risks.filter((r) => r.severity === 'Crítico').length;
-  const high = risks.filter((r) => r.severity === 'Alto').length;
+  const critical = risks.filter((r) => normalizeRiskSeverity(r.severity) === 'Crítico').length;
+  const high = risks.filter((r) => normalizeRiskSeverity(r.severity) === 'Alto').length;
   let score = 100;
   score -= critical * 15;
   score -= high * 8;

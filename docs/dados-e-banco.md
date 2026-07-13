@@ -74,10 +74,6 @@ npm run db:apply-migrations
 2. Na raiz: `DATABASE_URL=...` `CSV_DIR=...` `npm run db:import-csv`  
    Detalhe: [database/import/README.md](../database/import/README.md).
 
-## 6. Página na aplicação
-
-Com sessão iniciada, abre **Dados & base** no menu lateral: mostra URL da API, teste de **health**, **contagens por tabela** da tua organização e um resumo destes comandos.
-
-## 7. Arquitetura e segurança
+## 6. Arquitetura e segurança
 
 Modelo lógico, rotas da API e multi-tenant: [architecture.md](./architecture.md).

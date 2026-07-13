@@ -21,7 +21,7 @@ Não é necessário PostgREST nem serviço GoTrue externos: a app fala só com a
 
 ## Início rápido (local)
 
-Resumo: ver **[docs/dados-e-banco.md](docs/dados-e-banco.md)**. Na app (com sessão), abre **Dados & base** no menu lateral para ver ligações, estado e contagens.
+Resumo: ver **[docs/dados-e-banco.md](docs/dados-e-banco.md)**.
 
 1. **Docker** a correr.
 2. Na **raiz** do repositório:

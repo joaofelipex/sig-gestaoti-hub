@@ -1,4 +1,4 @@
-/* Modais / confirmações (app-modal, app-confirm) — visual Bootstrap/AdminLTE */
+/* Modais / confirmações (app-modal, app-confirm) */
 
 .app-modal-backdrop {
   position: fixed;
@@ -8,7 +8,14 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: app-modal-fade-in 0.16s ease-out;
+}
+
+.app-modal-backdrop.is-leaving {
+  animation: app-modal-fade-out 0.16s ease-in forwards;
 }
 
 .app-modal-dialog {
@@ -18,28 +25,74 @@
   display: flex;
   flex-direction: column;
   background: var(--sig-page-bg);
-  border-radius: var(--wl-radius);
+  border-radius: calc(var(--wl-radius) + 2px);
   border: 1px solid var(--sig-table-border);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+  box-shadow:
+    0 4px 6px rgba(15, 23, 42, 0.04),
+    0 24px 48px rgba(15, 23, 42, 0.18);
+  animation: app-modal-pop-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.app-modal-dialog.is-leaving {
+  animation: app-modal-pop-out 0.16s ease-in forwards;
 }
 
 .app-modal-dialog--sm {
-  max-width: 28rem;
+  max-width: 24rem;
+}
+
+.app-modal-dialog--confirm {
+  text-align: center;
+  padding-top: 0.5rem;
 }
 
 .app-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 1rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--sig-table-border);
 }
 
+.app-modal-header--confirm {
+  justify-content: center;
+  border-bottom: none;
+  padding-bottom: 0.25rem;
+}
+
 .app-modal-title {
   margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
+  font-size: 1.0625rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   color: var(--sig-text);
+}
+
+.app-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin: -0.25rem -0.35rem -0.25rem 0;
+  border: none;
+  border-radius: var(--br-sm);
+  background: transparent;
+  color: var(--sig-text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.app-modal-close:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--sig-text);
+}
+
+.app-modal-close:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .app-modal-body {
@@ -48,12 +101,117 @@
   flex: 1;
 }
 
+.app-modal-confirm-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin: 1.25rem auto 0;
+  border-radius: 999px;
+  background: rgba(220, 38, 38, 0.1);
+  color: #dc2626;
+  font-size: 1.1rem;
+}
+
+.app-modal-confirm-msg {
+  margin: 0;
+  color: var(--sig-text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
 .app-modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.85rem 1.25rem;
   border-top: 1px solid var(--sig-table-border);
-  background: var(--sig-table-toolbar);
-  border-radius: 0 0 var(--wl-radius) var(--wl-radius);
+  background: color-mix(in srgb, var(--sig-table-toolbar) 88%, transparent);
+  border-radius: 0 0 calc(var(--wl-radius) + 2px) calc(var(--wl-radius) + 2px);
+}
+
+.app-modal-dialog--confirm .app-modal-footer {
+  justify-content: center;
+  border-top: none;
+  background: transparent;
+  padding-top: 0.25rem;
+  padding-bottom: 1.25rem;
+}
+
+.app-modal-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 5.5rem;
+  justify-content: center;
+}
+
+.app-modal-spinner {
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: app-modal-spin 0.6s linear infinite;
+}
+
+.app-modal-spinner--light {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+
+@keyframes app-modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes app-modal-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes app-modal-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes app-modal-pop-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+
+@keyframes app-modal-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal-backdrop,
+  .app-modal-dialog,
+  .app-modal-backdrop.is-leaving,
+  .app-modal-dialog.is-leaving {
+    animation: none;
+  }
 }

@@ -81,7 +81,6 @@ export class AppShellSidebarComponent {
         { to: '/governanca', label: 'Governança', icon: 'fas fa-shield-alt' },
         { to: '/pagamentos', label: 'Pagamentos', icon: 'fas fa-wallet' },
         { to: '/alertas', label: 'Alertas', icon: 'fas fa-bell' },
-        { to: '/dados-base', label: 'Dados & base', icon: 'fas fa-database' },
       ],
     },
   ];

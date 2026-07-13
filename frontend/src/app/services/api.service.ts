@@ -14,7 +14,7 @@ export interface MeResponse {
     avatar_url?: string | null;
     role?: 'admin' | 'gestor' | 'usuario';
   };
-  permissions?: { canWrite: boolean };
+  permissions?: { canWrite: boolean; isAdmin?: boolean };
   postgres?: { configured: string; database: string | null; host: string | null; port: number | null };
   dataCounts?: { ativos: number; empresas: number; alertas: number };
   dataScope?: 'all' | 'org';
@@ -77,12 +77,42 @@ export class ApiService {
     return this.http.get<MeResponse>(this.api('/auth/me'));
   }
 
-  patchProfile(body: { nome?: string; email?: string; avatar_url?: string | null }): Observable<{ profile: MeResponse['profile'] }> {
+  patchProfile(body: { nome?: string; email?: string }): Observable<{ profile: MeResponse['profile'] }> {
     return this.http.patch<{ profile: MeResponse['profile'] }>(this.api('/auth/me'), body);
   }
 
-  changePassword(currentPassword: string, newPassword: string): Observable<{ ok: boolean }> {
-    return this.http.post<{ ok: boolean }>(this.api('/auth/change-password'), { currentPassword, newPassword });
+  changePassword(password: string): Observable<{ ok: boolean }> {
+    return this.http.post<{ ok: boolean }>(this.api('/auth/change-password'), { password });
+  }
+
+  listOrgUsers(): Observable<{
+    users: Array<{ user_id: string; email: string; nome: string; role: 'admin' | 'gestor' | 'usuario'; created_at?: string }>;
+  }> {
+    return this.http.get<{
+      users: Array<{ user_id: string; email: string; nome: string; role: 'admin' | 'gestor' | 'usuario'; created_at?: string }>;
+    }>(this.api('/auth/users'));
+  }
+
+  createOrgUser(body: {
+    nome: string;
+    email: string;
+    password: string;
+    role: 'admin' | 'gestor' | 'usuario';
+  }): Observable<{ user: { user_id: string; email: string; nome: string; role: string } }> {
+    return this.http.post<{ user: { user_id: string; email: string; nome: string; role: string } }>(
+      this.api('/auth/users'),
+      body,
+    );
+  }
+
+  updateOrgUser(
+    userId: string,
+    body: { nome?: string; role?: 'admin' | 'gestor' | 'usuario'; password?: string },
+  ): Observable<{ user: { user_id: string; email: string; nome: string; role: string } }> {
+    return this.http.patch<{ user: { user_id: string; email: string; nome: string; role: string } }>(
+      this.api(`/auth/users/${userId}`),
+      body,
+    );
   }
 
   logout(): Observable<{ ok: boolean }> {

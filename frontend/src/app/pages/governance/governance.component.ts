@@ -9,7 +9,7 @@ import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent, DonutChartComponent } from '../../components/charts.component';
 import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
-import { healthScoreColor } from '../../utils/health.util';
+import { healthScoreColor, normalizeRiskSeverity } from '../../utils/health.util';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigIcons } from '../../core/sig-icons';
 import { SigBadge } from '../../utils/status-badge';
@@ -174,7 +174,7 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   get filteredRisks() { const q = this.searchR.toLowerCase(); return this.risks.filter(r => (!q || r.title?.toLowerCase().includes(q)) && (!this.filterR['sev'] || r.severity === this.filterR['sev'])); }
 
   get activeAccess() { return this.accessRecords.filter(r => r.ativo).length; }
-  get criticalRisks() { return this.risks.filter(r => r.severity === 'Crítico').length; }
+  get criticalRisks() { return this.risks.filter(r => normalizeRiskSeverity(r.severity) === 'Crítico').length; }
   get healthScore() { return this.ti?.governanceHealthScore ?? 0; }
   get healthColor() { return healthScoreColor(this.healthScore); }
   get deleteMessage() {
@@ -185,14 +185,23 @@ export class GovernanceComponent implements OnInit, OnDestroy {
     const item = this.risks.find((r) => r.id === this.delId);
     return `Excluir risco ${item?.title || '?'}?`;
   }
-  get riskDistribution() { const map: any = { Crítico:'#ef4444', Alto:'#f97316', Médio:'#f59e0b', Baixo:'#10b981' }; const counts: any = {}; this.risks.forEach(r => counts[r.severity] = (counts[r.severity]||0)+1); return Object.entries(counts).map(([k,v]:any) => ({ label: k, value: v as number, color: map[k] })); }
+  get riskDistribution() {
+    const map: Record<string, string> = { Crítico: '#ef4444', Alto: '#f97316', Médio: '#f59e0b', Baixo: '#10b981' };
+    const counts: Record<string, number> = {};
+    this.risks.forEach((r) => {
+      const sev = normalizeRiskSeverity(r.severity);
+      counts[sev] = (counts[sev] || 0) + 1;
+    });
+    return Object.entries(counts).map(([k, v]) => ({ label: k, value: v, color: map[k] }));
+  }
   get accessDistribution() { const counts: any = {}; this.accessRecords.forEach(r => counts[r.accessLevel] = (counts[r.accessLevel]||0)+1); return Object.entries(counts).map(([k,v]:any) => ({ label: k, value: v as number })); }
 
   accessClass(l: string) {
     return l === 'Administrador' ? SigBadge.danger : l === 'Escrita' ? SigBadge.warning : SigBadge.success;
   }
   sevClass(s: string) {
-    return s === 'Crítico' ? SigBadge.danger : s === 'Alto' ? SigBadge.warning : s === 'Médio' ? SigBadge.info : SigBadge.success;
+    const sev = normalizeRiskSeverity(s);
+    return sev === 'Crítico' ? SigBadge.danger : sev === 'Alto' ? SigBadge.warning : sev === 'Médio' ? SigBadge.info : SigBadge.success;
   }
 
   openNewAccess() { this.formA = { ativo: true, nivel_acesso: 'Leitura', recurso_tipo: 'Aplicação', sistema: 'IMTS', data_concessao: new Date().toISOString().slice(0,10) }; this.modalA = true; }

@@ -9,8 +9,12 @@ import type {
 
 /** Custo mensal de uma licença — mesma regra do Painel principal. */
 export function licenseMonthlyCost(license: License): number {
+  // Preferir custo_mensal explícito quando cadastrado.
+  if (license.monthlyCost && license.monthlyCost > 0) {
+    return license.monthlyCost;
+  }
   const seats = license.totalLicenses || license.usedLicenses || 0;
-  const monthlyFactor = license.type === 'Mensal' ? 1 : 1 / 12;
+  const monthlyFactor = String(license.type || '').toLowerCase().startsWith('mensal') ? 1 : 1 / 12;
   return (license.costPerUnit || 0) * seats * monthlyFactor;
 }
 

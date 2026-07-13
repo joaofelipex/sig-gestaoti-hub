@@ -14,6 +14,7 @@ import {
   computeGovernanceHealth,
   computeOperationalHealth,
   healthScoreColor,
+  normalizeRiskSeverity,
 } from '../utils/health.util';
 import type { ChartDatum } from '../components/charts.component';
 
@@ -191,7 +192,7 @@ export class TiMetricsService {
       compositeHealthHint: compositeHealth.hint,
       healthColor: healthScoreColor(compositeHealth.score),
       criticalAlerts,
-      criticalRisks: d.risks.filter((r: any) => r.severity === 'Crítico').length,
+      criticalRisks: d.risks.filter((r: any) => normalizeRiskSeverity(r.severity) === 'Crítico').length,
       domainsExpiring,
       unusedLicenses,
       assetsInUse,

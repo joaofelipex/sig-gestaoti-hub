@@ -10,7 +10,8 @@ import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
+    // eventCoalescing atrasava o redesenho após await HTTP (modal só sumia no próximo clique)
+    provideZoneChangeDetection({ eventCoalescing: false }),
     provideBrowserGlobalErrorListeners(),
     provideAnimations(),
     provideHttpClient(withInterceptors([authInterceptor])),

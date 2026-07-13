@@ -244,9 +244,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const statusColors: any = { 'Em uso':'#10b981','Estoque':'#3b82f6','Manutenção':'#f59e0b','Aposentado':'#9ca3af' };
     this.assetStatus = Object.entries(statusMap).map(([k,v]:any) => ({ label: k, value: v as number, color: statusColors[k] }));
 
-    const domainMap: any = {}; domains.forEach((d: any) => domainMap[d.status] = (domainMap[d.status]||0)+1);
-    const domColors: any = { Ativo:'#10b981', Expirando:'#f59e0b', Expirado:'#ef4444' };
-    this.domainStatus = Object.entries(domainMap).map(([k,v]:any) => ({ label: k, value: v as number, color: domColors[k] }));
+    const domainMap: any = {};
+    domains.forEach((d: any) => {
+      let status = d.status || 'Ativo';
+      if (d.expirationDate) {
+        const left = days(d.expirationDate);
+        if (left <= 0) status = 'Expirado';
+        else if (left <= 30 && status !== 'Inativo') status = 'Expirando';
+      }
+      domainMap[status] = (domainMap[status] || 0) + 1;
+    });
+    const domColors: any = { Ativo: '#10b981', Expirando: '#f59e0b', Expirado: '#ef4444', Inativo: '#94a3b8' };
+    this.domainStatus = Object.entries(domainMap).map(([k, v]: any) => ({ label: k, value: v as number, color: domColors[k] }));
 
     const months: ChartDatum[] = [];
     for (let i = 5; i >= 0; i--) {
@@ -259,19 +268,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     const severityLabels: Record<string, string> = {
       critico: 'Crítico',
+      aviso: 'Aviso',
+      info: 'Info',
       alto: 'Alto',
       medio: 'Médio',
       baixo: 'Baixo',
     };
     const severityColors: Record<string, string> = {
       critico: '#ef4444',
-      alto: '#f59e0b',
-      medio: '#3b82f6',
+      aviso: '#f59e0b',
+      info: '#3b82f6',
+      alto: '#f97316',
+      medio: '#38bdf8',
       baixo: '#94a3b8',
     };
     const alertMap: Record<string, number> = {};
     alerts.forEach((a: any) => {
-      const k = a.severidade || 'baixo';
+      const k = String(a.severidade || 'info').toLowerCase();
       alertMap[k] = (alertMap[k] || 0) + 1;
     });
     this.alertsBySeverity = Object.entries(alertMap).map(([k, v]) => ({

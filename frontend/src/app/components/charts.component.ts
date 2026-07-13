@@ -1,378 +1,514 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {
+  ChartComponent,
+  ApexAxisChartSeries,
+  ApexChart,
+  ApexDataLabels,
+  ApexFill,
+  ApexGrid,
+  ApexLegend,
+  ApexMarkers,
+  ApexNonAxisChartSeries,
+  ApexPlotOptions,
+  ApexStroke,
+  ApexTooltip,
+  ApexXAxis,
+  ApexYAxis,
+} from 'ng-apexcharts';
 
-export interface ChartDatum { label: string; value: number; color?: string }
-export interface ChartSeries { label: string; color?: string; data: ChartDatum[] }
+export interface ChartDatum {
+  label: string;
+  value: number;
+  color?: string;
+}
+
+export interface ChartSeries {
+  label: string;
+  color?: string;
+  data: ChartDatum[];
+}
 
 const PALETTE = ['#023ed8', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b'];
 
-let lineChartSeq = 0;
+const AXIS_COLOR = '#64748b';
+const GRID_COLOR = '#e8ecf4';
+const LABEL_FONT = 'inherit';
+
+function formatNum(v: number, prefix = '', suffix = ''): string {
+  if (suffix === '%') return `${Math.round(v)}%`;
+  if (v >= 1_000_000) return `${prefix}${(v / 1_000_000).toFixed(1)} mi`;
+  if (v >= 10_000) return `${prefix}${Math.round(v / 1_000)} mil`;
+  return `${prefix}${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}${suffix}`;
+}
+
+function baseChart(type: ApexChart['type'], height = 280): ApexChart {
+  return {
+    type,
+    height,
+    fontFamily: LABEL_FONT,
+    foreColor: AXIS_COLOR,
+    toolbar: { show: false },
+    zoom: { enabled: false },
+    animations: {
+      enabled: true,
+      speed: 650,
+      animateGradually: { enabled: true, delay: 80 },
+      dynamicAnimation: { enabled: true, speed: 280 },
+    },
+  };
+}
+
+function baseGrid(): ApexGrid {
+  return {
+    borderColor: GRID_COLOR,
+    strokeDashArray: 4,
+    padding: { left: 8, right: 8 },
+    xaxis: { lines: { show: false } },
+    yaxis: { lines: { show: true } },
+  };
+}
+
+function baseTooltip(prefix = '', suffix = ''): ApexTooltip {
+  return {
+    theme: 'light',
+    style: { fontSize: '12px' },
+    y: {
+      formatter: (val: number) => formatNum(val, prefix, suffix),
+    },
+  };
+}
+
+function colorAt(i: number, override?: string): string {
+  return override || PALETTE[i % PALETTE.length];
+}
 
 @Component({
   selector: 'app-bar-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ChartComponent],
   template: `
-    <div class="sig-chart-bars" *ngIf="data.length; else empty">
-      <div class="sig-chart-bar" *ngFor="let d of data; let i = index">
-        <div class="sig-chart-bar__head">
-          <span class="sig-chart-bar__label">{{ d.label }}</span>
-          <span class="sig-chart-bar__values">
-            <strong>{{ formatValue(d.value) }}</strong>
-            <span *ngIf="showShare" class="sig-chart-bar__pct">{{ share(d.value) }}%</span>
-          </span>
-        </div>
-        <div class="sig-chart-bar__track" role="presentation">
-          <div
-            class="sig-chart-bar__fill"
-            [style.width.%]="pct(d.value)"
-            [style.background]="barFill(d.color || color(i))"
-          ></div>
-        </div>
-      </div>
+    <div class="sig-apex" *ngIf="data.length; else empty">
+      <apx-chart
+        [series]="series"
+        [chart]="chart"
+        [plotOptions]="plotOptions"
+        [colors]="colors"
+        [dataLabels]="dataLabels"
+        [xaxis]="xaxis"
+        [yaxis]="yaxis"
+        [grid]="grid"
+        [tooltip]="tooltip"
+        [legend]="legend"
+      ></apx-chart>
     </div>
     <ng-template #empty>
       <div class="sig-chart-empty">Sem dados para exibir</div>
     </ng-template>
   `,
 })
-export class BarChartComponent {
+export class BarChartComponent implements OnChanges {
   @Input() data: ChartDatum[] = [];
   @Input() prefix = '';
   @Input() suffix = '';
   @Input() showShare = true;
 
-  get max() {
-    return Math.max(1, ...this.data.map((d) => d.value));
+  series: ApexAxisChartSeries = [];
+  chart: ApexChart = baseChart('bar', Math.max(220, 48 + this.data.length * 44));
+  plotOptions: ApexPlotOptions = {};
+  colors: string[] = [];
+  dataLabels: ApexDataLabels = {};
+  xaxis: ApexXAxis = {};
+  yaxis: ApexYAxis = {};
+  grid: ApexGrid = baseGrid();
+  tooltip: ApexTooltip = baseTooltip();
+  legend: ApexLegend = { show: false };
+
+  ngOnChanges(): void {
+    this.rebuild();
   }
 
-  get total() {
-    return this.data.reduce((s, d) => s + d.value, 0);
-  }
+  private rebuild(): void {
+    const labels = this.data.map((d) => d.label);
+    const values = this.data.map((d) => d.value);
+    const total = values.reduce((s, v) => s + v, 0);
+    const prefix = this.prefix;
+    const suffix = this.suffix;
+    const showShare = this.showShare;
 
-  pct(v: number) {
-    return (v / this.max) * 100;
-  }
-
-  share(v: number) {
-    return this.total ? Math.round((v / this.total) * 100) : 0;
-  }
-
-  color(i: number) {
-    return PALETTE[i % PALETTE.length];
-  }
-
-  barFill(hex: string) {
-    return `linear-gradient(90deg, ${hex} 0%, ${hex}cc 100%)`;
-  }
-
-  formatValue(v: number) {
-    return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + this.suffix;
+    this.colors = this.data.map((d, i) => colorAt(i, d.color));
+    this.chart = {
+      ...baseChart('bar', Math.max(220, 56 + this.data.length * 42)),
+      stacked: false,
+    };
+    this.plotOptions = {
+      bar: {
+        horizontal: true,
+        borderRadius: 6,
+        borderRadiusApplication: 'end',
+        barHeight: '62%',
+        distributed: true,
+        dataLabels: { position: 'top' },
+      },
+    };
+    this.series = [{ name: 'Valor', data: values }];
+    this.dataLabels = {
+      enabled: true,
+      offsetX: 8,
+      style: { fontSize: '11px', fontWeight: 700, colors: ['#334155'] },
+      formatter: (val: string | number | number[]) => {
+        const n = typeof val === 'number' ? val : Number(val);
+        const base = formatNum(n, prefix, suffix);
+        if (!showShare || !total) return base;
+        return `${base} · ${Math.round((n / total) * 100)}%`;
+      },
+    };
+    this.xaxis = {
+      categories: labels,
+      labels: {
+        style: { colors: AXIS_COLOR, fontSize: '11px' },
+        formatter: (val: string) => formatNum(Number(val) || 0, prefix, suffix),
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    };
+    this.yaxis = {
+      labels: {
+        style: { colors: AXIS_COLOR, fontSize: '12px', fontWeight: 600 },
+        maxWidth: 140,
+      },
+    };
+    this.grid = {
+      ...baseGrid(),
+      xaxis: { lines: { show: true } },
+      yaxis: { lines: { show: false } },
+    };
+    this.tooltip = {
+      ...baseTooltip(prefix, suffix),
+      y: {
+        formatter: (val: number) => {
+          const base = formatNum(val, prefix, suffix);
+          if (!showShare || !total) return base;
+          return `${base} (${Math.round((val / total) * 100)}%)`;
+        },
+      },
+    };
+    this.legend = { show: false };
   }
 }
 
 @Component({
   selector: 'app-donut-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ChartComponent],
   template: `
-    <div class="sig-chart-donut" *ngIf="data.length; else empty">
-      <div class="sig-chart-donut__ring">
-        <svg viewBox="0 0 42 42" class="sig-chart-donut__svg sig-chart-donut__svg--ring" aria-hidden="true">
-          <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="var(--sig-chart-track)" stroke-width="5.5"></circle>
-          <circle
-            *ngFor="let s of segments"
-            cx="21"
-            cy="21"
-            r="15.915"
-            fill="transparent"
-            [attr.stroke]="s.color"
-            stroke-width="5.5"
-            [attr.stroke-dasharray]="s.dash"
-            [attr.stroke-dashoffset]="s.offset"
-            class="sig-chart-donut__segment"
-          ></circle>
-        </svg>
-        <div class="sig-chart-donut__center">
-          <strong class="sig-chart-donut__total">{{ centerValue ?? total }}</strong>
-          <span class="sig-chart-donut__center-label">{{ centerLabel }}</span>
-        </div>
-      </div>
-      <div class="sig-chart-donut__legend">
-        <div *ngFor="let d of data; let i = index" class="sig-chart-donut__row">
-          <span class="sig-chart-donut__swatch" [style.background]="d.color || color(i)"></span>
-          <span class="sig-chart-donut__name">{{ d.label }}</span>
-          <span class="sig-chart-donut__stat">
-            <strong>{{ d.value }}</strong>
-            <span class="sig-chart-donut__pct">{{ share(d.value) }}%</span>
-          </span>
-        </div>
-      </div>
+    <div class="sig-apex sig-apex--donut" *ngIf="data.length; else empty">
+      <apx-chart
+        [series]="series"
+        [chart]="chart"
+        [labels]="labels"
+        [colors]="colors"
+        [plotOptions]="plotOptions"
+        [dataLabels]="dataLabels"
+        [legend]="legend"
+        [stroke]="stroke"
+        [tooltip]="tooltip"
+      ></apx-chart>
     </div>
     <ng-template #empty>
       <div class="sig-chart-empty">Sem dados para exibir</div>
     </ng-template>
   `,
 })
-export class DonutChartComponent {
+export class DonutChartComponent implements OnChanges {
   @Input() data: ChartDatum[] = [];
   @Input() centerLabel = 'Total';
   @Input() centerValue: string | number | null = null;
 
-  get total() {
-    return this.data.reduce((s, d) => s + d.value, 0);
+  series: ApexNonAxisChartSeries = [];
+  chart: ApexChart = baseChart('donut', 280);
+  labels: string[] = [];
+  colors: string[] = [];
+  plotOptions: ApexPlotOptions = {};
+  dataLabels: ApexDataLabels = { enabled: false };
+  legend: ApexLegend = {};
+  stroke: ApexStroke = { width: 2, colors: ['#fff'] };
+  tooltip: ApexTooltip = {};
+
+  ngOnChanges(): void {
+    this.rebuild();
   }
 
-  color(i: number) {
-    return PALETTE[i % PALETTE.length];
-  }
+  private rebuild(): void {
+    const total = this.data.reduce((s, d) => s + d.value, 0);
+    const centerText =
+      this.centerValue != null
+        ? String(this.centerValue)
+        : total.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+    const centerLabel = this.centerLabel;
 
-  share(v: number) {
-    const t = Math.max(1, this.total);
-    return Math.round((v / t) * 100);
-  }
-
-  get segments() {
-    const sum = Math.max(1, this.total);
-    let acc = 0;
-    const C = 100;
-    return this.data.map((d, i) => {
-      const pct = (d.value / sum) * C;
-      const seg = {
-        color: d.color || this.color(i),
-        dash: `${pct} ${C - pct}`,
-        offset: C - acc,
-      };
-      acc += pct;
-      return seg;
-    });
+    this.series = this.data.map((d) => d.value);
+    this.labels = this.data.map((d) => d.label);
+    this.colors = this.data.map((d, i) => colorAt(i, d.color));
+    this.chart = baseChart('donut', 280);
+    this.plotOptions = {
+      pie: {
+        donut: {
+          size: '68%',
+          labels: {
+            show: true,
+            name: {
+              show: true,
+              fontSize: '11px',
+              fontWeight: 700,
+              color: AXIS_COLOR,
+              offsetY: 18,
+            },
+            value: {
+              show: true,
+              fontSize: '22px',
+              fontWeight: 800,
+              color: '#0f172a',
+              offsetY: -8,
+              formatter: () => centerText,
+            },
+            total: {
+              show: true,
+              showAlways: true,
+              label: centerLabel,
+              fontSize: '11px',
+              fontWeight: 700,
+              color: AXIS_COLOR,
+              formatter: () => centerText,
+            },
+          },
+        },
+      },
+    };
+    this.dataLabels = { enabled: false };
+    this.legend = {
+      position: 'bottom',
+      fontSize: '12px',
+      markers: { size: 6, offsetX: -2 },
+      itemMargin: { horizontal: 8, vertical: 4 },
+      formatter: (legendName: string, opts) => {
+        const val = Number(opts.w.globals.series[opts.seriesIndex]) || 0;
+        const pct = total ? Math.round((val / total) * 100) : 0;
+        const shown =
+          Math.abs(val) >= 1000
+            ? val.toLocaleString('pt-BR', { maximumFractionDigits: 0 })
+            : val.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+        return `${legendName} · ${shown} (${pct}%)`;
+      },
+    };
+    this.stroke = { width: 2, colors: ['#fff'] };
+    this.tooltip = {
+      theme: 'light',
+      y: {
+        formatter: (val: number) => {
+          const pct = total ? Math.round((val / total) * 100) : 0;
+          return `${val.toLocaleString('pt-BR')} (${pct}%)`;
+        },
+      },
+    };
   }
 }
 
 @Component({
   selector: 'app-line-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ChartComponent],
   template: `
-    <div class="sig-chart-line" *ngIf="data.length; else empty">
-      <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="sig-chart-line__svg" role="img">
-        <defs>
-          <linearGradient [attr.id]="gradId" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" [attr.stop-color]="strokeColor" stop-opacity="0.35" />
-            <stop offset="100%" [attr.stop-color]="strokeColor" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-        <g class="sig-chart-line__grid">
-          <line
-            *ngFor="let t of yTicks"
-            [attr.x1]="padX"
-            [attr.x2]="W - padX"
-            [attr.y1]="yAt(t)"
-            [attr.y2]="yAt(t)"
-          />
-        </g>
-        <g class="sig-chart-line__ylabels">
-          <text
-            *ngFor="let t of yTicks"
-            [attr.x]="padX - 6"
-            [attr.y]="yAt(t) + 3"
-            text-anchor="end"
-          >{{ formatTick(t) }}</text>
-        </g>
-        <polygon [attr.points]="area" [attr.fill]="'url(#' + gradId + ')'" />
-        <polyline [attr.points]="path" fill="none" [attr.stroke]="strokeColor" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
-        <g *ngFor="let p of points; let i = index" class="sig-chart-line__point">
-          <circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" [attr.fill]="strokeColor" stroke="#fff" stroke-width="2" />
-          <text [attr.x]="p.x" [attr.y]="p.y - 8" text-anchor="middle" class="sig-chart-line__value">{{ formatValue(data[i].value) }}</text>
-          <text [attr.x]="p.x" [attr.y]="H - 6" text-anchor="middle" class="sig-chart-line__month">{{ data[i].label }}</text>
-        </g>
-      </svg>
+    <div class="sig-apex" *ngIf="data.length; else empty">
+      <apx-chart
+        [series]="series"
+        [chart]="chart"
+        [stroke]="stroke"
+        [fill]="fill"
+        [markers]="markers"
+        [colors]="colors"
+        [dataLabels]="dataLabels"
+        [xaxis]="xaxis"
+        [yaxis]="yaxis"
+        [grid]="grid"
+        [tooltip]="tooltip"
+        [legend]="legend"
+      ></apx-chart>
     </div>
     <ng-template #empty>
       <div class="sig-chart-empty">Sem dados para exibir</div>
     </ng-template>
   `,
 })
-export class LineChartComponent {
+export class LineChartComponent implements OnChanges {
   @Input() data: ChartDatum[] = [];
   @Input() prefix = '';
   @Input() suffix = '';
   @Input() strokeColor = '#023ed8';
 
-  readonly gradId = `sig-line-grad-${++lineChartSeq}`;
-  W = 420;
-  H = 176;
-  padX = 44;
-  padTop = 22;
-  padBottom = 28;
+  series: ApexAxisChartSeries = [];
+  chart: ApexChart = baseChart('area', 260);
+  stroke: ApexStroke = {};
+  fill: ApexFill = {};
+  markers: ApexMarkers = {};
+  colors: string[] = [];
+  dataLabels: ApexDataLabels = { enabled: false };
+  xaxis: ApexXAxis = {};
+  yaxis: ApexYAxis = {};
+  grid: ApexGrid = baseGrid();
+  tooltip: ApexTooltip = baseTooltip();
+  legend: ApexLegend = { show: false };
 
-  get max() {
-    return Math.max(1, ...this.data.map((d) => d.value));
+  ngOnChanges(): void {
+    this.rebuild();
   }
 
-  get yTicks(): number[] {
-    const m = this.max;
-    if (m <= 0) return [0];
-    const step = m <= 4 ? 1 : m <= 20 ? 5 : m <= 100 ? 25 : m <= 1000 ? 250 : Math.ceil(m / 4 / 1000) * 1000;
-    const ticks: number[] = [];
-    for (let v = 0; v <= m; v += step) ticks.push(v);
-    if (ticks[ticks.length - 1] !== m) ticks.push(m);
-    return ticks.slice(-5);
-  }
+  private rebuild(): void {
+    const prefix = this.prefix;
+    const suffix = this.suffix;
+    const color = this.strokeColor || PALETTE[0];
 
-  yAt(value: number) {
-    const h = this.H - this.padTop - this.padBottom;
-    return this.padTop + h - (value / this.max) * h;
-  }
-
-  get points() {
-    if (!this.data.length) return [];
-    const w = this.W - this.padX * 2;
-    const h = this.H - this.padTop - this.padBottom;
-    return this.data.map((d, i) => ({
-      x: this.padX + (i / Math.max(1, this.data.length - 1)) * w,
-      y: this.padTop + h - (d.value / this.max) * h,
-    }));
-  }
-
-  get path() {
-    return this.points.map((p) => `${p.x},${p.y}`).join(' ');
-  }
-
-  get area() {
-    const pts = this.points;
-    if (!pts.length) return '';
-    const base = this.H - this.padBottom;
-    return `${pts[0].x},${base} ${this.path} ${pts[pts.length - 1].x},${base}`;
-  }
-
-  formatTick(v: number) {
-    if (this.suffix === '%') return `${Math.round(v)}%`;
-    if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)} mi`;
-    if (v >= 1_000) return `${Math.round(v / 1_000)} mil`;
-    return `${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}${this.suffix}`;
-  }
-
-  formatValue(v: number) {
-    if (v >= 1_000_000) return this.prefix + (v / 1_000_000).toFixed(1) + ' mi';
-    if (v >= 10_000) return this.prefix + Math.round(v / 1_000) + ' mil';
-    return this.prefix + v.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) + this.suffix;
+    this.colors = [color];
+    this.chart = baseChart('area', 260);
+    this.series = [
+      {
+        name: 'Valor',
+        data: this.data.map((d) => d.value),
+      },
+    ];
+    this.stroke = {
+      curve: 'smooth',
+      width: 3,
+    };
+    this.fill = {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.45,
+        opacityTo: 0.05,
+        stops: [0, 90, 100],
+      },
+    };
+    this.markers = {
+      size: 4,
+      strokeColors: '#fff',
+      strokeWidth: 2,
+      hover: { size: 6 },
+    };
+    this.dataLabels = { enabled: false };
+    this.xaxis = {
+      categories: this.data.map((d) => d.label),
+      labels: {
+        style: { colors: AXIS_COLOR, fontSize: '11px' },
+        rotate: 0,
+      },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    };
+    this.yaxis = {
+      labels: {
+        style: { colors: AXIS_COLOR, fontSize: '11px' },
+        formatter: (val: number) => formatNum(val, prefix, suffix),
+      },
+    };
+    this.grid = baseGrid();
+    this.tooltip = baseTooltip(prefix, suffix);
+    this.legend = { show: false };
   }
 }
 
 @Component({
   selector: 'app-multi-line-chart',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ChartComponent],
   template: `
-    <div class="sig-chart-line" *ngIf="series.length && labels.length; else empty">
-      <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="sig-chart-line__svg" role="img">
-        <g class="sig-chart-line__grid">
-          <line
-            *ngFor="let t of yTicks"
-            [attr.x1]="padX"
-            [attr.x2]="W - padX"
-            [attr.y1]="yAt(t)"
-            [attr.y2]="yAt(t)"
-          />
-        </g>
-        <g class="sig-chart-line__ylabels">
-          <text
-            *ngFor="let t of yTicks"
-            [attr.x]="padX - 6"
-            [attr.y]="yAt(t) + 3"
-            text-anchor="end"
-          >{{ formatTick(t) }}</text>
-        </g>
-        <g *ngFor="let s of normalizedSeries; let i = index">
-          <polyline
-            [attr.points]="path(s.data)"
-            fill="none"
-            [attr.stroke]="s.color || color(i)"
-            stroke-width="2.5"
-            stroke-linejoin="round"
-            stroke-linecap="round"
-          />
-          <g *ngFor="let p of points(s.data); let j = index" class="sig-chart-line__point">
-            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" [attr.fill]="s.color || color(i)" stroke="#fff" stroke-width="2" />
-            <text *ngIf="i === 0" [attr.x]="p.x" [attr.y]="H - 6" text-anchor="middle" class="sig-chart-line__month">{{ labels[j] }}</text>
-          </g>
-        </g>
-      </svg>
-      <div class="d-flex flex-wrap gap-3 mt-2">
-        <span *ngFor="let s of series; let i = index" class="d-inline-flex align-items-center gap-1 text-sm" style="color: var(--sig-text-muted)">
-          <span class="sig-chart-donut__swatch" [style.background]="s.color || color(i)"></span>
-          {{ s.label }}
-        </span>
-      </div>
+    <div class="sig-apex" *ngIf="series.length && categoryLabels.length; else empty">
+      <apx-chart
+        [series]="apexSeries"
+        [chart]="chart"
+        [stroke]="stroke"
+        [markers]="markers"
+        [colors]="colors"
+        [dataLabels]="dataLabels"
+        [xaxis]="xaxis"
+        [yaxis]="yaxis"
+        [grid]="grid"
+        [tooltip]="tooltip"
+        [legend]="legend"
+      ></apx-chart>
     </div>
     <ng-template #empty>
       <div class="sig-chart-empty">Sem dados para exibir</div>
     </ng-template>
   `,
 })
-export class MultiLineChartComponent {
+export class MultiLineChartComponent implements OnChanges {
   @Input() series: ChartSeries[] = [];
   @Input() prefix = '';
   @Input() suffix = '';
 
-  W = 420;
-  H = 176;
-  padX = 44;
-  padTop = 22;
-  padBottom = 28;
+  apexSeries: ApexAxisChartSeries = [];
+  chart: ApexChart = baseChart('line', 280);
+  stroke: ApexStroke = {};
+  markers: ApexMarkers = {};
+  colors: string[] = [];
+  dataLabels: ApexDataLabels = { enabled: false };
+  xaxis: ApexXAxis = {};
+  yaxis: ApexYAxis = {};
+  grid: ApexGrid = baseGrid();
+  tooltip: ApexTooltip = baseTooltip();
+  legend: ApexLegend = {};
+  categoryLabels: string[] = [];
 
-  get labels(): string[] {
-    return Array.from(new Set(this.series.flatMap((s) => s.data.map((d) => d.label))));
+  ngOnChanges(): void {
+    this.rebuild();
   }
 
-  get normalizedSeries(): ChartSeries[] {
-    return this.series.map((s) => ({
-      ...s,
-      data: this.labels.map((label) => s.data.find((d) => d.label === label) || { label, value: 0 }),
+  private rebuild(): void {
+    const prefix = this.prefix;
+    const suffix = this.suffix;
+    const labels = Array.from(new Set(this.series.flatMap((s) => s.data.map((d) => d.label))));
+    this.categoryLabels = labels;
+
+    this.colors = this.series.map((s, i) => colorAt(i, s.color));
+    this.apexSeries = this.series.map((s) => ({
+      name: s.label,
+      data: labels.map((label) => s.data.find((d) => d.label === label)?.value ?? 0),
     }));
-  }
-
-  get max() {
-    return Math.max(1, ...this.normalizedSeries.flatMap((s) => s.data.map((d) => d.value)));
-  }
-
-  get yTicks(): number[] {
-    const m = this.max;
-    if (m <= 0) return [0];
-    const step = m <= 4 ? 1 : m <= 20 ? 5 : m <= 100 ? 25 : m <= 1000 ? 250 : Math.ceil(m / 4 / 1000) * 1000;
-    const ticks: number[] = [];
-    for (let v = 0; v <= m; v += step) ticks.push(v);
-    if (ticks[ticks.length - 1] !== m) ticks.push(m);
-    return ticks.slice(-5);
-  }
-
-  color(i: number) {
-    return PALETTE[i % PALETTE.length];
-  }
-
-  yAt(value: number) {
-    const h = this.H - this.padTop - this.padBottom;
-    return this.padTop + h - (value / this.max) * h;
-  }
-
-  points(data: ChartDatum[]) {
-    const w = this.W - this.padX * 2;
-    return data.map((d, i) => ({
-      x: this.padX + (i / Math.max(1, data.length - 1)) * w,
-      y: this.yAt(d.value),
-    }));
-  }
-
-  path(data: ChartDatum[]) {
-    return this.points(data).map((p) => `${p.x},${p.y}`).join(' ');
-  }
-
-  formatTick(v: number) {
-    if (this.suffix === '%') return `${Math.round(v)}%`;
-    if (v >= 1_000_000) return `${this.prefix}${(v / 1_000_000).toFixed(1)} mi`;
-    if (v >= 1_000) return `${this.prefix}${Math.round(v / 1_000)} mil`;
-    return `${this.prefix}${v.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}${this.suffix}`;
+    this.chart = baseChart('line', 280);
+    this.stroke = { curve: 'smooth', width: 3 };
+    this.markers = {
+      size: 4,
+      strokeColors: '#fff',
+      strokeWidth: 2,
+      hover: { size: 6 },
+    };
+    this.dataLabels = { enabled: false };
+    this.xaxis = {
+      categories: labels,
+      labels: { style: { colors: AXIS_COLOR, fontSize: '11px' } },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+    };
+    this.yaxis = {
+      labels: {
+        style: { colors: AXIS_COLOR, fontSize: '11px' },
+        formatter: (val: number) => formatNum(val, prefix, suffix),
+      },
+    };
+    this.grid = baseGrid();
+    this.tooltip = {
+      ...baseTooltip(prefix, suffix),
+      shared: true,
+      intersect: false,
+    };
+    this.legend = {
+      position: 'top',
+      horizontalAlign: 'left',
+      fontSize: '12px',
+      markers: { size: 6, offsetX: -2 },
+      itemMargin: { horizontal: 12, vertical: 4 },
+    };
   }
 }
 

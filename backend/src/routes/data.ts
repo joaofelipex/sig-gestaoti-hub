@@ -40,7 +40,7 @@ const DASHBOARD_SELECT: Partial<Record<DashboardTable, string>> = {
   dominios: `id, org_id, empresa_id, nome, registrar, data_vencimento, custo_renovacao,
     custo_anual, auto_renovacao, dns_provider, hosting_provider, ssl_vencimento, status, observacoes`,
   licencas: `id, org_id, empresa_id, nome, tipo, total_licencas, qtd_usuarios,
-    chave_ativacao, custo_unitario, data_renovacao, fornecedor, categoria`,
+    chave_ativacao, custo_unitario, custo_mensal, data_renovacao, fornecedor, categoria`,
   servidores: `id, org_id, empresa_id, nome, provedor, tipo, regiao, ip_publico,
     sistema_operacional, cpu, ram, armazenamento, status, uptime_pct, custo_mensal,
     finalidade, equipe_responsavel, contrato_fim, ultimo_backup, url_monitoramento,
@@ -96,6 +96,7 @@ const STATUS_TABLES = [
   'registros_acesso',
   'riscos',
   'pagamentos',
+  'dns_records',
 ] as const;
 
 r.get('/status', async (req: AuthedRequest, res) => {

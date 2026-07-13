@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ApplicationRef, Component, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { Toast, ToastService } from '../services/toast.service';
@@ -10,23 +10,27 @@ import { Toast, ToastService } from '../services/toast.service';
   template: `
     <div class="app-toast-host" aria-live="polite">
       <div
-        *ngFor="let toast of toasts"
+        *ngFor="let toast of toasts; trackBy: trackToast"
         class="app-toast"
         [class.app-toast--error]="toast.variant === 'destructive'"
+        [class.app-toast--success]="toast.variant !== 'destructive'"
         role="alert"
       >
-        <div class="d-flex justify-content-between align-items-start gap-2">
-          <div>
-            <div class="app-toast__title">{{ toast.title }}</div>
-            <p *ngIf="toast.description" class="app-toast__body mb-0">{{ toast.description }}</p>
-          </div>
-          <button
-            type="button"
-            class="btn-close btn-close-sm"
-            aria-label="Fechar"
-            (click)="removeToast(toast.id)"
-          ></button>
+        <div class="app-toast__icon" aria-hidden="true">
+          <i class="fas" [class.fa-check]="toast.variant !== 'destructive'" [class.fa-exclamation]="toast.variant === 'destructive'"></i>
         </div>
+        <div class="app-toast__content">
+          <div class="app-toast__title">{{ toast.title }}</div>
+          <p *ngIf="toast.description" class="app-toast__body mb-0">{{ toast.description }}</p>
+        </div>
+        <button
+          type="button"
+          class="app-toast__close"
+          aria-label="Fechar"
+          (click)="removeToast(toast.id)"
+        >
+          <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
       </div>
     </div>
   `,
@@ -35,14 +39,31 @@ export class ToastComponent implements OnInit, OnDestroy {
   toasts: Toast[] = [];
   private sub?: Subscription;
 
-  constructor(private toastService: ToastService) {}
+  constructor(
+    private toastService: ToastService,
+    private appRef: ApplicationRef,
+    private zone: NgZone,
+  ) {}
 
   ngOnInit(): void {
-    this.sub = this.toastService.toasts$.subscribe((t) => (this.toasts = t));
+    this.sub = this.toastService.toasts$.subscribe((t) => {
+      this.toasts = t;
+      this.zone.run(() => {
+        try {
+          this.appRef.tick();
+        } catch {
+          /* ignore */
+        }
+      });
+    });
   }
 
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
+  }
+
+  trackToast(_i: number, toast: Toast): string {
+    return toast.id;
   }
 
   removeToast(id: string): void {

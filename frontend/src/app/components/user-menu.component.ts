@@ -34,7 +34,7 @@ import { AuthService } from '../services/auth.service';
         </div>
         <hr />
         <a routerLink="/configuracoes" class="sig-user-menu__item" role="menuitem" (click)="close()">
-          <i class="fas fa-user-cog" aria-hidden="true"></i>
+          <i class="fas fa-cog" aria-hidden="true"></i>
           Configurações
         </a>
         <button type="button" class="sig-user-menu__item sig-user-menu__item--danger" role="menuitem" (click)="signOut()">
