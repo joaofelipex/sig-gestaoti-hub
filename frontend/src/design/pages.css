@@ -184,26 +184,70 @@
   color: var(--sig-text-muted);
 }
 
+.sig-row-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
 .sig-link-action {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: 0.875rem;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(var(--wl-background-color), 0.22);
+  background: rgba(var(--wl-background-color), 0.06);
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--br-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.2;
   color: rgb(var(--wl-background-color));
   cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.sig-link-action i {
+  font-size: 0.7rem;
+  line-height: 1;
 }
 
 .sig-link-action:hover {
-  text-decoration: underline;
+  background: rgba(var(--wl-background-color), 0.12);
+  border-color: rgba(var(--wl-background-color), 0.4);
+  text-decoration: none;
 }
 
 .sig-link-action--danger {
   color: var(--sig-danger);
+  border-color: rgba(220, 53, 69, 0.28);
+  background: rgba(220, 53, 69, 0.06);
+}
+
+.sig-link-action--danger:hover {
+  background: rgba(220, 53, 69, 0.12);
+  border-color: rgba(220, 53, 69, 0.45);
+  text-decoration: none;
 }
 
 .sig-link-action--success {
   color: var(--sig-success);
+  border-color: rgba(25, 135, 84, 0.28);
+  background: rgba(25, 135, 84, 0.06);
+}
+
+.sig-link-action--success:hover {
+  background: rgba(25, 135, 84, 0.12);
+  border-color: rgba(25, 135, 84, 0.45);
+  text-decoration: none;
+}
+
+/* Espaço entre ações legado (sem .sig-row-actions) */
+td.text-end > .sig-link-action + .sig-link-action {
+  margin-left: 0.4rem;
 }
 
 .sig-filter-tabs {

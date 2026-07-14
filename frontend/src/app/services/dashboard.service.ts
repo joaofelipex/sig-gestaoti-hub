@@ -6,6 +6,7 @@ import { ApiService } from './api.service';
 import { AuthService } from './auth.service';
 import { EmpresaService } from './empresa.service';
 import { ToastService } from './toast.service';
+import { toDateInputValue } from '../utils/date-input.util';
 
 interface HasEmpresa { empresa_id?: string | null; }
 
@@ -15,6 +16,7 @@ export interface Asset extends HasEmpresa {
   brand: string;
   model: string;
   serialNumber: string;
+  patrimonio: string;
   status: 'Em uso' | 'Estoque' | 'Manutenção' | 'Aposentado' | '';
   assignedTo: string | null;
   department: string;
@@ -22,6 +24,8 @@ export interface Asset extends HasEmpresa {
   warrantyEnd: string;
   specs: any;
   purchaseValue: number;
+  vidaUtilMeses: number | null;
+  observacoes: string;
   maintenanceLog: any[];
 }
 
@@ -59,6 +63,7 @@ export interface Server {
   name: string;
   provider: string;
   type: string;
+  ambiente: string;
   region: string;
   ip: string;
   os: string;
@@ -161,6 +166,7 @@ export interface AccessRecord {
   resource: string;
   resourceType: string;
   accessLevel: string;
+  sistema: string;
   grantedDate: string;
   lastAccess: string;
   ativo: boolean;
@@ -579,29 +585,31 @@ export class DashboardService {
       brand: r.marca || '',
       model: r.modelo || '',
       serialNumber: r.numero_serie || '',
+      patrimonio: r.patrimonio || '',
       status: r.status === 'ativo' ? 'Em uso' : r.status === 'estoque' ? 'Estoque' : r.status === 'manutencao' ? 'Manutenção' : r.status === 'descartado' ? 'Aposentado' : '',
       assignedTo: r.assigned_to || null,
       department: r.department_nome || '',
-      purchaseDate: r.data_aquisicao || '',
-      warrantyEnd: r.warranty_end || '',
+      purchaseDate: toDateInputValue(r.data_aquisicao),
+      warrantyEnd: toDateInputValue(r.warranty_end),
       specs: r.specs || {},
       purchaseValue: Number(r.valor_aquisicao || 0),
+      vidaUtilMeses: r.vida_util_meses != null ? Number(r.vida_util_meses) : null,
+      observacoes: r.observacoes || '',
       maintenanceLog: r.maintenance_log || [],
     };
   }
 
   private mapDomain(r: any): Domain {
-    const exp = r.data_vencimento || '';
     return {
       id: r.id,
       url: r.nome,
       registrar: r.registrar || '',
-      expirationDate: exp,
+      expirationDate: toDateInputValue(r.data_vencimento),
       renewalCost: Number(r.custo_renovacao ?? r.custo_anual ?? 0),
       autoRenew: !!r.auto_renovacao,
       dnsProvider: r.dns_provider || '',
       hostingProvider: r.hosting_provider || '',
-      sslExpiration: r.ssl_vencimento || '',
+      sslExpiration: toDateInputValue(r.ssl_vencimento),
       status: r.status || '',
       observacoes: r.observacoes || '',
     };
@@ -617,7 +625,7 @@ export class DashboardService {
       activationKey: r.chave_ativacao || '',
       costPerUnit: Number(r.custo_unitario || 0),
       monthlyCost: Number(r.custo_mensal || 0),
-      renewalDate: r.data_renovacao || '',
+      renewalDate: toDateInputValue(r.data_renovacao),
       vendor: r.fornecedor || '',
       category: r.categoria || '',
     };
@@ -629,6 +637,7 @@ export class DashboardService {
       name: r.nome,
       provider: r.provedor || '',
       type: r.tipo || '',
+      ambiente: r.ambiente || 'producao',
       region: r.regiao || '',
       ip: r.ip_publico || '',
       os: r.sistema_operacional || '',
@@ -640,10 +649,10 @@ export class DashboardService {
       monthlyCost: Number(r.custo_mensal || 0),
       purpose: r.finalidade || '',
       responsibleTeam: r.equipe_responsavel || '',
-      contractEnd: r.contrato_fim || '',
-      lastBackup: r.ultimo_backup || '',
+      contractEnd: toDateInputValue(r.contrato_fim),
+      lastBackup: toDateInputValue(r.ultimo_backup),
       monitoringUrl: r.url_monitoramento,
-      sslExpiration: r.ssl_vencimento,
+      sslExpiration: toDateInputValue(r.ssl_vencimento),
       notes: r.observacoes,
     };
   }
@@ -657,7 +666,7 @@ export class DashboardService {
       status: r.status || 'Ativo',
       costCenter: r.cost_center || '',
       monthlyCost: Number(r.monthly_cost || 0),
-      endDate: r.end_date || '',
+      endDate: toDateInputValue(r.end_date),
     };
   }
 
@@ -680,8 +689,8 @@ export class DashboardService {
       ativo_id: r.ativo_id,
       tipo: r.tipo,
       status: r.status,
-      data_abertura: r.data_abertura,
-      data_conclusao: r.data_conclusao,
+      data_abertura: toDateInputValue(r.data_abertura),
+      data_conclusao: r.data_conclusao ? toDateInputValue(r.data_conclusao) : null,
       custo: r.custo ? Number(r.custo) : null,
       fornecedor: r.fornecedor,
       descricao: r.descricao,
@@ -694,7 +703,7 @@ export class DashboardService {
       ativo_id: r.ativo_id,
       ativo_label: r.ativo_label,
       tipo: r.tipo,
-      data: r.data,
+      data: toDateInputValue(r.data),
       from_department: r.from_department,
       to_department: r.to_department,
       from_user: r.from_user,
@@ -758,7 +767,7 @@ export class DashboardService {
       effort: r.effort,
       estimatedSavings: Number(r.estimated_savings),
       owner: r.owner || '',
-      dueDate: r.due_date,
+      dueDate: toDateInputValue(r.due_date),
       status: r.status,
       createdAt: r.created_at,
     };
@@ -771,8 +780,9 @@ export class DashboardService {
       resource: r.recurso || '',
       resourceType: r.recurso_tipo || '',
       accessLevel: r.nivel_acesso || '',
-      grantedDate: r.data_concessao,
-      lastAccess: r.ultimo_acesso || '',
+      sistema: r.sistema || '',
+      grantedDate: toDateInputValue(r.data_concessao),
+      lastAccess: toDateInputValue(r.ultimo_acesso),
       ativo: r.ativo,
     };
   }
@@ -792,11 +802,11 @@ export class DashboardService {
       id: r.id,
       nome: r.nome,
       categoria: r.categoria,
-      competencia: r.competencia,
+      competencia: toDateInputValue(r.competencia),
       valor: Number(r.valor),
       status: r.status,
-      vencimento: r.vencimento,
-      data_pagamento: r.data_pagamento,
+      vencimento: r.vencimento ? toDateInputValue(r.vencimento) : null,
+      data_pagamento: r.data_pagamento ? toDateInputValue(r.data_pagamento) : null,
       fornecedor: r.fornecedor,
       observacoes: r.observacoes,
     };

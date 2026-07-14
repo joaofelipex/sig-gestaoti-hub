@@ -114,7 +114,23 @@ export class AssetsComponent implements OnInit, OnDestroy {
   openNew() { this.form = { tipo: 'Notebook', status: 'ativo', valor_aquisicao: 0, vida_util_meses: 60 }; this.modalOpen = true; }
   openEdit(a: Asset) {
     const statusMap: any = { 'Em uso':'ativo','Estoque':'estoque','Manutenção':'manutencao','Aposentado':'descartado' };
-    this.form = { id: a.id, tipo: a.type, status: statusMap[a.status]||'ativo', marca: a.brand, modelo: a.model, numero_serie: a.serialNumber, assigned_to: a.assignedTo, department_nome: a.department, data_aquisicao: a.purchaseDate, warranty_end: a.warrantyEnd, valor_aquisicao: a.purchaseValue };
+    this.form = {
+      id: a.id,
+      empresa_id: (a as any).empresa_id ?? null,
+      tipo: a.type,
+      status: statusMap[a.status] || 'ativo',
+      marca: a.brand,
+      modelo: a.model,
+      numero_serie: a.serialNumber,
+      patrimonio: a.patrimonio || '',
+      assigned_to: a.assignedTo,
+      department_nome: a.department,
+      data_aquisicao: a.purchaseDate,
+      warranty_end: a.warrantyEnd,
+      valor_aquisicao: a.purchaseValue,
+      vida_util_meses: a.vidaUtilMeses,
+      observacoes: a.observacoes || '',
+    };
     this.modalOpen = true;
   }
   async save() { if (!this.ux.require(this.form.tipo, 'o tipo do ativo')) return; this.saving = true; try { const o = { ...this.form }; ['data_aquisicao','warranty_end'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('ativos', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }

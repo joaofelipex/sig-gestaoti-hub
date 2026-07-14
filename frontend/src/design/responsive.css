@@ -242,9 +242,8 @@ body {
     white-space: normal;
   }
 
-  .sig-table-wrap td.text-end .sig-link-action {
-    display: inline-flex;
-    margin: 0.15rem 0.35rem 0.15rem 0;
+  .sig-table-wrap td.text-end .sig-row-actions {
+    justify-content: flex-end;
   }
 
   .sig-chart-panel > table,

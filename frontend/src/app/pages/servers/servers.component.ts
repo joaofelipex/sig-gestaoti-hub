@@ -72,6 +72,7 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="text-sm">SSL Vencimento<input type="date" [(ngModel)]="form.ssl_vencimento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Contrato fim<input type="date" [(ngModel)]="form.contrato_fim" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="md:col-span-2 text-sm">Finalidade<input [(ngModel)]="form.finalidade" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="md:col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
     </app-modal>
     <app-confirm [open]="confirmOpen" title="Excluir servidor" [message]="'Excluir ' + (toDelete?.name || '?')" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="doDelete()"></app-confirm>
@@ -95,7 +96,30 @@ export class ServersComponent implements OnInit, OnDestroy {
     return s === 'Online' ? SigBadge.success : s === 'Offline' ? SigBadge.danger : SigBadge.warning;
   }
   openNew() { this.form = { status: 'Online', ambiente: 'producao', uptime_pct: 99.9, custo_mensal: 0 }; this.modalOpen = true; }
-  openEdit(s: Server) { this.form = { id: s.id, nome: s.name, provedor: s.provider, tipo: s.type, status: s.status, ip_publico: s.ip, regiao: s.region, sistema_operacional: s.os, cpu: s.cpu, ram: s.ram, armazenamento: s.storage, uptime_pct: s.uptime, custo_mensal: s.monthlyCost, ssl_vencimento: s.sslExpiration, contrato_fim: s.contractEnd, finalidade: s.purpose }; this.modalOpen = true; }
+  openEdit(s: Server) {
+    this.form = {
+      id: s.id,
+      empresa_id: (s as any).empresa_id ?? null,
+      nome: s.name,
+      provedor: s.provider,
+      tipo: s.type,
+      status: s.status,
+      ambiente: s.ambiente || 'producao',
+      ip_publico: s.ip,
+      regiao: s.region,
+      sistema_operacional: s.os,
+      cpu: s.cpu,
+      ram: s.ram,
+      armazenamento: s.storage,
+      uptime_pct: s.uptime,
+      custo_mensal: s.monthlyCost,
+      ssl_vencimento: s.sslExpiration,
+      contrato_fim: s.contractEnd,
+      finalidade: s.purpose,
+      observacoes: s.notes || '',
+    };
+    this.modalOpen = true;
+  }
   async save() { if (!this.ux.require(this.form.nome, 'o nome do servidor')) return; this.saving = true; try { const o = { ...this.form }; ['ssl_vencimento','contrato_fim'].forEach(k=>{ if(!o[k]) o[k]=null; }); const ok = await this.crud.upsert('servidores', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(s: Server) { this.toDelete = s; this.confirmOpen = true; }
   async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('servidores', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }

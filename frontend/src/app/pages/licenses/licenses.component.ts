@@ -99,7 +99,22 @@ export class LicensesComponent implements OnInit, OnDestroy {
     );
   }
   openNew() { this.form = { tipo: 'Mensal', categoria: 'Produtividade', total_licencas: 1, qtd_usuarios: 0, custo_unitario: 0 }; this.modalOpen = true; }
-  openEdit(l: License) { this.form = { id: l.id, nome: l.software, fornecedor: l.vendor, tipo: l.type, categoria: l.category, total_licencas: l.totalLicenses, qtd_usuarios: l.usedLicenses, custo_unitario: l.costPerUnit, chave_ativacao: l.activationKey, data_renovacao: l.renewalDate }; this.modalOpen = true; }
+  openEdit(l: License) {
+    this.form = {
+      id: l.id,
+      empresa_id: (l as any).empresa_id ?? null,
+      nome: l.software,
+      fornecedor: l.vendor,
+      tipo: l.type,
+      categoria: l.category,
+      total_licencas: l.totalLicenses,
+      qtd_usuarios: l.usedLicenses,
+      custo_unitario: l.costPerUnit,
+      chave_ativacao: l.activationKey,
+      data_renovacao: l.renewalDate,
+    };
+    this.modalOpen = true;
+  }
   async save() { if (!this.ux.require(this.form.nome, 'o software')) return; this.saving = true; try { const o = { ...this.form }; if (!o.data_renovacao) o.data_renovacao = null; const ok = await this.crud.upsert('licencas', o); if (ok) this.modalOpen = false; } finally { this.saving = false; } }
   askDelete(l: License) { this.toDelete = l; this.confirmOpen = true; }
   async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('licencas', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }

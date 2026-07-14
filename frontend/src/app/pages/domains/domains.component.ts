@@ -53,8 +53,16 @@ import { SigBadge } from '../../utils/status-badge';
               <td>{{ d.sslExpiration ? (d.sslExpiration | date:'dd/MM/yyyy') : '—' }}</td>
               <td>R$ {{ d.renewalCost.toLocaleString('pt-BR') }}</td>
               <td class="text-end">
-                <button type="button" (click)="openEdit(d)" class="sig-link-action me-3">Editar</button>
-                <button type="button" (click)="askDelete(d)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                <div class="sig-row-actions">
+                  <button type="button" (click)="openEdit(d)" class="sig-link-action" title="Editar">
+                    <i class="fas fa-pen" aria-hidden="true"></i>
+                    <span>Editar</span>
+                  </button>
+                  <button type="button" (click)="askDelete(d)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                    <span>Excluir</span>
+                  </button>
+                </div>
               </td>
             </tr>
             <tr *ngIf="!filtered.length"><td colspan="7" class="sig-table-empty">Nenhum domínio encontrado</td></tr>
@@ -108,8 +116,16 @@ import { SigBadge } from '../../utils/status-badge';
             <tr *ngFor="let r of domainDns">
               <td>{{ r.tipo }}</td><td>{{ r.nome }}</td><td>{{ r.valor }}</td><td>{{ r.ttl }}</td>
               <td class="text-end">
-                <button type="button" class="sig-link-action me-2" (click)="openEditDns(r)">Editar</button>
-                <button type="button" class="sig-link-action sig-link-action--danger" (click)="removeDns(r)">Excluir</button>
+                <div class="sig-row-actions">
+                  <button type="button" class="sig-link-action" (click)="openEditDns(r)" title="Editar">
+                    <i class="fas fa-pen" aria-hidden="true"></i>
+                    <span>Editar</span>
+                  </button>
+                  <button type="button" class="sig-link-action sig-link-action--danger" (click)="removeDns(r)" title="Excluir">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                    <span>Excluir</span>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -191,6 +207,7 @@ export class DomainsComponent implements OnInit, OnDestroy {
   openEdit(d: Domain) {
     this.form = {
       id: d.id,
+      empresa_id: (d as any).empresa_id ?? null,
       nome: d.url,
       registrar: d.registrar,
       dns_provider: d.dnsProvider,

@@ -205,7 +205,21 @@ export class GovernanceComponent implements OnInit, OnDestroy {
   }
 
   openNewAccess() { this.formA = { ativo: true, nivel_acesso: 'Leitura', recurso_tipo: 'Aplicação', sistema: 'IMTS', data_concessao: new Date().toISOString().slice(0,10) }; this.modalA = true; }
-  openEditAccess(r: AccessRecord) { this.formA = { id: r.id, user_label: r.user, recurso: r.resource, recurso_tipo: r.resourceType, nivel_acesso: r.accessLevel, ativo: r.ativo, data_concessao: r.grantedDate, ultimo_acesso: r.lastAccess, sistema: 'IMTS' }; this.modalA = true; }
+  openEditAccess(r: AccessRecord) {
+    this.formA = {
+      id: r.id,
+      empresa_id: (r as any).empresa_id ?? null,
+      user_label: r.user,
+      recurso: r.resource,
+      recurso_tipo: r.resourceType,
+      nivel_acesso: r.accessLevel,
+      ativo: r.ativo,
+      data_concessao: r.grantedDate,
+      ultimo_acesso: r.lastAccess,
+      sistema: r.sistema || 'IMTS',
+    };
+    this.modalA = true;
+  }
   async saveAccess() { if (!this.ux.require(this.formA.user_label, 'o usuário')) return; this.saving = true; try { const o = { ...this.formA }; if (!o.sistema) o.sistema = 'Sistema'; if (!o.ultimo_acesso) o.ultimo_acesso = null; const ok = await this.crud.upsert('registros_acesso', o); if (ok) this.modalA = false; } finally { this.saving = false; } }
 
   openNewRisk() { this.formR = { severity: 'Médio' }; this.modalR = true; }
