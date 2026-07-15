@@ -77,8 +77,16 @@ import { SigBadge } from '../../utils/status-badge';
                 <td><span [class]="r.ativo ? SigBadge.success : SigBadge.danger">{{ r.ativo ? 'Ativo' : 'Inativo' }}</span></td>
                 <td>{{ r.lastAccess | date:'dd/MM/yyyy' }}</td>
                 <td class="text-end">
-                  <button type="button" (click)="openEditAccess(r)" class="sig-link-action me-3">Editar</button>
-                  <button type="button" (click)="askDelete('access', r.id)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                  <div class="sig-row-actions">
+                    <button type="button" (click)="openEditAccess(r)" class="sig-link-action" title="Editar">
+                      <i class="fas fa-pen" aria-hidden="true"></i>
+                      <span>Editar</span>
+                    </button>
+                    <button type="button" (click)="askDelete('access', r.id)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                      <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                      <span>Excluir</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr *ngIf="!filteredAccess.length"><td colspan="7" class="sig-table-empty">Nenhum acesso</td></tr>
@@ -111,8 +119,16 @@ import { SigBadge } from '../../utils/status-badge';
                 <td>{{ r.owner || '—' }}</td>
                 <td>{{ r.mitigation || '—' }}</td>
                 <td class="text-end">
-                  <button type="button" (click)="openEditRisk(r)" class="sig-link-action me-3">Editar</button>
-                  <button type="button" (click)="askDelete('risk', r.id)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                  <div class="sig-row-actions">
+                    <button type="button" (click)="openEditRisk(r)" class="sig-link-action" title="Editar">
+                      <i class="fas fa-pen" aria-hidden="true"></i>
+                      <span>Editar</span>
+                    </button>
+                    <button type="button" (click)="askDelete('risk', r.id)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                      <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                      <span>Excluir</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr *ngIf="!filteredRisks.length"><td colspan="5" class="sig-table-empty">Nenhum risco</td></tr>
@@ -124,7 +140,7 @@ import { SigBadge } from '../../utils/status-badge';
     </section>
 
     <app-modal [open]="modalA" [title]="formA.id ? 'Editar Acesso' : 'Novo Acesso'" [saving]="saving" (close)="modalA=false" (save)="saveAccess()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="md:col-span-2 text-sm">Usuário *<input [(ngModel)]="formA.user_label" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Recurso<input [(ngModel)]="formA.recurso" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Tipo<select [(ngModel)]="formA.recurso_tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Aplicação</option><option>Servidor</option><option>Banco de Dados</option><option>Sistema</option></select></label>
@@ -137,7 +153,7 @@ import { SigBadge } from '../../utils/status-badge';
     </app-modal>
 
     <app-modal [open]="modalR" [title]="formR.id ? 'Editar Risco' : 'Novo Risco'" [saving]="saving" (close)="modalR=false" (save)="saveRisk()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="md:col-span-2 text-sm">Título *<input [(ngModel)]="formR.title" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Severidade<select [(ngModel)]="formR.severity" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Crítico</option><option>Alto</option><option>Médio</option><option>Baixo</option></select></label>
         <label class="text-sm">Responsável<input [(ngModel)]="formR.owner" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>

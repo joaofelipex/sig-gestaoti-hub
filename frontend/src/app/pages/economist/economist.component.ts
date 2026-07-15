@@ -497,10 +497,16 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
                   <td class="text-end fw-medium">{{ brl(b.annualBudget) }}</td>
                   <td class="text-muted small">{{ b.notes || '—' }}</td>
                   <td class="text-end">
-                    <button type="button" (click)="openEditBudget(b)" class="sig-link-action me-3">Editar</button>
-                    <button type="button" (click)="askDeleteBudget(b)" class="sig-link-action sig-link-action--danger">
-                      Excluir
-                    </button>
+                    <div class="sig-row-actions">
+                      <button type="button" (click)="openEditBudget(b)" class="sig-link-action" title="Editar">
+                        <i class="fas fa-pen" aria-hidden="true"></i>
+                        <span>Editar</span>
+                      </button>
+                      <button type="button" (click)="askDeleteBudget(b)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                        <span>Excluir</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 <tr *ngIf="!filteredBudgets.length">
@@ -553,19 +559,27 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
                   <td>{{ a.dueDate ? (a.dueDate | date:'dd/MM/yyyy') : '—' }}</td>
                   <td class="text-end fw-medium">{{ brl(a.estimatedSavings) }}</td>
                   <td class="text-end">
-                    <button
-                      *ngIf="!isDone(a.status)"
-                      type="button"
-                      (click)="markActionDone(a)"
-                      [disabled]="actionDoneId === a.id"
-                      class="sig-link-action sig-link-action--success me-2"
-                    >
-                      {{ actionDoneId === a.id ? 'Concluindo...' : 'Concluir' }}
-                    </button>
-                    <button type="button" (click)="openEditAction(a)" class="sig-link-action me-2">Editar</button>
-                    <button type="button" (click)="askDeleteAction(a)" class="sig-link-action sig-link-action--danger">
-                      Excluir
-                    </button>
+                    <div class="sig-row-actions">
+                      <button
+                        *ngIf="!isDone(a.status)"
+                        type="button"
+                        (click)="markActionDone(a)"
+                        [disabled]="actionDoneId === a.id"
+                        class="sig-link-action sig-link-action--success"
+                        title="Concluir"
+                      >
+                        <i class="fas fa-check" aria-hidden="true"></i>
+                        <span>{{ actionDoneId === a.id ? 'Concluindo...' : 'Concluir' }}</span>
+                      </button>
+                      <button type="button" (click)="openEditAction(a)" class="sig-link-action" title="Editar">
+                        <i class="fas fa-pen" aria-hidden="true"></i>
+                        <span>Editar</span>
+                      </button>
+                      <button type="button" (click)="askDeleteAction(a)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                        <span>Excluir</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 <tr *ngIf="!filteredActions.length">
@@ -616,8 +630,16 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
                   <td>{{ c.endDate ? (c.endDate | date:'dd/MM/yyyy') : '—' }}</td>
                   <td class="text-end fw-medium">{{ brl(c.monthlyCost) }}</td>
                   <td class="text-end">
-                    <button type="button" (click)="openEditContract(c)" class="sig-link-action me-2">Editar</button>
-                    <button type="button" (click)="askDeleteContract(c)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                    <div class="sig-row-actions">
+                      <button type="button" (click)="openEditContract(c)" class="sig-link-action" title="Editar">
+                        <i class="fas fa-pen" aria-hidden="true"></i>
+                        <span>Editar</span>
+                      </button>
+                      <button type="button" (click)="askDeleteContract(c)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                        <span>Excluir</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 <tr *ngIf="!filteredContracts.length">
@@ -638,7 +660,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
       (close)="budgetModal = false"
       (save)="saveBudget()"
     >
-      <div class="sig-modal-form grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="text-sm md:col-span-2">
           Categoria *
           <input [(ngModel)]="budgetForm.category" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
@@ -675,7 +697,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
       (close)="actionModal = false"
       (save)="saveAction()"
     >
-      <div class="sig-modal-form grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="text-sm md:col-span-2">
           Título *
           <input [(ngModel)]="actionForm.title" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
@@ -757,7 +779,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
       (close)="contractModal = false"
       (save)="saveContract()"
     >
-      <div class="sig-modal-form grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="text-sm md:col-span-2">
           Fornecedor *
           <input [(ngModel)]="contractForm.supplier" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />

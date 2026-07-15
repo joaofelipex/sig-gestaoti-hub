@@ -47,9 +47,20 @@ import { SigBadge } from '../../utils/status-badge';
               <td class="fw-medium">{{ brl(p.valor) }}</td>
               <td><span [class]="statusClass(p.status)">{{ statusLabel(p.status) }}</span></td>
               <td class="text-end">
-                <button *ngIf="p.status !== 'pago'" type="button" (click)="markPaid(p)" [disabled]="payingId === p.id" class="sig-link-action sig-link-action--success me-3">{{ payingId === p.id ? 'Pagando...' : 'Pagar' }}</button>
-                <button type="button" (click)="openEdit(p)" class="sig-link-action me-3">Editar</button>
-                <button type="button" (click)="askDelete(p)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                <div class="sig-row-actions">
+                  <button *ngIf="p.status !== 'pago'" type="button" (click)="markPaid(p)" [disabled]="payingId === p.id" class="sig-link-action sig-link-action--success" title="Pagar">
+                    <i class="fas fa-check" aria-hidden="true"></i>
+                    <span>{{ payingId === p.id ? 'Pagando...' : 'Pagar' }}</span>
+                  </button>
+                  <button type="button" (click)="openEdit(p)" class="sig-link-action" title="Editar">
+                    <i class="fas fa-pen" aria-hidden="true"></i>
+                    <span>Editar</span>
+                  </button>
+                  <button type="button" (click)="askDelete(p)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                    <span>Excluir</span>
+                  </button>
+                </div>
               </td>
             </tr>
             <tr *ngIf="!filtered.length"><td colspan="7" class="sig-table-empty">Nenhum pagamento</td></tr>
@@ -60,7 +71,7 @@ import { SigBadge } from '../../utils/status-badge';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Pagamento' : 'Novo Pagamento'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="md:col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Categoria<select [(ngModel)]="form.categoria" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option value="servidor">Servidor</option><option value="licenca">Licença</option><option value="dominio">Domínio</option><option value="contrato">Contrato</option><option value="outro">Outro</option></select></label>
         <label class="text-sm">Status<select [(ngModel)]="form.status" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option value="pendente">Pendente</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option></select></label>

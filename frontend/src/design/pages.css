@@ -1329,12 +1329,17 @@ td.text-end > .sig-link-action + .sig-link-action {
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--sig-text);
+  min-width: 0;
 }
 
 .sig-modal-form label > input,
 .sig-modal-form label > select,
 .sig-modal-form label > textarea {
-  margin-top: 0.35rem;
+  margin-top: 0.3rem;
+}
+
+.sig-modal-form label.flex {
+  display: flex;
 }
 
 /* Páginas CRUD ainda com markup legado (sem alterar tema) */

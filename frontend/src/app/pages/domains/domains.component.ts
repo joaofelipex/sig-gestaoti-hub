@@ -73,7 +73,7 @@ import { SigBadge } from '../../utils/status-badge';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Domínio' : 'Novo Domínio'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="md:col-span-2 text-sm">Domínio *
           <input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm" required />
         </label>
@@ -105,37 +105,42 @@ import { SigBadge } from '../../utils/status-badge';
         </label>
       </div>
 
-      <div *ngIf="form.id" class="mt-4 pt-4 border-top">
-        <div class="d-flex justify-content-between align-items-center mb-2">
+      <div *ngIf="form.id" class="mt-3 pt-3 border-top">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
           <h3 class="h6 mb-0">Registos DNS</h3>
           <button type="button" class="sig-link-action" (click)="openNewDns()">Adicionar registo</button>
         </div>
-        <table class="sig-table sig-table--compact w-full" *ngIf="domainDns.length">
-          <thead><tr><th>Tipo</th><th>Nome</th><th>Valor</th><th>TTL</th><th class="text-end">Ações</th></tr></thead>
-          <tbody>
-            <tr *ngFor="let r of domainDns">
-              <td>{{ r.tipo }}</td><td>{{ r.nome }}</td><td>{{ r.valor }}</td><td>{{ r.ttl }}</td>
-              <td class="text-end">
-                <div class="sig-row-actions">
-                  <button type="button" class="sig-link-action" (click)="openEditDns(r)" title="Editar">
-                    <i class="fas fa-pen" aria-hidden="true"></i>
-                    <span>Editar</span>
-                  </button>
-                  <button type="button" class="sig-link-action sig-link-action--danger" (click)="removeDns(r)" title="Excluir">
-                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                    <span>Excluir</span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="sig-table-wrap" *ngIf="domainDns.length">
+          <table class="sig-table sig-table--compact">
+            <thead><tr><th>Tipo</th><th>Nome</th><th>Valor</th><th>TTL</th><th class="text-end">Ações</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let r of domainDns">
+                <td>{{ r.tipo }}</td>
+                <td>{{ r.nome }}</td>
+                <td class="sig-table-cell-break">{{ r.valor }}</td>
+                <td>{{ r.ttl }}</td>
+                <td class="text-end">
+                  <div class="sig-row-actions">
+                    <button type="button" class="sig-link-action" (click)="openEditDns(r)" title="Editar">
+                      <i class="fas fa-pen" aria-hidden="true"></i>
+                      <span>Editar</span>
+                    </button>
+                    <button type="button" class="sig-link-action sig-link-action--danger" (click)="removeDns(r)" title="Excluir">
+                      <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                      <span>Excluir</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <p *ngIf="!domainDns.length" class="text-sm text-muted mb-0">Nenhum registo DNS para este domínio.</p>
       </div>
     </app-modal>
 
     <app-modal [open]="dnsModalOpen" [title]="dnsForm.id ? 'Editar registo DNS' : 'Novo registo DNS'" [saving]="dnsSaving" (close)="dnsModalOpen=false" (save)="saveDns()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="text-sm">Tipo *
           <select [(ngModel)]="dnsForm.tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
             <option>A</option><option>AAAA</option><option>CNAME</option><option>MX</option><option>TXT</option><option>NS</option>

@@ -44,8 +44,16 @@ import { SigBadge } from '../../utils/status-badge';
               <td>{{ m.fornecedor || '—' }}</td>
               <td>{{ m.custo ? 'R$ ' + m.custo.toLocaleString('pt-BR') : '—' }}</td>
               <td class="text-end">
-                <button type="button" (click)="openEdit(m)" class="sig-link-action me-3">Editar</button>
-                <button type="button" (click)="askDelete(m)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                <div class="sig-row-actions">
+                  <button type="button" (click)="openEdit(m)" class="sig-link-action" title="Editar">
+                    <i class="fas fa-pen" aria-hidden="true"></i>
+                    <span>Editar</span>
+                  </button>
+                  <button type="button" (click)="askDelete(m)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                    <span>Excluir</span>
+                  </button>
+                </div>
               </td>
             </tr>
             <tr *ngIf="!filtered.length"><td colspan="8" class="sig-table-empty">Nenhuma manutenção</td></tr>
@@ -56,7 +64,7 @@ import { SigBadge } from '../../utils/status-badge';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Manutenção' : 'Nova Manutenção'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="md:col-span-2 text-sm">Ativo *
           <select [(ngModel)]="form.ativo_id" class="mt-1 w-full px-3 py-2 border rounded-md text-sm">
             <option value="">Selecione...</option>

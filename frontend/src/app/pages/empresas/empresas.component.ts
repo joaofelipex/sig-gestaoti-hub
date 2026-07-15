@@ -57,11 +57,20 @@ import { SigBadge } from '../../utils/status-badge';
                 <td>{{ e.responsavel || '—' }}</td>
                 <td><span [class]="statusClass(e)">{{ e.ativo ? 'Ativa' : 'Inativa' }}</span></td>
                 <td class="text-end">
-                  <button type="button" (click)="select(e)" class="sig-link-action me-3">
-                    {{ selectedId === e.id ? 'Selecionada' : 'Filtrar' }}
-                  </button>
-                  <button type="button" (click)="openEdit(e)" class="sig-link-action me-3">Editar</button>
-                  <button type="button" (click)="askDelete(e)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                  <div class="sig-row-actions">
+                    <button type="button" (click)="select(e)" class="sig-link-action" [title]="selectedId === e.id ? 'Selecionada' : 'Filtrar'">
+                      <i class="fas fa-filter" aria-hidden="true"></i>
+                      <span>{{ selectedId === e.id ? 'Selecionada' : 'Filtrar' }}</span>
+                    </button>
+                    <button type="button" (click)="openEdit(e)" class="sig-link-action" title="Editar">
+                      <i class="fas fa-pen" aria-hidden="true"></i>
+                      <span>Editar</span>
+                    </button>
+                    <button type="button" (click)="askDelete(e)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                      <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                      <span>Excluir</span>
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr *ngIf="!filtered.length"><td colspan="6" class="sig-table-empty">Nenhuma empresa</td></tr>
@@ -72,7 +81,7 @@ import { SigBadge } from '../../utils/status-badge';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Empresa' : 'Nova Empresa'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="md:col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">CNPJ<input [(ngModel)]="form.cnpj" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" placeholder="00.000.000/0000-00"/></label>
         <label class="text-sm">Segmento<input [(ngModel)]="form.segmento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" placeholder="Tecnologia, Saúde..."/></label>

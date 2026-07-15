@@ -48,8 +48,16 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
               <td>R$ {{ l.costPerUnit.toLocaleString('pt-BR') }}</td>
               <td>{{ l.renewalDate ? (l.renewalDate | date:'dd/MM/yyyy') : '—' }}</td>
               <td class="text-end">
-                <button type="button" (click)="openEdit(l)" class="sig-link-action me-3">Editar</button>
-                <button type="button" (click)="askDelete(l)" class="sig-link-action sig-link-action--danger">Excluir</button>
+                <div class="sig-row-actions">
+                  <button type="button" (click)="openEdit(l)" class="sig-link-action" title="Editar">
+                    <i class="fas fa-pen" aria-hidden="true"></i>
+                    <span>Editar</span>
+                  </button>
+                  <button type="button" (click)="askDelete(l)" class="sig-link-action sig-link-action--danger" title="Excluir">
+                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                    <span>Excluir</span>
+                  </button>
+                </div>
               </td>
             </tr>
             <tr *ngIf="!filtered.length"><td colspan="9" class="sig-table-empty">Nenhuma licença</td></tr>
@@ -60,7 +68,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
     </section>
 
     <app-modal [open]="modalOpen" [title]="form.id ? 'Editar Licença' : 'Nova Licença'" [saving]="saving" (close)="modalOpen=false" (save)="save()">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="sig-modal-form sig-modal-grid">
         <label class="md:col-span-2 text-sm">Software *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Fornecedor<input [(ngModel)]="form.fornecedor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Categoria
