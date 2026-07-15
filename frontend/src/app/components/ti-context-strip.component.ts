@@ -44,7 +44,13 @@ import { healthScoreColor } from '../utils/health.util';
 
       <div class="sig-ti-context__metrics">
         <span><i class="fas fa-coins me-1" aria-hidden="true"></i>{{ formatBrl(m.operationalMonthlyCost) }}/mês</span>
-        <span *ngIf="m.criticalAlerts"><i class="fas fa-bell me-1" aria-hidden="true"></i>{{ m.criticalAlerts }} alerta(s)</span>
+        <span *ngIf="m.unreadCriticalAlerts || m.criticalAlerts">
+          <i class="fas fa-bell me-1" aria-hidden="true"></i>
+          <ng-container *ngIf="m.unreadCriticalAlerts; else allCritical">
+            {{ m.unreadCriticalAlerts }} crítico(s) não lido(s)
+          </ng-container>
+          <ng-template #allCritical>{{ m.criticalAlerts }} crítico(s)</ng-template>
+        </span>
         <span *ngIf="m.criticalRisks"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>{{ m.criticalRisks }} risco(s)</span>
         <span *ngIf="m.paymentsOverdue"><i class="fas fa-exclamation-circle me-1" aria-hidden="true"></i>{{ formatBrl(m.paymentsOverdue) }} atrasado</span>
       </div>

@@ -3,6 +3,7 @@ import { Subscription, debounceTime, filter, firstValueFrom, take } from 'rxjs';
 import { DashboardService, Alert } from './dashboard.service';
 import { CrudService } from './crud.service';
 import { ApiService } from './api.service';
+import { isDomainNotRenewed } from '../utils/domain.util';
 
 export interface AlertDraft {
   titulo: string;
@@ -101,6 +102,9 @@ export class AlertGenerationService {
       const id = d.id;
       const notes = (d.observacoes || d.notes || '').trim();
       const status = (d.status || '').trim();
+
+      // Não Renovado: sem alertas de vencimento/SSL — decisão deliberada de não renovar.
+      if (isDomainNotRenewed(d)) return;
 
       if (!d.expirationDate) {
         push({

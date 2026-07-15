@@ -16,6 +16,7 @@ import {
   healthScoreColor,
   normalizeRiskSeverity,
 } from '../utils/health.util';
+import { countExpiredDomains, countExpiringDomains } from '../utils/domain.util';
 import type { ChartDatum } from '../components/charts.component';
 
 export interface TiMetrics {
@@ -44,9 +45,13 @@ export interface TiMetrics {
   compositeHealthScore: number;
   compositeHealthHint: string;
   healthColor: string;
+  /** Total de alertas críticos (alinhado à página Alertas). */
   criticalAlerts: number;
+  /** Críticos ainda não lidos — usados na saúde operacional. */
+  unreadCriticalAlerts: number;
   criticalRisks: number;
   domainsExpiring: number;
+  expiredDomains: number;
   unusedLicenses: number;
   assetsInUse: number;
 }
@@ -119,17 +124,18 @@ export class TiMetricsService {
     const openActions = d.actions.filter((a: ActionItem) => isOpen(a.status)).length;
     const overdueActions = countOverdueActions(d.actions);
 
-    const days = (date: string) =>
-      date ? Math.ceil((new Date(date).getTime() - Date.now()) / 86400000) : 999;
     const assetsInUse = d.assets.filter((a: any) => a.status === 'Em uso').length;
-    const domainsExpiring = d.domains.filter(
-      (dom: any) => dom.expirationDate && days(dom.expirationDate) > 0 && days(dom.expirationDate) <= 30,
-    ).length;
+    const domainsExpiring = countExpiringDomains(d.domains);
+    const expiredDomains = countExpiredDomains(d.domains);
     const unusedLicenses = d.licenses.reduce(
       (s: number, l: any) => s + Math.max(0, l.totalLicenses - l.usedLicenses),
       0,
     );
-    const criticalAlerts = d.alerts.filter((a: any) => a.severidade === 'critico' && !a.lida).length;
+    // Só alertas pendentes (não concluídos) entram nas métricas.
+    const unreadCriticalAlerts = d.alerts.filter(
+      (a: any) => a.severidade === 'critico' && !a.lida,
+    ).length;
+    const criticalAlerts = unreadCriticalAlerts;
 
     const operationalHealth = computeOperationalHealth({
       assets: d.assets,
@@ -137,7 +143,7 @@ export class TiMetricsService {
       servers: d.servers,
       alerts: d.alerts,
       assetsInUse,
-      criticalAlerts,
+      criticalAlerts: unreadCriticalAlerts,
       domainsExpiring,
     });
     const governanceHealth = computeGovernanceHealth(d.risks);
@@ -192,8 +198,10 @@ export class TiMetricsService {
       compositeHealthHint: compositeHealth.hint,
       healthColor: healthScoreColor(compositeHealth.score),
       criticalAlerts,
+      unreadCriticalAlerts,
       criticalRisks: d.risks.filter((r: any) => normalizeRiskSeverity(r.severity) === 'Crítico').length,
       domainsExpiring,
+      expiredDomains,
       unusedLicenses,
       assetsInUse,
     };

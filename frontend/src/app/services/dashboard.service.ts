@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { EmpresaService } from './empresa.service';
 import { ToastService } from './toast.service';
 import { toDateInputValue } from '../utils/date-input.util';
+import { normalizeDomainStatus } from '../utils/domain.util';
 
 interface HasEmpresa { empresa_id?: string | null; }
 
@@ -610,7 +611,7 @@ export class DashboardService {
       dnsProvider: r.dns_provider || '',
       hostingProvider: r.hosting_provider || '',
       sslExpiration: toDateInputValue(r.ssl_vencimento),
-      status: r.status || '',
+      status: normalizeDomainStatus(r.status || 'Ativo'),
       observacoes: r.observacoes || '',
     };
   }

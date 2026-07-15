@@ -9,6 +9,7 @@ import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigBadge } from '../../utils/status-badge';
+import { DOMAIN_STATUSES, normalizeDomainStatus } from '../../utils/domain.util';
 
 @Component({
   selector: 'app-domains',
@@ -26,7 +27,7 @@ import { SigBadge } from '../../utils/status-badge';
       <app-data-toolbar
         searchPlaceholder="Buscar domínio, registrador..."
         [search]="search"
-        [filters]="[{key:'status',label:'Status',options:[{value:'Ativo',label:'Ativo'},{value:'Expirando',label:'Expirando'},{value:'Expirado',label:'Expirado'}]}]"
+        [filters]="[{key:'status',label:'Status',options:statusFilterOpts}]"
         [filterValues]="filterValues"
         (searchChange)="search=$event"
         (filterChange)="filterValues[$event.key]=$event.value"
@@ -94,7 +95,7 @@ import { SigBadge } from '../../utils/status-badge';
         </label>
         <label class="text-sm">Status
           <select [(ngModel)]="form.status" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
-            <option>Ativo</option><option>Expirando</option><option>Expirado</option>
+            <option *ngFor="let s of statusOptions" [value]="s">{{ s }}</option>
           </select>
         </label>
         <label class="md:col-span-2 text-sm flex items-center gap-2">
@@ -165,6 +166,8 @@ import { SigBadge } from '../../utils/status-badge';
   `
 })
 export class DomainsComponent implements OnInit, OnDestroy {
+  readonly statusOptions = [...DOMAIN_STATUSES];
+  readonly statusFilterOpts = DOMAIN_STATUSES.map((v) => ({ value: v, label: v }));
   domains: Domain[] = [];
   dnsRecords: DnsRecord[] = [];
   loading = true;
@@ -205,7 +208,11 @@ export class DomainsComponent implements OnInit, OnDestroy {
   }
 
   statusClass(s: string) {
-    return s === 'Ativo' ? SigBadge.success : s === 'Expirando' ? SigBadge.warning : s === 'Expirado' ? SigBadge.danger : SigBadge.neutral;
+    const status = normalizeDomainStatus(s);
+    if (status === 'Ativo') return SigBadge.success;
+    if (status === 'Expirando') return SigBadge.warning;
+    if (status === 'Expirado') return SigBadge.danger;
+    return SigBadge.neutral; // Não Renovado e demais
   }
 
   openNew() { this.form = { auto_renovacao: true, status: 'Ativo', custo_renovacao: 0 }; this.modalOpen = true; }
@@ -219,7 +226,7 @@ export class DomainsComponent implements OnInit, OnDestroy {
       data_vencimento: d.expirationDate,
       ssl_vencimento: d.sslExpiration,
       custo_renovacao: d.renewalCost,
-      status: d.status,
+      status: normalizeDomainStatus(d.status),
       auto_renovacao: d.autoRenew,
       observacoes: d.observacoes || '',
     };
@@ -227,7 +234,10 @@ export class DomainsComponent implements OnInit, OnDestroy {
   }
   async save() {
     if (!this.ux.require(this.form.nome, 'o domínio')) return;
-    const payload = this.cleanDates(this.form);
+    const payload = this.cleanDates({
+      ...this.form,
+      status: normalizeDomainStatus(this.form.status),
+    });
     this.saving = true;
     try {
       const ok = await this.crud.upsert('dominios', payload);
@@ -261,7 +271,7 @@ export class DomainsComponent implements OnInit, OnDestroy {
       data_vencimento: r['Vencimento'] || r['data_vencimento'] || null,
       ssl_vencimento: r['SSL'] || r['ssl_vencimento'] || null,
       custo_renovacao: Number(r['Custo'] || r['custo_renovacao'] || 0) || 0,
-      status: r['Status'] || 'Ativo',
+      status: normalizeDomainStatus(r['Status'] || 'Ativo'),
       auto_renovacao: (r['AutoRenovacao'] || 'Sim').toLowerCase().startsWith('s'),
     })).filter(r => r.nome);
     if (payload.length) await this.crud.bulkInsert('dominios', payload);

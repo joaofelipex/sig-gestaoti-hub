@@ -20,28 +20,28 @@ import { SigIcons } from '../../core/sig-icons';
       <header class="app-page-header">
         <div>
           <h1 class="app-page-title">Alertas</h1>
-          <p class="app-page-sub">Notificações de domínios, licenças, pagamentos e infraestrutura — impactam a saúde operacional do Painel.</p>
+          <p class="app-page-sub">Pendências ativas de domínios, licenças, pagamentos e infraestrutura. Conclusão remove o item da lista e das contagens.</p>
         </div>
         <div class="d-flex flex-wrap gap-2">
           <button type="button" (click)="generate()" [disabled]="generating" class="btn btn-primary btn-sm">
             <i class="fas fa-sync-alt" [class.fa-spin]="generating" aria-hidden="true"></i>
             {{ generating ? 'Atualizando…' : 'Atualizar alertas' }}
           </button>
-          <button type="button" (click)="markAllRead()" [disabled]="markingAll" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-check-double" aria-hidden="true"></i> Marcar todos como lidos
+          <button type="button" (click)="markAllRead()" [disabled]="markingAll || !activeAlerts.length" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-check-double" aria-hidden="true"></i> Concluir todos
           </button>
         </div>
       </header>
 
       <div class="sig-kpi-grid">
-        <app-kpi-card label="Não lidos" [value]="unreadCount" [icon]="icons.alert" color="#3b82f6"></app-kpi-card>
+        <app-kpi-card label="Pendentes" [value]="unreadCount" [icon]="icons.alert" color="#3b82f6"></app-kpi-card>
         <app-kpi-card label="Críticos" [value]="counts.critico" [icon]="icons.alertCritical" color="#ef4444"></app-kpi-card>
         <app-kpi-card label="Avisos" [value]="counts.aviso" [icon]="icons.warning" color="#f59e0b"></app-kpi-card>
         <app-kpi-card label="Informações" [value]="counts.info" [icon]="icons.info" color="#10b981"></app-kpi-card>
       </div>
 
       <div class="sig-filter-tabs">
-        <button type="button" *ngFor="let f of ['todos','critico','aviso','info','nao_lidos']"
+        <button type="button" *ngFor="let f of filterTabs"
                 (click)="filter=f"
                 [class.is-active]="filter===f">
           {{ filterLabel(f) }}
@@ -50,7 +50,7 @@ import { SigIcons } from '../../core/sig-icons';
 
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
       <div *ngIf="!loading" class="d-flex flex-column gap-2">
-        <article *ngFor="let a of filtered" class="sig-alert-item" [class]="borderClass(a.severidade)" [class.is-read]="a.lida">
+        <article *ngFor="let a of filtered" class="sig-alert-item" [class]="borderClass(a.severidade)">
           <div class="sig-alert-item__layout">
             <div class="sig-alert-item__icon" [class]="alertIconClass(a.severidade)">
               <i [class]="alertIcon(a.severidade)" aria-hidden="true"></i>
@@ -63,7 +63,7 @@ import { SigIcons } from '../../core/sig-icons';
                 </div>
                 <div class="sig-alert-item__badges">
                   <span class="sig-alert-pill" [class]="sevClass(a.severidade)">{{ sevLabel(a.severidade) }}</span>
-                  <span *ngIf="!a.lida" class="sig-alert-pill sig-alert-pill--new">Novo</span>
+                  <span class="sig-alert-pill sig-alert-pill--new">Pendente</span>
                 </div>
               </div>
               <p *ngIf="displayMessage(a)" class="sig-alert-item__message">{{ displayMessage(a) }}</p>
@@ -73,7 +73,7 @@ import { SigIcons } from '../../core/sig-icons';
               <a *ngIf="a.link" [routerLink]="a.link" class="sig-icon-btn text-blue-600" title="Abrir" aria-label="Abrir alerta">
                 <i [class]="icons.external" aria-hidden="true"></i>
               </a>
-              <button *ngIf="!a.lida" type="button" (click)="markRead(a)" [disabled]="markingId === a.id" class="sig-icon-btn sig-icon-btn--success" title="Marcar como lido" aria-label="Marcar alerta como lido">
+              <button type="button" (click)="markRead(a)" [disabled]="markingId === a.id" class="sig-icon-btn sig-icon-btn--success" title="Concluir alerta" aria-label="Concluir alerta">
                 <i [class]="icons.check" aria-hidden="true"></i>
               </button>
               <button type="button" (click)="askRemove(a)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir" aria-label="Excluir alerta">
@@ -82,7 +82,7 @@ import { SigIcons } from '../../core/sig-icons';
             </div>
           </div>
         </article>
-        <div *ngIf="!filtered.length" class="sig-table-empty">Nenhum alerta</div>
+        <div *ngIf="!filtered.length" class="sig-table-empty">Nenhum alerta pendente</div>
       </div>
     </section>
     <app-confirm [open]="confirmOpen" title="Excluir alerta" [message]="'Excluir ' + (toDelete ? displayTitle(toDelete) : 'este alerta') + '?'" [confirming]="deleting" (cancel)="confirmOpen=false" (confirm)="remove()"></app-confirm>
@@ -90,11 +90,18 @@ import { SigIcons } from '../../core/sig-icons';
 })
 export class AlertsComponent implements OnInit, OnDestroy {
   readonly icons = SigIcons;
-  alerts: Alert[] = []; loading = true; filter = 'todos'; generating = false; markingAll = false; deleting = false;
+  readonly filterTabs = ['todos', 'critico', 'aviso', 'info'] as const;
+  alerts: Alert[] = [];
+  loading = true;
+  filter: 'todos' | 'critico' | 'aviso' | 'info' = 'todos';
+  generating = false;
+  markingAll = false;
+  deleting = false;
   markingId: string | null = null;
   confirmOpen = false;
   toDelete: Alert | null = null;
   private sub!: Subscription;
+
   constructor(
     private dashboard: DashboardService,
     private crud: CrudService,
@@ -102,58 +109,138 @@ export class AlertsComponent implements OnInit, OnDestroy {
     private toast: ToastService,
     private alertGen: AlertGenerationService,
   ) {}
+
   ngOnInit() {
-    this.sub = this.dashboard.data$.subscribe(d => { this.alerts = [...d.alerts].sort((a,b)=> (b.created_at||'').localeCompare(a.created_at||'')); this.loading = d.loading; });
+    this.sub = this.dashboard.data$.subscribe((d) => {
+      this.alerts = [...d.alerts].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+      this.loading = d.loading;
+    });
   }
-  ngOnDestroy() { this.sub?.unsubscribe(); }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+  }
+
+  /** Só alertas ainda não concluídos (ativos na fila). */
+  get activeAlerts(): Alert[] {
+    return this.alerts.filter((a) => !a.lida);
+  }
 
   get filtered() {
-    if (this.filter === 'todos') return this.alerts;
-    if (this.filter === 'nao_lidos') return this.alerts.filter(a => !a.lida);
-    return this.alerts.filter(a => a.severidade === this.filter);
+    const active = this.activeAlerts;
+    if (this.filter === 'todos') return active;
+    return active.filter((a) => a.severidade === this.filter);
   }
-  get counts() { return { critico: this.alerts.filter(a=>a.severidade==='critico').length, aviso: this.alerts.filter(a=>a.severidade==='aviso').length, info: this.alerts.filter(a=>a.severidade==='info').length }; }
-  get unreadCount() { return this.alerts.filter(a => !a.lida).length; }
 
-  filterLabel(f: string) { return ({ todos:'Todos', critico:'Críticos', aviso:'Avisos', info:'Info', nao_lidos:'Não lidos' } as any)[f]; }
-  sevLabel(s: string) { return ({ critico:'Crítico', aviso:'Aviso', info:'Info' } as any)[s] || s; }
-  sevClass(s: string) { return s === 'critico' ? 'bg-red-100 text-red-800' : s === 'aviso' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'; }
-  borderClass(s: string) { return s === 'critico' ? 'border-red-500' : s === 'aviso' ? 'border-yellow-500' : 'border-blue-500'; }
-  typeLabel(t: string) {
-    return ({
-      dominio: 'Domínio',
-      licenca: 'Licença',
-      servidor: 'Servidor',
-      pagamento: 'Pagamento',
-      infra: 'Infraestrutura',
-    } as Record<string, string>)[t] || t;
+  /** Contagens do módulo — apenas pendentes, para baixarem ao concluir. */
+  get counts() {
+    const active = this.activeAlerts;
+    return {
+      critico: active.filter((a) => a.severidade === 'critico').length,
+      aviso: active.filter((a) => a.severidade === 'aviso').length,
+      info: active.filter((a) => a.severidade === 'info').length,
+    };
   }
-  alertIcon(s: string) { return s === 'critico' ? this.icons.alertCritical : s === 'aviso' ? this.icons.warning : this.icons.info; }
-  alertIconClass(s: string) { return s === 'critico' ? 'sig-alert-item__icon--critical' : s === 'aviso' ? 'sig-alert-item__icon--warning' : 'sig-alert-item__icon--info'; }
+
+  get unreadCount() {
+    return this.activeAlerts.length;
+  }
+
+  filterLabel(f: string) {
+    return ({ todos: 'Todos', critico: 'Críticos', aviso: 'Avisos', info: 'Info' } as Record<string, string>)[f] || f;
+  }
+
+  sevLabel(s: string) {
+    return ({ critico: 'Crítico', aviso: 'Aviso', info: 'Info' } as Record<string, string>)[s] || s;
+  }
+
+  sevClass(s: string) {
+    return s === 'critico' ? 'bg-red-100 text-red-800' : s === 'aviso' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800';
+  }
+
+  borderClass(s: string) {
+    return s === 'critico' ? 'border-red-500' : s === 'aviso' ? 'border-yellow-500' : 'border-blue-500';
+  }
+
+  typeLabel(t: string) {
+    return (
+      ({
+        dominio: 'Domínio',
+        licenca: 'Licença',
+        servidor: 'Servidor',
+        pagamento: 'Pagamento',
+        infra: 'Infraestrutura',
+      } as Record<string, string>)[t] || t
+    );
+  }
+
+  alertIcon(s: string) {
+    return s === 'critico' ? this.icons.alertCritical : s === 'aviso' ? this.icons.warning : this.icons.info;
+  }
+
+  alertIconClass(s: string) {
+    return s === 'critico'
+      ? 'sig-alert-item__icon--critical'
+      : s === 'aviso'
+        ? 'sig-alert-item__icon--warning'
+        : 'sig-alert-item__icon--info';
+  }
 
   async markRead(a: Alert) {
-    if (this.markingId) return;
+    if (this.markingId || a.lida) return;
     this.markingId = a.id;
     try {
       await firstValueFrom(this.api.patchTable('alertas', a.id, { lida: true }));
-      a.lida = true;
+      this.applyConcludedLocally([a.id]);
+    } catch {
+      this.toast.show({
+        title: 'Não foi possível concluir',
+        description: 'Tente novamente em instantes.',
+        variant: 'destructive',
+      });
     } finally {
       this.markingId = null;
     }
   }
+
   async markAllRead() {
-    const ids = this.alerts.filter((x) => !x.lida).map((x) => x.id);
+    const ids = this.activeAlerts.map((x) => x.id);
     if (!ids.length) return;
     this.markingAll = true;
     try {
       await Promise.all(ids.map((id) => firstValueFrom(this.api.patchTable('alertas', id, { lida: true }))));
-      void this.dashboard.loadData(true);
+      this.applyConcludedLocally(ids);
+      this.toast.show({
+        title: 'Alertas concluídos',
+        description: `${ids.length} alerta(s) removido(s) da fila`,
+      });
+    } catch {
+      this.toast.show({
+        title: 'Falha ao concluir todos',
+        description: 'Recarregue a página e tente novamente.',
+        variant: 'destructive',
+      });
+      void this.dashboard.loadData(true, true);
     } finally {
       this.markingAll = false;
     }
   }
-  askRemove(a: Alert) { this.toDelete = a; this.confirmOpen = true; }
-  async remove() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('alertas', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
+
+  askRemove(a: Alert) {
+    this.toDelete = a;
+    this.confirmOpen = true;
+  }
+
+  async remove() {
+    if (!this.toDelete || this.deleting) return;
+    this.deleting = true;
+    const ok = await this.crud.remove('alertas', this.toDelete.id);
+    this.deleting = false;
+    if (ok) {
+      this.confirmOpen = false;
+      this.toDelete = null;
+    }
+  }
 
   async generate() {
     this.generating = true;
@@ -178,5 +265,30 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   displayTitle(a: Alert) {
     return a.titulo;
+  }
+
+  /** Atualiza lista local + store do dashboard (badge/KPIs) sem esperar reload. */
+  private applyConcludedLocally(ids: string[]) {
+    const idSet = new Set(ids);
+    this.alerts = this.alerts.map((a) => (idSet.has(a.id) ? { ...a, lida: true } : a));
+    for (const id of ids) {
+      const row = this.alerts.find((a) => a.id === id);
+      if (!row) continue;
+      this.dashboard.applyTableMutation(
+        'alertas',
+        {
+          id: row.id,
+          titulo: row.titulo,
+          mensagem: row.mensagem,
+          tipo: row.tipo,
+          severidade: row.severidade,
+          lida: true,
+          link: row.link,
+          created_at: row.created_at,
+          empresa_id: (row as Alert & { empresa_id?: string | null }).empresa_id ?? null,
+        },
+        'upsert',
+      );
+    }
   }
 }

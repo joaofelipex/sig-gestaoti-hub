@@ -1,17 +1,11 @@
-import type { ActionItem, Alert, Asset, Domain, License, RiskItem, Server } from '../services/dashboard.service';
+import type { ActionItem, Alert, Asset, Domain, RiskItem, Server } from '../services/dashboard.service';
+import { countExpiredDomains } from './domain.util';
 
 export function healthScoreColor(score: number): string {
   return score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444';
 }
 
 /** Saúde operacional — mesma lógica do Painel principal. */
-function daysUntil(date: string | null | undefined): number {
-  if (!date) return 999;
-  const ms = new Date(date).getTime() - Date.now();
-  if (Number.isNaN(ms)) return 999;
-  return Math.ceil(ms / 86400000);
-}
-
 export function computeOperationalHealth(input: {
   assets: Asset[];
   domains: Domain[];
@@ -22,11 +16,8 @@ export function computeOperationalHealth(input: {
   domainsExpiring: number;
 }): { score: number; hint: string } {
   const { assets, domains, servers, assetsInUse, criticalAlerts, domainsExpiring } = input;
-  // Conta por data de vencimento (status no cadastro costuma ficar desatualizado).
-  const expiredDomains = domains.filter((d) => {
-    if (d.expirationDate) return daysUntil(d.expirationDate) <= 0;
-    return String(d.status || '').toLowerCase() === 'expirado';
-  }).length;
+  // Data de vencimento; se não houver data, respeita status Expirado no cadastro.
+  const expiredDomains = countExpiredDomains(domains);
   const unassignedAssets = assets.filter((a) => a.status === 'Em uso' && !a.assignedTo).length;
   const offlineServers = servers.filter((s) =>
     ['offline', 'manutenção', 'manutencao'].includes(String(s.status || '').toLowerCase()),
@@ -34,7 +25,7 @@ export function computeOperationalHealth(input: {
   const inUseAssets = Math.max(1, assetsInUse);
 
   const penalties = [
-    { label: 'alertas críticos', value: Math.min(25, criticalAlerts * 5), count: criticalAlerts },
+    { label: 'alertas críticos não lidos', value: Math.min(25, criticalAlerts * 5), count: criticalAlerts },
     { label: 'domínios expirados', value: Math.min(25, expiredDomains * 12), count: expiredDomains },
     { label: 'domínios a vencer', value: Math.min(15, domainsExpiring * 3), count: domainsExpiring },
     { label: 'servidores indisponíveis', value: Math.min(20, offlineServers * 10), count: offlineServers },
