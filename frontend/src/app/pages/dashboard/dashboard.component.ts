@@ -72,7 +72,7 @@ import {
           <app-kpi-card label="Saúde operacional" [value]="healthScore + '%'" [icon]="icons.health" [color]="healthColor" [hint]="healthHint"></app-kpi-card>
           <app-kpi-card label="Ativos em uso" [value]="assetsInUse" [icon]="icons.assets" color="#3b82f6" [hint]="assetsHint"></app-kpi-card>
           <app-kpi-card label="Custo Mensal TI" [value]="brl(monthlyCost)" [icon]="icons.cost" color="#10b981" [hint]="costHint"></app-kpi-card>
-          <app-kpi-card label="Domínios ≤30d" [value]="domainsExpiring" [icon]="icons.domain" color="#f59e0b" [hint]="domainsHint"></app-kpi-card>
+          <app-kpi-card label="Domínios em risco" [value]="domainsAtRisk" [icon]="icons.domain" color="#f59e0b" [hint]="domainsHint"></app-kpi-card>
           <app-kpi-card label="Licenças ociosas" [value]="unusedLicenses" [icon]="icons.license" color="#8b5cf6" [hint]="licensesHint"></app-kpi-card>
           <app-kpi-card label="Alertas críticos" [value]="criticalAlerts" [icon]="icons.alertCritical" color="#ef4444" [hint]="alertsHint"></app-kpi-card>
         </div>
@@ -154,10 +154,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   data: any = { assets: [], domains: [], licenses: [], servers: [], alerts: [], payments: [], loading: true };
   ti: TiMetrics | null = null;
   loading = true;
-  healthScore = 0; healthHint = 'Saúde geral da TI'; assetsInUse = 0; domainsExpiring = 0; unusedLicenses = 0; monthlyCost = 0; criticalAlerts = 0;
+  healthScore = 0; healthHint = 'Saúde geral da TI'; assetsInUse = 0; domainsExpiring = 0; expiredDomains = 0; unusedLicenses = 0; monthlyCost = 0; criticalAlerts = 0;
   assetsHint = 'Ativos cadastrados';
   costHint = 'Servidores, licenças e domínios';
-  domainsHint = 'Vencimentos próximos';
+  domainsHint = 'Expirados + a vencer em ≤30d';
   licensesHint = 'Assentos não utilizados';
   alertsHint = 'Total de alertas críticos';
   costByCategory: ChartDatum[] = [];
@@ -217,6 +217,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.criticalAlerts = m.criticalAlerts;
         this.unreadCriticalAlerts = m.unreadCriticalAlerts;
         this.domainsExpiring = m.domainsExpiring;
+        this.expiredDomains = m.expiredDomains;
         this.unusedLicenses = m.unusedLicenses;
         this.assetsInUse = m.assetsInUse;
         this.assetsHint = `${m.assetsInUse} ativo(s) em uso`;
@@ -224,9 +225,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           m.criticalAlerts > 0
             ? `${m.criticalAlerts} pendente(s) · conclua no módulo Alertas`
             : 'Nenhum crítico pendente';
-        this.domainsHint = m.expiredDomains
-          ? `${m.expiredDomains} expirado(s) · ${m.domainsExpiring} vencem em até 30d`
-          : `${m.domainsExpiring} vencem em até 30d`;
+        this.domainsHint = this.buildDomainsHint(m.expiredDomains, m.domainsExpiring);
       }
     });
     this.sub = this.dashboardService.data$.subscribe((d) => {
@@ -242,12 +241,15 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   brl(v: number) { return formatBrl(v); }
   get healthColor() { return healthScoreColor(this.healthScore); }
+  /** Expirados + a vencer em ≤30d (conjuntos disjuntos). */
+  get domainsAtRisk() { return this.expiredDomains + this.domainsExpiring; }
 
   private compute() {
     const { assets, domains, licenses, alerts, payments } = this.data;
 
     this.assetsInUse = assets.filter((a: any) => a.status === 'Em uso').length;
     this.domainsExpiring = countExpiringDomains(domains);
+    this.expiredDomains = countExpiredDomains(domains);
     this.unusedLicenses = licenses.reduce((s: number, l: any) => s + Math.max(0, l.totalLicenses - l.usedLicenses), 0);
 
     this.updateKpiHints({ assets, domains, licenses });
@@ -329,7 +331,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     licenses: any[];
   }) {
     const retiredAssets = ctx.assets.filter((a: any) => a.status === 'Aposentado').length;
-    const expiredDomains = countExpiredDomains(ctx.domains);
     const stockAssets = ctx.assets.filter((a: any) => a.status === 'Estoque').length;
     const licTotal = ctx.licenses.reduce((s: number, l: any) => s + (l.totalLicenses || 0), 0);
 
@@ -338,12 +339,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (retiredAssets) assetParts.push(`${retiredAssets} aposentado(s)`);
     this.assetsHint = assetParts.join(' · ');
 
-    this.domainsHint = expiredDomains
-      ? `${expiredDomains} expirado(s) · ${this.domainsExpiring} vencem em até 30d`
-      : `${this.domainsExpiring} vencem em até 30d`;
+    this.domainsHint = this.buildDomainsHint(this.expiredDomains, this.domainsExpiring);
     this.licensesHint = licTotal
       ? `${this.unusedLicenses} de ${licTotal} assento(s) sem uso`
       : 'Nenhuma licença cadastrada';
     this.costHint = this.ti?.operationalCostHint || this.costHint;
+  }
+
+  /** Legenda que soma exatamente o valor do KPI (conjuntos disjuntos). */
+  private buildDomainsHint(expired: number, expiringSoon: number): string {
+    const parts: string[] = [];
+    if (expired > 0) {
+      parts.push(`${expired} ${expired === 1 ? 'expirado' : 'expirados'}`);
+    }
+    if (expiringSoon > 0) {
+      parts.push(`${expiringSoon} ${expiringSoon === 1 ? 'vence' : 'vencem'} em ≤30d`);
+    }
+    if (!parts.length) return 'Nenhum domínio expirado ou a vencer em ≤30d';
+    return parts.join(' · ');
   }
 }
