@@ -1,6 +1,5 @@
 -- Dados de demonstração (IMTS) — reaplicável.
 -- Docker (5432): corre após 01_schema no primeiro init; ou `npm run db:seed`.
--- Supabase CLI (54322): usa `supabase/seed.sql` (após `npm run local:stack` / `supabase db reset`).
 
 BEGIN;
 

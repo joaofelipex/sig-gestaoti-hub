@@ -1,15 +1,15 @@
-# Migrações SQL (incremental)
+# Migrações SQL
 
-Ficheiros `*.sql` nesta pasta são aplicados ao Postgres local com:
+Aplicar ao Postgres (Docker local ou remoto com `DATABASE_URL`):
 
 ```bash
 npm run db:apply-migrations
 ```
 
-- Ordem: **nome do ficheiro** (ordem lexicográfica).
-- **Todos** os ficheiros `.sql` são aplicados (inclui `baseline`).
-- Cada ficheiro corre **uma vez**; o registo fica em `public._repo_migration_log`.
-- O script torna o DDL idempotente (`IF NOT EXISTS`, etc.) para poder correr em bases já parcialmente criadas.
+- Ordem: **nome do ficheiro** (lexicográfica).
+- Inclui o ficheiro **baseline**.
+- Cada `.sql` corre **uma vez** — registo em `public._repo_migration_log`.
+- DDL tornada idempotente onde possível (`IF NOT EXISTS`, etc.).
 
 Verificar tabelas:
 
@@ -17,8 +17,10 @@ Verificar tabelas:
 npm run db:verify-schema
 ```
 
-Para **regenerar** o baseline de referência a partir do init:
+Regenerar baseline a partir de `database/init/01_schema.sql`:
 
 ```bash
 npm run db:gen-baseline
 ```
+
+Guia completo: [docs/dados-e-banco.md](../../docs/dados-e-banco.md).

@@ -1,50 +1,40 @@
-# Frontend
+# Frontend — SIG Gestão TI
 
-Angular 21 SPA do SIG Gestão TI. Documentação do monorepo (stack, dados, segurança): [../docs/architecture.md](../docs/architecture.md). Guia operacional completo: [../docs/dados-e-banco.md](../docs/dados-e-banco.md).
+SPA Angular 21.
 
-## Development server
+| Documento | Conteúdo |
+|-----------|----------|
+| [../docs/uso-interno.md](../docs/uso-interno.md) | Uso pela equipa |
+| [../docs/architecture.md](../docs/architecture.md) | Arquitetura |
+| [../docs/dados-e-banco.md](../docs/dados-e-banco.md) | Postgres, API, arranque |
 
-Com Postgres e API a correr (ver guia de dados), inicia só o Angular nesta pasta:
+## Desenvolvimento
+
+Com Postgres e API disponíveis:
 
 ```bash
 npm run dev
 ```
 
-(`npm start` é equivalente — `ng serve` em `http://0.0.0.0:8080` com `--poll` para WSL/Docker.)
+Na raiz do monorepo, `npm run dev` sobe **API + Angular**.
 
-Na **raiz do repositório**, `npm run dev` sobe API + Angular em paralelo.
+- App: [http://localhost:8080](http://localhost:8080)
+- Proxy: `/api` e `/health` → `http://127.0.0.1:3000` (`proxy.conf.json`)
+- Demo (seed): **dev@local.imts** / **demo123456**
 
-A app usa `proxy.conf.json`: pedidos `/api` e `/health` são encaminhados a `http://127.0.0.1:3000`. Abre [http://localhost:8080](http://localhost:8080).
+Tailwind v4 via PostCSS (`src/styles.css`). Se a UI aparecer sem estilos, corre `npm install` nesta pasta no mesmo ambiente do `ng serve`.
 
-Conta demo (após seed): **dev@local.imts** / **demo123456**.
-
-### Tailwind CSS v4
-
-Estilos globais em `src/styles.css`. Tailwind via PostCSS (`.postcssrc.json` + `@tailwindcss/postcss`). Se a UI parecer HTML sem estilo, executa `npm install` nesta pasta no **mesmo ambiente** que usas para `ng serve` (preferir WSL em vez de `\\wsl.localhost\…` no Windows).
-
-## Code scaffolding
+## Build
 
 ```bash
-ng generate component component-name
-ng generate --help
+npm run build
+# ou na raiz: npm run build
 ```
 
-## Building
+Saída em `dist/`.
 
-```bash
-ng build
-```
-
-Artefactos em `dist/`.
-
-## Unit tests
+## Testes
 
 ```bash
 ng test
 ```
-
-(Vitest via `@angular/build:unit-test`.)
-
-## Additional Resources
-
-[Angular CLI Overview and Command Reference](https://angular.dev/tools/cli)

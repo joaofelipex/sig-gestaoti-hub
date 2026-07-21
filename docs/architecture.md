@@ -1,78 +1,116 @@
 # Arquitetura — SIG Gestão TI
 
-Este documento descreve o **projeto atual do sistema** após a migração para a arquitetura 100% customizada (sem Supabase). 
+Arquitetura do sistema em uso interno: SPA Angular, API Express com JWT, PostgreSQL 16.
 
-## 1. Visão Geral e Contexto
+## Visão
 
-O **SIG Gestão TI** é um console de gestão de TI desenvolvido para a holding IMTS. O sistema centraliza a operação tecnológica: inventário de ativos, contratos, domínios (DNS), licenças, servidores, riscos, orçamentos e alertas.
+Consola de gestão de TI da IMTS. Isolamento em dois níveis:
 
-A aplicação é fortemente **multi-tenant** com dois níveis de isolamento:
-- **Organização (`org_id`)**: Isolamento primário (nível macro).
-- **Empresa (`empresa_id`)**: Múltiplas empresas sob o guarda-chuva de uma mesma organização (nível micro).
+- **`org_id`** — organização (tenant).
+- **`empresa_id`** — empresa dentro da organização.
 
-## 2. Diagrama de Contexto (Three-Tier)
+## Diagrama
 
 ```mermaid
 flowchart LR
-  subgraph browser [Navegador]
-    SPA[Angular 21 SPA]
-  end
-  subgraph api [Servidor (Node.js)]
-    REST[API Express]
-  end
-  PG[(PostgreSQL 16)]
-  
-  SPA -->|HTTP + JWT| REST
-  REST -->|node-postgres (pg)| PG
+  SPA[Angular 21] -->|HTTP + Bearer JWT| API[Express]
+  API -->|pg| PG[(PostgreSQL 16)]
 ```
 
-Diferente da versão inicial do projeto, o Frontend **NÃO** possui mais dependências diretas de bibliotecas de BaaS (Backend as a Service). Toda a comunicação é feita através do `HttpClient` do Angular direcionada à nossa API Node.js.
+A SPA **não** acede ao Postgres. Toda a lógica de auth, papéis e filtro por organização está na API.
 
-## 3. Stack Tecnológico Atualizado
+## Stack
 
-| Camada | Tecnologia |
-|--------|------------|
-| **SPA (Frontend)** | Angular 21 (Standalone, lazy loading). |
-| **Estilos / UI** | Tailwind CSS 4, `lucide-angular`, PrimeNG. |
-| **Comunicação HTTP** | `@angular/common/http` encapsulado no `ApiService`. |
-| **API (Backend)** | Node.js com Express 5. |
-| **Driver BD** | `pg` (node-postgres) para conexão direta e execução de SQL puro. |
-| **Segurança / Auth** | Autenticação baseada em JWT (`jsonwebtoken`) e senhas com Hash (`bcryptjs` / `pgcrypto`). |
-| **Banco de Dados** | PostgreSQL 16 executado em um contêiner Docker local (`:5432`). |
+| Camada | Detalhe |
+|--------|---------|
+| SPA | Angular 21 (standalone, lazy routes), Tailwind 4, lucide / Font Awesome, PrimeNG |
+| HTTP | `HttpClient` → `ApiService` |
+| API | Express 5, `pg`, compression, CORS |
+| Auth | JWT (`jsonwebtoken`) + password hash (`pgcrypto` / bcrypt) |
+| BD | PostgreSQL 16 |
 
-## 4. Segurança e Autenticação Customizada
+## Autenticação
 
-Como o Supabase Auth (GoTrue) foi removido, a autenticação agora segue o padrão clássico de JWT:
+1. `POST /api/auth/login` — email + password.
+2. Validação em `auth.users` (hash `crypt` / `pgcrypto`).
+3. JWT assinado com `JWT_SECRET`.
+4. Cliente envia `Authorization: Bearer <token>`.
+5. `requireAuth` valida o token; `profiles` + `user_roles` resolvem `org_id` e papel.
 
-1. **Login/Signup:** O Angular envia `email` e `password` para `POST /api/auth/login`.
-2. **Validação:** A API consulta a tabela `auth.users`, validando o hash da senha (gerado com `crypt()` via extensão `pgcrypto`).
-3. **Token:** O Express gera um token JWT (via `jsonwebtoken` assinado com o `JWT_SECRET`) e o devolve ao frontend.
-4. **Middlewares:** O Angular armazena no `localStorage` e envia o token no header `Authorization: Bearer <token>`. A API utiliza o middleware `requireAuth` para validar a assinatura, injetando o `userId` na requisição para extrair o `org_id` através da tabela `profiles`.
+Outros endpoints (`backend/src/routes/auth.ts`): signup, `/me`, change-password, CRUD de utilizadores (admin).
 
-## 5. Estratégia de Multi-Tenancy e Escopo de Dados
+## RBAC
 
-O isolamento dos dados não é mais feito por RLS (Row Level Security) automática do banco, e sim pelas lógicas de rotas e repositórios da **API Express**.
+| Papel | Escrita de dados | Gestão de users |
+|-------|------------------|-----------------|
+| `admin` | sim | sim |
+| `gestor` | sim | não |
+| `usuario` | não | não |
 
-- Ao consultar a rota genérica `GET /api/data/dashboard`, o servidor lê o `org_id` atrelado ao `userId` do JWT ativo.
-- Ele apensa (através do helper `sqlOrgReadScope`) um fragmento SQL `AND org_id = $x` forçadamente em **todas** as queries.
-- Para a inserção/atualização (`CrudService` no frontend → rotas genéricas na API), a API intercepta o `body` e sobreescreve/força o campo `org_id` para bater com o do usuário autenticado, impedindo vazamentos ou sequestro de IDs (Broken Object Level Authorization - BOLA).
+Código: `backend/src/profile.ts`, `middleware/rbac.ts`; frontend: `PermissionService`. Não é permitido remover o último admin da org. Signup cria o primeiro user como `admin` da nova org.
 
-## 6. Modelo Lógico de Dados (PostgreSQL)
+## Multi-tenant (`DATA_SCOPE`)
 
-O schema está em **`database/init/01_schema.sql`** e se divide nos seguintes blocos principais:
+| Valor | Comportamento |
+|-------|----------------|
+| `org` (predefinição) | Leituras e escritas limitadas ao `org_id` do perfil |
+| `all` | Escape hatch de desenvolvimento — **proibido** em ambiente interno partilhado |
 
-- **Autenticação:** schema `auth.users` (para referências, espelhando parcialmente o padrão clássico, mantendo `encrypted_password`).
-- **Núcleo:** `organizations`, `empresas`, `departamentos`, `usuarios`, `profiles`, `user_roles`.
-- **Operação de TI:** `ativos`, `dominios`, `dns_records`, `licencas`, `servidores`, `contratos`, `manutencoes`.
-- **Gestão Financeira & Riscos:** `pagamentos`, `orcamentos`, `acoes_economista`, `riscos`, `registros_acesso`.
+Inserts forçam o `org_id` do token (mitiga BOLA). Implementação: `backend/src/org-scope.ts`.
 
-O controle de modificações ao longo do tempo é gerido pela tabela e scripts dentro de **`database/migrations/`**.
+## API
 
-## 7. Fluxo de Desenvolvimento Diário
+### Health (sem JWT)
 
-1. **Banco:** `npm run db:up` (sobe o docker Postgres na 5432).
-2. **Ambiente Dev:** `npm run dev` na raiz inicia tanto a **API (3000)** quanto o **Frontend (8080)** simultaneamente.
-3. **Acesso:** `http://localhost:8080` (O usuário seed demo é `dev@local.imts` / senha `demo123456`).
+- `GET /health`, `GET /api/health`
+- `GET /api/health/db`
 
----
-*Atualizado após a remoção estrutural de dependências do Supabase em favor do Express.*
+### Auth — `/api/auth`
+
+Login, signup, me, change-password, logout (noop no cliente), users (admin).
+
+### Dados — `/api/data` (JWT)
+
+| Método | Caminho | Notas |
+|--------|---------|-------|
+| GET | `/status` | Contagens, papel, escopo |
+| GET | `/dashboard?tables=` | Leitura em bloco |
+| GET | `/empresas` | Empresas da org |
+| POST | `/:table` | Insert (requer escrita) |
+| PATCH | `/:table/:id` | Update |
+| DELETE | `/:table/:id` | Delete |
+
+Tabelas expostas: `backend/src/tables.ts` (`ativos`, `dominios`, `licencas`, `servidores`, `contratos`, `manutencoes`, `pagamentos`, `orcamentos`, `riscos`, …). Algumas tabelas sensíveis (`profiles`, `user_roles`, `organizations`) estão bloqueadas no CRUD genérico.
+
+## Modelo de dados
+
+Schema: `database/init/01_schema.sql`.
+
+- **Auth:** `auth.users`
+- **Núcleo:** `organizations`, `empresas`, `departamentos`, `profiles`, `user_roles`
+- **Operação:** `ativos`, `dominios`, `dns_records`, `licencas`, `servidores`, `contratos`, `manutencoes`, `movimentacoes`, `inventario`, `alertas`
+- **Finanças / risco:** `pagamentos`, `orcamentos`, `acoes_economista`, `riscos`, `registros_acesso`, `termos_responsabilidade`
+
+Migrações: `database/migrations/` → log em `public._repo_migration_log`.
+
+## Frontend
+
+Rotas: `frontend/src/app/app.routes.ts`. Layout com sidebar (`app-shell-sidebar`).
+
+Ferramentas partilhadas:
+
+- `data-toolbar` — pesquisa, filtros, CSV, calendário
+- `utils/ics.util.ts` — geração iCalendar (VEVENT all-day)
+- `utils/csv.util.ts` — import/export CSV
+- `UxFeedbackService` — toasts de validação / sucesso
+
+## Desenvolvimento
+
+```bash
+npm run db:up
+npm run dev
+```
+
+API `:3000`, app `:8080`, demo `dev@local.imts` / `demo123456`.
+
+Ver [dados-e-banco.md](./dados-e-banco.md) e [uso-interno.md](./uso-interno.md).

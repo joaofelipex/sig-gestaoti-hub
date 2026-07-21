@@ -1,79 +1,126 @@
-# Dados e base de dados — guia único
+# Dados e base de dados
 
-Tudo o que precisas para **PostgreSQL**, **API** e **dados** da aplicação num só sítio.
+Guia operacional: PostgreSQL, API, Angular, migrações e importação.
 
-## Fluxo dos dados
+## Fluxo
 
 ```text
-Angular (8080)  →  HTTP + JWT  →  API Express (3000)  →  PostgreSQL (5432)
+Angular (:8080)  →  JWT  →  API Express (:3000)  →  PostgreSQL
 ```
 
-A SPA **nunca** liga diretamente ao Postgres: só à API. A API valida o token e filtra por `org_id` do teu `profiles`.
+Com `DATA_SCOPE=org`, a API filtra sempre pelo `org_id` do utilizador autenticado.
 
-## 1. Postgres (Docker)
+---
 
-| Campo | Valor local típico |
-|-------|---------------------|
+## 1. PostgreSQL
+
+### Local (Docker)
+
+| Campo | Valor |
+|-------|--------|
 | Host | `127.0.0.1` |
-| Porta | `5432` (`HOST_PG_PORT` no `scripts/db.sh`) |
-| Utilizador | `postgres` |
-| Palavra-passe | `postgres` |
-| Base | `sig_gestao_ti` |
+| Porta | `5432` |
+| User / password | `postgres` / `postgres` |
+| Database | `sig_gestao_ti` |
 
-**Comandos (raiz do repo):**
+```bash
+npm run db:up      # sobe
+npm run db:down    # para
+npm run db:reset   # apaga volume + schema + seed
+npm run db:seed    # só reaplicar seed demo
+```
 
-| Comando | Efeito |
-|---------|--------|
-| `npm run db:up` | Sobe o contentor |
-| `npm run db:down` | Para o contentor |
-| `npm run db:reset` | Apaga o volume e recria (schema + seed de novo) |
-| `npm run db:seed` | Reaplica `02_seed.sql` num volume já existente |
-| `npm run db:sync-remote` | Copia dados do Postgres remoto (`REMOTE_DATABASE_URL` no `.env`) para o Docker local (ver `.env.example`) |
+Na **primeira** criação do volume: `database/init/01_schema.sql` → `02_seed.sql` → `03_api_auth.sql`.
 
-**Init SQL** (ordem): `database/init/01_schema.sql` → `02_seed.sql` → `03_api_auth.sql` (palavra-passe da conta demo).
+Sincronizar de um Postgres remoto para o Docker:
 
-## 2. API Express
+```bash
+# .env na raiz com REMOTE_DATABASE_URL (ver .env.example)
+npm run db:sync-remote
+```
 
-| Campo | Valor local típico |
-|-------|---------------------|
-| URL da API (Angular) | `http://127.0.0.1:3000/api` |
-| Health (sem JWT) | `GET http://127.0.0.1:3000/health` |
+### Ambiente interno (Postgres partilhado)
 
-**Subir a API:** `cd backend && npm run dev` (porta **3000**).
+Docker é opcional. Qualquer PostgreSQL 16 com o schema do projeto serve:
 
-**Variáveis** (`backend/.env`, ver `backend/.env.example`): `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `PORT`, `JWT_SECRET`, `CORS_ORIGIN`.
+1. Schema + migrações (`DATABASE_URL=... npm run db:apply-migrations`).
+2. `backend/.env` com a URI / `DB_*` desse servidor.
+3. `JWT_SECRET` forte · `CORS_ORIGIN` com a origem da SPA · `DATA_SCOPE=org`.
+4. Confirmar: `GET /api/health` e `GET /api/health/db`.
+
+---
+
+## 2. API
+
+| Item | Local |
+|------|--------|
+| Base | `http://127.0.0.1:3000/api` |
+| Health | `GET /health` |
+
+```bash
+cd backend && npm run dev
+# ou na raiz: npm run dev
+```
+
+Variáveis (`backend/.env.example`):
+
+| Variável | Função |
+|----------|--------|
+| `DATABASE_URL` / `DB_*` | Ligação ao Postgres |
+| `PORT` | Predefinição `3000` |
+| `JWT_SECRET` | Assinatura dos tokens |
+| `CORS_ORIGIN` | Origens permitidas (lista separada por vírgulas) |
+| `DATA_SCOPE` | `org` (interno) ou `all` (só debug) |
+
+---
 
 ## 3. Angular
 
-| Modo | Comando |
-|------|---------|
-| API + UI (após `npm run db:up`) | `npm run dev` na raiz |
-| Só API | `cd backend && npm run dev` |
-| Só UI (API já a correr) | `cd frontend && npm run dev` |
+```bash
+npm run dev                 # API + UI
+cd frontend && npm run dev  # só UI
+```
 
-Conta demo (após seed): **dev@local.imts** / **demo123456**.
+Proxy (`frontend/proxy.conf.json`): `/api` e `/health` → `127.0.0.1:3000`.
 
-Verificação rápida Postgres + API: na raiz, `npm run doctor`.
+Demo: **dev@local.imts** / **demo123456**  
+Check: `npm run doctor`
 
-## 4. Migrações SQL no Postgres local
+---
 
-Ficheiros em **`database/migrations/`** (incrementais, ex. políticas RLS e colunas novas) aplicam-se ao Docker:
+## 4. Migrações
+
+Pasta: `database/migrations/`.
 
 ```bash
-npm run db:up
 npm run db:apply-migrations
 ```
 
-- Cria os papéis `authenticated`, `anon` e `service_role` se faltarem (exigido por `CREATE POLICY ... TO authenticated`).
-- Por defeito **ignora** ficheiros cujo nome contém `baseline` (o schema base vem de `database/init/01_schema.sql`). Para forçar baseline: `APPLY_BASELINE=true npm run db:apply-migrations`.
-- Cada ficheiro corre **uma vez** (tabela `public._repo_migration_log`).
+- Ordem lexicográfica do nome do ficheiro.
+- Inclui o **baseline**; cada ficheiro corre **uma vez** (`public._repo_migration_log`).
+- Em Postgres remoto: definir `DATABASE_URL` antes do comando.
+- Verificar: `npm run db:verify-schema`
+- Regenerar baseline: `npm run db:gen-baseline`
 
-## 5. Importar CSV
+Ver [database/migrations/README.md](../database/migrations/README.md).
 
-1. Exportar tabelas como `*-export-*.csv` (separador `;`).
-2. Na raiz: `DATABASE_URL=...` `CSV_DIR=...` `npm run db:import-csv`  
-   Detalhe: [database/import/README.md](../database/import/README.md).
+---
 
-## 6. Arquitetura e segurança
+## 5. Import CSV em massa
 
-Modelo lógico, rotas da API e multi-tenant: [architecture.md](./architecture.md).
+Ficheiros `*-export-*.csv` (separador `;`).
+
+```bash
+DATABASE_URL="postgresql://..." CSV_DIR="/caminho/csv" npm run db:import-csv
+```
+
+**Atenção:** o script **apaga** o conteúdo do schema `public` e reinsere a partir dos CSV. Em base partilhada, só com backup e acordo da equipa.
+
+Detalhe: [database/import/README.md](../database/import/README.md).
+
+---
+
+## 6. Relacionados
+
+- Equipa: [uso-interno.md](./uso-interno.md)
+- Arquitetura / API: [architecture.md](./architecture.md)
