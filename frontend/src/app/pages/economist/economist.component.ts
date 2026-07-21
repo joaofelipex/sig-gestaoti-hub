@@ -24,6 +24,7 @@ import {
   ChartSeries,
 } from '../../components/charts.component';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
 import { SigIcons } from '../../core/sig-icons';
@@ -55,6 +56,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
     LineChartComponent,
     MultiLineChartComponent,
     DataToolbarComponent,
+    DateInputComponent,
     ModalComponent,
     ConfirmComponent,
   ],
@@ -740,7 +742,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
         </label>
         <label class="text-sm">
           Prazo
-          <input type="date" [(ngModel)]="actionForm.due_date" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+          <app-date-input [(ngModel)]="actionForm.due_date" ariaLabel="Prazo"></app-date-input>
         </label>
         <label class="text-sm">
           Economia estimada (R$)
@@ -806,7 +808,7 @@ type TabId = 'visao' | 'orcamentos' | 'acoes' | 'contratos';
         </label>
         <label class="text-sm">
           Vencimento
-          <input type="date" [(ngModel)]="contractForm.end_date" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" />
+          <app-date-input [(ngModel)]="contractForm.end_date" ariaLabel="Vencimento"></app-date-input>
         </label>
         <label class="text-sm md:col-span-2">
           Custo mensal (R$)

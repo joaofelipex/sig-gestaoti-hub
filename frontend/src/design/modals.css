@@ -147,7 +147,9 @@
 .app-modal-body input[type='datetime-local'],
 .app-modal-body input[type='month'],
 .app-modal-body input[type='time'],
-.app-modal-body input[type='number'] {
+.app-modal-body input[type='number'],
+.app-modal-body .sig-date-input,
+.app-modal-body .sig-date-input__field {
   min-width: 0;
 }
 

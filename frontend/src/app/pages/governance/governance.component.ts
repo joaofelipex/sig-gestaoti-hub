@@ -6,6 +6,7 @@ import { DashboardService, AccessRecord, RiskItem } from '../../services/dashboa
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { KpiCardComponent, DonutChartComponent } from '../../components/charts.component';
 import { TiMetricsService, TiMetrics } from '../../services/ti-metrics.service';
@@ -17,7 +18,7 @@ import { SigBadge } from '../../utils/status-badge';
 @Component({
   selector: 'app-governance',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent, KpiCardComponent, DonutChartComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, DateInputComponent, ModalComponent, ConfirmComponent, KpiCardComponent, DonutChartComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -146,8 +147,8 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="text-sm">Tipo<select [(ngModel)]="formA.recurso_tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Aplicação</option><option>Servidor</option><option>Banco de Dados</option><option>Sistema</option></select></label>
         <label class="text-sm">Nível<select [(ngModel)]="formA.nivel_acesso" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Administrador</option><option>Escrita</option><option>Leitura</option></select></label>
         <label class="text-sm">Sistema<input [(ngModel)]="formA.sistema" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Concedido em<input type="date" [(ngModel)]="formA.data_concessao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Último acesso<input type="date" [(ngModel)]="formA.ultimo_acesso" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="text-sm">Concedido em<app-date-input [(ngModel)]="formA.data_concessao" ariaLabel="Concedido em"></app-date-input></label>
+        <label class="text-sm">Último acesso<app-date-input [(ngModel)]="formA.ultimo_acesso" ariaLabel="Último acesso"></app-date-input></label>
         <label class="md:col-span-2 text-sm flex items-center gap-2"><input type="checkbox" [(ngModel)]="formA.ativo"/> Ativo</label>
       </div>
     </app-modal>

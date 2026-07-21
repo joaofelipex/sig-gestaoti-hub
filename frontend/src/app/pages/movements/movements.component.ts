@@ -6,13 +6,14 @@ import { DashboardService, Movement, Asset } from '../../services/dashboard.serv
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 
 @Component({
   selector: 'app-movements',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, DateInputComponent, ModalComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -75,7 +76,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
           </select>
         </label>
         <label class="text-sm">Tipo *<select [(ngModel)]="form.tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Entrega</option><option>Devolução</option><option>Transferência</option><option>Descarte</option><option>Empréstimo</option></select></label>
-        <label class="text-sm">Data<input type="date" [(ngModel)]="form.data" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="text-sm">Data<app-date-input [(ngModel)]="form.data" ariaLabel="Data"></app-date-input></label>
         <label class="text-sm">De (usuário)<input [(ngModel)]="form.from_user" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">De (depto)<input [(ngModel)]="form.from_department" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Para (usuário)<input [(ngModel)]="form.to_user" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
