@@ -9,6 +9,7 @@ import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { exportToICS, IcsEvent } from '../../utils/ics.util';
 import { SigBadge } from '../../utils/status-badge';
 
 @Component({
@@ -25,8 +26,9 @@ import { SigBadge } from '../../utils/status-badge';
       </header>
       <app-data-toolbar searchPlaceholder="Buscar nome, provedor..." [search]="search"
         [filters]="[{key:'status',label:'Status',options:[{value:'Online',label:'Online'},{value:'Offline',label:'Offline'},{value:'Manutenção',label:'Manutenção'}]}]"
-        [filterValues]="filterValues" (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
-        (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"></app-data-toolbar>
+        [filterValues]="filterValues" [showCalendarExport]="true"
+        (searchChange)="search=$event" (filterChange)="filterValues[$event.key]=$event.value"
+        (newClick)="openNew()" (exportClick)="exportCSV()" (calendarClick)="exportICS()" (importFile)="importCSV($event)"></app-data-toolbar>
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
       <div *ngIf="!loading" class="sig-list-card">
         <div class="sig-table-wrap">
@@ -133,6 +135,42 @@ export class ServersComponent implements OnInit, OnDestroy {
   askDelete(s: Server) { this.toDelete = s; this.confirmOpen = true; }
   async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('servidores', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(s => ({ Nome: s.name, Provedor: s.provider, Tipo: s.type, Status: s.status, IP: s.ip, Uptime: s.uptime, CustoMensal: s.monthlyCost })), 'servidores'); }
+  exportICS() {
+    const events: IcsEvent[] = [];
+    for (const s of this.filtered) {
+      if (s.sslExpiration) {
+        events.push({
+          uid: `servidor-ssl-${s.id}@sig-gestao-ti`,
+          summary: `SSL vence: ${s.name}`,
+          date: s.sslExpiration,
+          description: [
+            'Vencimento do certificado SSL',
+            s.provider ? `Provedor: ${s.provider}` : '',
+            s.ip ? `IP: ${s.ip}` : '',
+            s.purpose ? `Finalidade: ${s.purpose}` : '',
+          ].filter(Boolean).join('\n'),
+          location: s.ip || undefined,
+        });
+      }
+      if (s.contractEnd) {
+        events.push({
+          uid: `servidor-contrato-${s.id}@sig-gestao-ti`,
+          summary: `Contrato fim: ${s.name}`,
+          date: s.contractEnd,
+          description: [
+            'Fim do contrato do servidor',
+            s.provider ? `Provedor: ${s.provider}` : '',
+            s.type ? `Tipo: ${s.type}` : '',
+            s.purpose ? `Finalidade: ${s.purpose}` : '',
+          ].filter(Boolean).join('\n'),
+          location: s.ip || undefined,
+        });
+      }
+    }
+    const count = exportToICS(events, 'servidores-vencimentos', 'SIG — Vencimentos de servidores');
+    if (!count) this.ux.noCalendarEvents('servidores (SSL ou contrato)');
+    else this.ux.calendarExported(count);
+  }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const payload = rows.map(r => ({ nome: r['Nome'], provedor: r['Provedor']||null, tipo: r['Tipo']||null, status: r['Status']||'Online', ip_publico: r['IP']||null, uptime_pct: Number(r['Uptime']||100), custo_mensal: Number(r['CustoMensal']||0) })).filter(r => r.nome);

@@ -9,6 +9,7 @@ import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { exportToICS, IcsEvent } from '../../utils/ics.util';
 
 @Component({
   selector: 'app-licenses',
@@ -28,9 +29,10 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         [search]="search"
         [filters]="[{key:'tipo',label:'Tipo',options:[{value:'Mensal',label:'Mensal'},{value:'Anual',label:'Anual'}]},{key:'categoria',label:'Categoria',options:catOpts}]"
         [filterValues]="filterValues"
+        [showCalendarExport]="true"
         (searchChange)="search=$event"
         (filterChange)="filterValues[$event.key]=$event.value"
-        (newClick)="openNew()" (exportClick)="exportCSV()" (importFile)="importCSV($event)"
+        (newClick)="openNew()" (exportClick)="exportCSV()" (calendarClick)="exportICS()" (importFile)="importCSV($event)"
       ></app-data-toolbar>
 
       <div *ngIf="loading" class="sig-page-loading">Carregando…</div>
@@ -128,6 +130,24 @@ export class LicensesComponent implements OnInit, OnDestroy {
   askDelete(l: License) { this.toDelete = l; this.confirmOpen = true; }
   async doDelete() { if (!this.toDelete || this.deleting) return; this.deleting = true; const ok = await this.crud.remove('licencas', this.toDelete.id); this.deleting = false; if (ok) { this.confirmOpen = false; this.toDelete = null; } }
   exportCSV() { exportToCSV(this.filtered.map(l => ({ Software: l.software, Fornecedor: l.vendor, Tipo: l.type, Categoria: l.category, Total: l.totalLicenses, EmUso: l.usedLicenses, Custo: l.costPerUnit, Renovacao: l.renewalDate })), 'licencas'); }
+  exportICS() {
+    const events: IcsEvent[] = this.filtered
+      .filter((l) => !!l.renewalDate)
+      .map((l) => ({
+        uid: `licenca-${l.id}@sig-gestao-ti`,
+        summary: `Renovação: ${l.software}`,
+        date: l.renewalDate,
+        description: [
+          `Licença ${l.type || ''}`.trim(),
+          l.vendor ? `Fornecedor: ${l.vendor}` : '',
+          l.category ? `Categoria: ${l.category}` : '',
+          `Assentos: ${l.usedLicenses}/${l.totalLicenses}`,
+        ].filter(Boolean).join('\n'),
+      }));
+    const count = exportToICS(events, 'licencas-renovacoes', 'SIG — Renovações de licenças');
+    if (!count) this.ux.noCalendarEvents('licenças');
+    else this.ux.calendarExported(count);
+  }
   async importCSV(f: File) {
     const rows = parseCSV(await readFileAsText(f));
     const payload = rows.map(r => ({ nome: r['Software']||r['nome'], fornecedor: r['Fornecedor']||null, tipo: r['Tipo']||'Mensal', categoria: r['Categoria']||'Produtividade', total_licencas: Number(r['Total']||1), qtd_usuarios: Number(r['EmUso']||0), custo_unitario: Number(r['Custo']||0), data_renovacao: r['Renovacao']||null })).filter(r => r.nome);

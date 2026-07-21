@@ -9,6 +9,7 @@ import { DataToolbarComponent } from '../../components/data-toolbar.component';
 import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
+import { exportToICS, IcsEvent } from '../../utils/ics.util';
 import { SigBadge } from '../../utils/status-badge';
 import { DOMAIN_STATUSES, normalizeDomainStatus } from '../../utils/domain.util';
 
@@ -30,10 +31,12 @@ import { DOMAIN_STATUSES, normalizeDomainStatus } from '../../utils/domain.util'
         [search]="search"
         [filters]="[{key:'status',label:'Status',options:statusFilterOpts}]"
         [filterValues]="filterValues"
+        [showCalendarExport]="true"
         (searchChange)="search=$event"
         (filterChange)="filterValues[$event.key]=$event.value"
         (newClick)="openNew()"
         (exportClick)="exportCSV()"
+        (calendarClick)="exportICS()"
         (importFile)="importCSV($event)"
       ></app-data-toolbar>
 
@@ -261,6 +264,42 @@ export class DomainsComponent implements OnInit, OnDestroy {
     exportToCSV(this.filtered.map(d => ({
       Dominio: d.url, Registrador: d.registrar, Status: d.status, Vencimento: d.expirationDate, SSL: d.sslExpiration, Custo: d.renewalCost, AutoRenovacao: d.autoRenew ? 'Sim' : 'Não'
     })), 'dominios');
+  }
+
+  exportICS() {
+    const events: IcsEvent[] = [];
+    for (const d of this.filtered) {
+      if (d.expirationDate) {
+        events.push({
+          uid: `dominio-vencimento-${d.id}@sig-gestao-ti`,
+          summary: `Domínio vence: ${d.url}`,
+          date: d.expirationDate,
+          description: [
+            'Vencimento do domínio',
+            d.registrar ? `Registrador: ${d.registrar}` : '',
+            d.status ? `Status: ${d.status}` : '',
+            d.autoRenew ? 'Renovação automática: Sim' : 'Renovação automática: Não',
+          ].filter(Boolean).join('\n'),
+          location: d.url || undefined,
+        });
+      }
+      if (d.sslExpiration) {
+        events.push({
+          uid: `dominio-ssl-${d.id}@sig-gestao-ti`,
+          summary: `SSL vence: ${d.url}`,
+          date: d.sslExpiration,
+          description: [
+            'Vencimento do certificado SSL',
+            d.registrar ? `Registrador: ${d.registrar}` : '',
+            d.status ? `Status: ${d.status}` : '',
+          ].filter(Boolean).join('\n'),
+          location: d.url || undefined,
+        });
+      }
+    }
+    const count = exportToICS(events, 'dominios-vencimentos', 'SIG — Vencimentos de domínios');
+    if (!count) this.ux.noCalendarEvents('domínios (vencimento ou SSL)');
+    else this.ux.calendarExported(count);
   }
 
   async importCSV(file: File) {

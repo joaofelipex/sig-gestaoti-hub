@@ -85,6 +85,16 @@ export interface FilterDef {
           <i [class]="icons.export" aria-hidden="true"></i>
           Exportar
         </button>
+        <button
+          *ngIf="showCalendarExport"
+          type="button"
+          class="sig-toolbar-btn sig-toolbar-btn--ghost"
+          title="Baixar .ics para Google Agenda, Outlook, etc."
+          (click)="calendarClick.emit()"
+        >
+          <i [class]="icons.calendar" aria-hidden="true"></i>
+          Calendário
+        </button>
         <button *ngIf="hasActiveInput" type="button" class="sig-toolbar-btn sig-toolbar-btn--ghost" (click)="clearAll()">
           Limpar
         </button>
@@ -110,10 +120,13 @@ export class DataToolbarComponent {
   @Input() filters: FilterDef[] = [];
   @Input() filterValues: Record<string, string> = {};
   @Input() showNew = true;
+  /** Exibe botão para exportar vencimentos/renovações em .ics */
+  @Input() showCalendarExport = false;
   @Output() searchChange = new EventEmitter<string>();
   @Output() filterChange = new EventEmitter<{ key: string; value: string }>();
   @Output() newClick = new EventEmitter<void>();
   @Output() exportClick = new EventEmitter<void>();
+  @Output() calendarClick = new EventEmitter<void>();
   @Output() importFile = new EventEmitter<File>();
 
   constructor(readonly permissions: PermissionService) {}

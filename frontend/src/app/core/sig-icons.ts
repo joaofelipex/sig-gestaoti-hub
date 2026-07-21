@@ -29,6 +29,7 @@ export const SigIcons = {
   search: 'fas fa-search',
   import: 'fas fa-file-upload',
   export: 'fas fa-file-download',
+  calendar: 'fas fa-calendar-alt',
   plus: 'fas fa-plus',
   building: 'fas fa-building',
   server: 'fas fa-server',

@@ -28,4 +28,19 @@ export class UxFeedbackService {
       variant: 'destructive',
     });
   }
+
+  noCalendarEvents(context: string): void {
+    this.toast.show({
+      title: 'Nenhuma data para exportar',
+      description: `Não há ${context} com data cadastrada na lista atual.`,
+      variant: 'destructive',
+    });
+  }
+
+  calendarExported(count: number): void {
+    this.toast.show({
+      title: 'Calendário gerado',
+      description: `${count} evento${count === 1 ? '' : 's'} no arquivo .ics. Importe no Google Agenda, Outlook ou Apple.`,
+    });
+  }
 }
