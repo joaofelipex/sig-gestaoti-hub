@@ -6,6 +6,7 @@ import { DashboardService, Domain, DnsRecord } from '../../services/dashboard.se
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigBadge } from '../../utils/status-badge';
@@ -14,7 +15,7 @@ import { DOMAIN_STATUSES, normalizeDomainStatus } from '../../utils/domain.util'
 @Component({
   selector: 'app-domains',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, DateInputComponent, ModalComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -85,10 +86,10 @@ import { DOMAIN_STATUSES, normalizeDomainStatus } from '../../utils/domain.util'
           <input [(ngModel)]="form.dns_provider" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
         </label>
         <label class="text-sm">Vencimento
-          <input type="date" [(ngModel)]="form.data_vencimento" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
+          <app-date-input [(ngModel)]="form.data_vencimento" ariaLabel="Vencimento"></app-date-input>
         </label>
         <label class="text-sm">SSL Vencimento
-          <input type="date" [(ngModel)]="form.ssl_vencimento" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
+          <app-date-input [(ngModel)]="form.ssl_vencimento" ariaLabel="SSL Vencimento"></app-date-input>
         </label>
         <label class="text-sm">Custo Renovação (R$)
           <input type="number" [(ngModel)]="form.custo_renovacao" class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />

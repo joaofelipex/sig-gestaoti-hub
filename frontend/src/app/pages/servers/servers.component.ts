@@ -6,6 +6,7 @@ import { DashboardService, Server } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigBadge } from '../../utils/status-badge';
@@ -13,7 +14,7 @@ import { SigBadge } from '../../utils/status-badge';
 @Component({
   selector: 'app-servers',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, DateInputComponent, ModalComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -77,8 +78,8 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="text-sm">Armazenamento<input [(ngModel)]="form.armazenamento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Uptime %<input type="number" step="0.1" [(ngModel)]="form.uptime_pct" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Custo Mensal (R$)<input type="number" step="0.01" [(ngModel)]="form.custo_mensal" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">SSL Vencimento<input type="date" [(ngModel)]="form.ssl_vencimento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Contrato fim<input type="date" [(ngModel)]="form.contrato_fim" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="text-sm">SSL Vencimento<app-date-input [(ngModel)]="form.ssl_vencimento" ariaLabel="SSL Vencimento"></app-date-input></label>
+        <label class="text-sm">Contrato fim<app-date-input [(ngModel)]="form.contrato_fim" ariaLabel="Contrato fim"></app-date-input></label>
         <label class="md:col-span-2 text-sm">Finalidade<input [(ngModel)]="form.finalidade" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="md:col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>

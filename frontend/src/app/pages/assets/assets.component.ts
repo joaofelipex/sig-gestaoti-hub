@@ -6,6 +6,7 @@ import { DashboardService, Asset } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigBadge } from '../../utils/status-badge';
@@ -13,7 +14,7 @@ import { SigBadge } from '../../utils/status-badge';
 @Component({
   selector: 'app-assets',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, DateInputComponent, ModalComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -89,8 +90,8 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="text-sm">Patrimônio<input [(ngModel)]="form.patrimonio" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Atribuído a<input [(ngModel)]="form.assigned_to" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Departamento<input [(ngModel)]="form.department_nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Aquisição<input type="date" [(ngModel)]="form.data_aquisicao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Garantia até<input type="date" [(ngModel)]="form.warranty_end" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="text-sm">Aquisição<app-date-input [(ngModel)]="form.data_aquisicao" ariaLabel="Aquisição"></app-date-input></label>
+        <label class="text-sm">Garantia até<app-date-input [(ngModel)]="form.warranty_end" ariaLabel="Garantia até"></app-date-input></label>
         <label class="text-sm">Valor (R$)<input type="number" step="0.01" [(ngModel)]="form.valor_aquisicao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Vida útil (meses)<input type="number" [(ngModel)]="form.vida_util_meses" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="md:col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" class="mt-1 w-full px-3 py-2 border rounded-md text-sm" rows="2"></textarea></label>

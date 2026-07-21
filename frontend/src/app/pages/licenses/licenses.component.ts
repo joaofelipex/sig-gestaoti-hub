@@ -6,13 +6,14 @@ import { DashboardService, License } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 
 @Component({
   selector: 'app-licenses',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, DateInputComponent, ModalComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -82,7 +83,7 @@ import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
         <label class="text-sm">Total Licenças<input type="number" [(ngModel)]="form.total_licencas" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Em Uso<input type="number" [(ngModel)]="form.qtd_usuarios" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Custo Unitário (R$)<input type="number" step="0.01" [(ngModel)]="form.custo_unitario" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Renovação<input type="date" [(ngModel)]="form.data_renovacao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="text-sm">Renovação<app-date-input [(ngModel)]="form.data_renovacao" ariaLabel="Renovação"></app-date-input></label>
         <label class="md:col-span-2 text-sm">Chave de Ativação<input [(ngModel)]="form.chave_ativacao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
       </div>
     </app-modal>

@@ -6,6 +6,7 @@ import { DashboardService, Maintenance, Asset } from '../../services/dashboard.s
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
 import { SigBadge } from '../../utils/status-badge';
@@ -13,7 +14,7 @@ import { SigBadge } from '../../utils/status-badge';
 @Component({
   selector: 'app-maintenance',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, DateInputComponent, ModalComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -73,8 +74,8 @@ import { SigBadge } from '../../utils/status-badge';
         </label>
         <label class="text-sm">Tipo *<select [(ngModel)]="form.tipo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option>Preventiva</option><option>Corretiva</option><option>Atualização</option></select></label>
         <label class="text-sm">Status<select [(ngModel)]="form.status" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option value="aberta">Aberta</option><option value="em_andamento">Em andamento</option><option value="concluida">Concluída</option><option value="cancelada">Cancelada</option></select></label>
-        <label class="text-sm">Abertura<input type="date" [(ngModel)]="form.data_abertura" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Conclusão<input type="date" [(ngModel)]="form.data_conclusao" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="text-sm">Abertura<app-date-input [(ngModel)]="form.data_abertura" ariaLabel="Abertura"></app-date-input></label>
+        <label class="text-sm">Conclusão<app-date-input [(ngModel)]="form.data_conclusao" ariaLabel="Conclusão"></app-date-input></label>
         <label class="text-sm">Fornecedor<input [(ngModel)]="form.fornecedor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Custo (R$)<input type="number" step="0.01" [(ngModel)]="form.custo" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="md:col-span-2 text-sm">Descrição<textarea [(ngModel)]="form.descricao" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
