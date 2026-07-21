@@ -57,15 +57,18 @@ import { WhiteLabelService } from '../../services/white-label.service';
             </div>
 
             <button type="submit" class="sig-login__submit" [disabled]="loading">
-              {{ loading ? 'Carregando...' : (tab === 'signin' ? 'Entrar' : 'Cadastrar') }}
+              <span *ngIf="loading" class="sig-login__btn-spinner" aria-hidden="true"></span>
+              {{ loading ? 'A carregar…' : (tab === 'signin' ? 'Entrar' : 'Cadastrar') }}
             </button>
           </form>
 
-          <button type="button" class="sig-login__toggle" (click)="toggleTab()">
+          <button type="button" class="sig-login__toggle" (click)="toggleTab()" [disabled]="loading">
             {{ tab === 'signin' ? 'Não tem conta? Criar' : 'Já tem conta? Entrar' }}
           </button>
         </div>
       </div>
+
+      <div *ngIf="loading" class="sig-page-loading" role="status" aria-live="polite">A carregar…</div>
     </div>
   `,
   styles: [],

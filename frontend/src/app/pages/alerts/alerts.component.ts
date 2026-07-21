@@ -73,7 +73,7 @@ import { SigIcons } from '../../core/sig-icons';
               <a *ngIf="a.link" [routerLink]="a.link" class="sig-icon-btn text-blue-600" title="Abrir" aria-label="Abrir alerta">
                 <i [class]="icons.external" aria-hidden="true"></i>
               </a>
-              <button type="button" (click)="markRead(a)" [disabled]="markingId === a.id" class="sig-icon-btn sig-icon-btn--success" title="Concluir alerta" aria-label="Concluir alerta">
+              <button type="button" (click)="markRead(a)" class="sig-icon-btn sig-icon-btn--success" title="Concluir alerta" aria-label="Concluir alerta">
                 <i [class]="icons.check" aria-hidden="true"></i>
               </button>
               <button type="button" (click)="askRemove(a)" class="sig-icon-btn sig-icon-btn--danger" title="Excluir" aria-label="Excluir alerta">
@@ -97,9 +97,9 @@ export class AlertsComponent implements OnInit, OnDestroy {
   generating = false;
   markingAll = false;
   deleting = false;
-  markingId: string | null = null;
   confirmOpen = false;
   toDelete: Alert | null = null;
+  private concludingIds = new Set<string>();
   private sub!: Subscription;
 
   constructor(
@@ -187,34 +187,37 @@ export class AlertsComponent implements OnInit, OnDestroy {
   }
 
   async markRead(a: Alert) {
-    if (this.markingId || a.lida) return;
-    this.markingId = a.id;
+    if (a.lida || this.concludingIds.has(a.id)) return;
+    this.concludingIds.add(a.id);
+    this.applyConcludedLocally([a.id]);
     try {
       await firstValueFrom(this.api.patchTable('alertas', a.id, { lida: true }));
-      this.applyConcludedLocally([a.id]);
     } catch {
+      this.revertConcludedLocally([a.id]);
       this.toast.show({
         title: 'Não foi possível concluir',
         description: 'Tente novamente em instantes.',
         variant: 'destructive',
       });
     } finally {
-      this.markingId = null;
+      this.concludingIds.delete(a.id);
     }
   }
 
   async markAllRead() {
-    const ids = this.activeAlerts.map((x) => x.id);
-    if (!ids.length) return;
+    const ids = this.activeAlerts.filter((x) => !this.concludingIds.has(x.id)).map((x) => x.id);
+    if (!ids.length || this.markingAll) return;
     this.markingAll = true;
+    ids.forEach((id) => this.concludingIds.add(id));
+    this.applyConcludedLocally(ids);
+    this.toast.show({
+      title: 'Alertas concluídos',
+      description: `${ids.length} alerta(s) removido(s) da fila`,
+    });
     try {
       await Promise.all(ids.map((id) => firstValueFrom(this.api.patchTable('alertas', id, { lida: true }))));
-      this.applyConcludedLocally(ids);
-      this.toast.show({
-        title: 'Alertas concluídos',
-        description: `${ids.length} alerta(s) removido(s) da fila`,
-      });
     } catch {
+      this.revertConcludedLocally(ids);
       this.toast.show({
         title: 'Falha ao concluir todos',
         description: 'Recarregue a página e tente novamente.',
@@ -222,6 +225,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
       });
       void this.dashboard.loadData(true, true);
     } finally {
+      ids.forEach((id) => this.concludingIds.delete(id));
       this.markingAll = false;
     }
   }
@@ -269,8 +273,16 @@ export class AlertsComponent implements OnInit, OnDestroy {
 
   /** Atualiza lista local + store do dashboard (badge/KPIs) sem esperar reload. */
   private applyConcludedLocally(ids: string[]) {
+    this.setLidaLocally(ids, true);
+  }
+
+  private revertConcludedLocally(ids: string[]) {
+    this.setLidaLocally(ids, false);
+  }
+
+  private setLidaLocally(ids: string[], lida: boolean) {
     const idSet = new Set(ids);
-    this.alerts = this.alerts.map((a) => (idSet.has(a.id) ? { ...a, lida: true } : a));
+    this.alerts = this.alerts.map((a) => (idSet.has(a.id) ? { ...a, lida } : a));
     for (const id of ids) {
       const row = this.alerts.find((a) => a.id === id);
       if (!row) continue;
@@ -282,7 +294,7 @@ export class AlertsComponent implements OnInit, OnDestroy {
           mensagem: row.mensagem,
           tipo: row.tipo,
           severidade: row.severidade,
-          lida: true,
+          lida,
           link: row.link,
           created_at: row.created_at,
           empresa_id: (row as Alert & { empresa_id?: string | null }).empresa_id ?? null,
