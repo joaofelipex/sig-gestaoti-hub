@@ -6,6 +6,7 @@ import { DashboardService, Payment } from '../../services/dashboard.service';
 import { CrudService } from '../../services/crud.service';
 import { UxFeedbackService } from '../../services/ux-feedback.service';
 import { DataToolbarComponent } from '../../components/data-toolbar.component';
+import { DateInputComponent } from '../../components/date-input.component';
 import { ModalComponent, ConfirmComponent } from '../../components/modal.component';
 import { formatBrl } from '../../utils/financial.util';
 import { exportToCSV, parseCSV, readFileAsText } from '../../utils/csv.util';
@@ -15,7 +16,7 @@ import { SigBadge } from '../../utils/status-badge';
 @Component({
   selector: 'app-payments',
   standalone: true,
-  imports: [CommonModule, FormsModule, DataToolbarComponent, ModalComponent, ConfirmComponent],
+  imports: [CommonModule, FormsModule, DataToolbarComponent, DateInputComponent, ModalComponent, ConfirmComponent],
   template: `
     <section class="sig-page">
       <header class="app-page-header">
@@ -75,10 +76,10 @@ import { SigBadge } from '../../utils/status-badge';
         <label class="md:col-span-2 text-sm">Nome *<input [(ngModel)]="form.nome" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="text-sm">Categoria<select [(ngModel)]="form.categoria" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option value="servidor">Servidor</option><option value="licenca">Licença</option><option value="dominio">Domínio</option><option value="contrato">Contrato</option><option value="outro">Outro</option></select></label>
         <label class="text-sm">Status<select [(ngModel)]="form.status" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"><option value="pendente">Pendente</option><option value="pago">Pago</option><option value="atrasado">Atrasado</option></select></label>
-        <label class="text-sm">Competência<input type="date" [(ngModel)]="form.competencia" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Vencimento<input type="date" [(ngModel)]="form.vencimento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="text-sm">Competência<app-date-input [(ngModel)]="form.competencia" ariaLabel="Competência"></app-date-input></label>
+        <label class="text-sm">Vencimento<app-date-input [(ngModel)]="form.vencimento" ariaLabel="Vencimento"></app-date-input></label>
         <label class="text-sm">Valor (R$)<input type="number" step="0.01" [(ngModel)]="form.valor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
-        <label class="text-sm">Data Pagamento<input type="date" [(ngModel)]="form.data_pagamento" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
+        <label class="text-sm">Data Pagamento<app-date-input [(ngModel)]="form.data_pagamento" ariaLabel="Data Pagamento"></app-date-input></label>
         <label class="md:col-span-2 text-sm">Fornecedor<input [(ngModel)]="form.fornecedor" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"/></label>
         <label class="md:col-span-2 text-sm">Observações<textarea [(ngModel)]="form.observacoes" rows="2" class="mt-1 w-full px-3 py-2 border rounded-md text-sm"></textarea></label>
       </div>
