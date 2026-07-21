@@ -1,11 +1,12 @@
 /**
  * Responsividade SIG — mobile-first, tablet e desktop
  * Breakpoints: xs ≤575 · sm ≤767 · md ≤991 · lg ≤1199 · xl ≥1200
+ * Alinhados à sidebar: overlay <768 · estreita 768–1199 · plena ≥1200
  */
 
 html,
 body {
-  overflow-x: clip;
+  overflow-x: hidden;
   max-width: 100%;
 }
 
@@ -37,7 +38,7 @@ body {
 .sig-content {
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: hidden;
 }
 
 .sig-page > *,
@@ -49,23 +50,23 @@ body {
 
 .sig-content img,
 .sig-content svg,
-.sig-content canvas {
+.sig-content canvas,
+.sig-content video,
+.sig-content iframe {
   max-width: 100%;
+  height: auto;
 }
 
 /* —— Conteúdo: grids e cartões —— */
 @media (max-width: 575.98px) {
-  .sig-content .grid.grid-cols-2,
-  .sig-content .grid.grid-cols-2.md\:grid-cols-4,
-  .sig-content .grid.grid-cols-1.md\:grid-cols-2,
-  .sig-content .grid.grid-cols-1.lg\:grid-cols-2,
-  .sig-content .grid.grid-cols-1.lg\:grid-cols-3,
-  .sig-content .grid.grid-cols-1.md\:grid-cols-2.lg\:grid-cols-3 {
+  /* Qualquer grid Tailwind de 2+ colunas vira 1 coluna no telemóvel */
+  .sig-content .grid[class*="grid-cols-"]:not([class*="grid-cols-1"]) {
     grid-template-columns: 1fr !important;
   }
 
   .sig-content .grid .col-span-2,
-  .sig-content .grid .md\:col-span-2 {
+  .sig-content .grid .md\:col-span-2,
+  .sig-content .grid .lg\:col-span-2 {
     grid-column: span 1 !important;
   }
 
@@ -84,17 +85,21 @@ body {
   }
 
   .sig-kpi-card__value {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
   }
 
-  .sig-kpi-card__body {
-    gap: 0.6rem;
+  .sig-kpi-card {
+    padding: 0.75rem 2.4rem 0.75rem 0.75rem;
   }
 
   .sig-kpi-card__icon {
-    width: 2.15rem;
-    height: 2.15rem;
-    font-size: 1rem;
+    top: 0.6rem;
+    right: 0.5rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    max-width: 1.7rem;
+    max-height: 1.7rem;
+    font-size: 0.8rem;
   }
 
   .sig-kpi-grid,
@@ -249,7 +254,7 @@ body {
   }
 }
 
-/* —— Tabelas: scroll horizontal —— */
+/* —— Tabelas: scroll controlado + ações compactas —— */
 @media (max-width: 991.98px) {
   .sig-content .bg-white.rounded-lg.border.overflow-hidden,
   .sig-content .sig-list-card,
@@ -258,15 +263,24 @@ body {
     -webkit-overflow-scrolling: touch;
   }
 
+  /* Soft min-width: scroll horizontal quando necessário, sem forçar 640px */
   .sig-content .bg-white.rounded-lg.border.overflow-hidden table,
   .sig-content .sig-list-card table,
   .sig-table-wrap > table {
-    min-width: 640px;
+    min-width: 36rem;
+    width: max(100%, 36rem);
   }
 
   .sig-table-wrap th,
   .sig-table-wrap td {
     white-space: nowrap;
+  }
+
+  /* Células de texto longo podem encolher/quebrar */
+  .sig-table-wrap td:not(.text-end):not(.text-center) {
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .sig-table-wrap td .sig-link-action {
@@ -301,11 +315,51 @@ body {
   }
 }
 
-/* —— Toolbar de listagens —— */
+/* Telemóvel: tabelas com scroll + botões só ícone */
 @media (max-width: 767.98px) {
-  .sig-list-toolbar {
+  .sig-content .bg-white.rounded-lg.border.overflow-hidden table,
+  .sig-content .sig-list-card table,
+  .sig-table-wrap > table {
+    min-width: 28rem;
+    width: max(100%, 28rem);
+  }
+
+  .sig-table-wrap th,
+  .sig-table-wrap td {
+    padding: 0.45rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Ações de linha: só ícone (title/aria já existem) */
+  .sig-link-action {
+    padding: 0.35rem 0.45rem;
+    gap: 0;
+  }
+
+  .sig-link-action > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .sig-row-actions {
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+}
+
+/* —— Toolbar de listagens —— */
+@media (max-width: 991.98px) {
+  .sig-list-toolbar,
+  .sig-toolbar-standalone {
     flex-direction: column;
-    align-items: stretch;
+    align-items: stretch !important;
   }
 
   .sig-list-toolbar .sig-toolbar-search,
@@ -323,10 +377,6 @@ body {
     margin-left: 0 !important;
     width: 100%;
     justify-content: stretch;
-  }
-
-  .sig-toolbar-standalone {
-    align-items: stretch !important;
   }
 
   .sig-list-toolbar .sig-toolbar-actions .app-btn-ghost,
@@ -354,10 +404,20 @@ body {
   .sig-list-toolbar select.app-field {
     width: 100%;
     min-width: 0 !important;
+    flex: 1 1 calc(50% - 0.5rem);
   }
 
   .sig-toolbar-standalone .sig-toolbar-filter__menu {
     width: 100%;
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .sig-toolbar-standalone .sig-toolbar-filter,
+  .sig-list-toolbar select.app-field {
+    flex: 1 1 100%;
   }
 }
 
@@ -369,13 +429,25 @@ body {
 
 /* —— Gráficos (ApexCharts) —— */
 .sig-apex {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.sig-apex .apexcharts-canvas,
+.sig-apex .apexcharts-svg {
+  max-width: 100% !important;
 }
 
 @media (max-width: 575.98px) {
   .sig-apex {
     min-height: 14rem;
+  }
+
+  .sig-apex .apexcharts-legend {
+    padding: 0 !important;
   }
 }
 
@@ -595,20 +667,54 @@ body {
   }
 }
 
-/* —— Tablet: grids intermediários —— */
+/* —— Tablet: grids intermediários (sidebar ainda ocupa espaço) —— */
 @media (min-width: 576px) and (max-width: 767.98px) {
-  .sig-kpi-grid--5 {
+  .sig-kpi-grid--5,
+  .sig-kpi-grid--6 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 768px) and (max-width: 991.98px) {
-  .sig-content .grid.lg\:grid-cols-3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Grids Tailwind “desktop” (lg:) ainda não devem abrir 3 colunas com sidebar */
+  .sig-content .grid.lg\:grid-cols-3,
+  .sig-content .grid[class*="lg:grid-cols-3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
-  .sig-content .grid.lg\:grid-cols-3 > .lg\:col-span-2 {
+  .sig-content .grid.lg\:grid-cols-3 > .lg\:col-span-2,
+  .sig-content .grid[class*="lg:grid-cols-3"] > [class*="lg:col-span-2"] {
     grid-column: span 2;
+  }
+
+  .sig-content .grid.lg\:grid-cols-4,
+  .sig-content .grid[class*="lg:grid-cols-4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .sig-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .sig-kpi-grid--5,
+  .sig-kpi-grid--6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .sig-chart-panel__head {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1439.98px) {
+  /* Com sidebar, 6 KPIs em linha ficam estreitos demais */
+  .sig-kpi-grid--6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .sig-kpi-grid--5 {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 }
 

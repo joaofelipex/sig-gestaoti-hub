@@ -10,12 +10,16 @@
 
 .sig-table-wrap {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
+/* Desktop: table fills container; narrow viewports get a soft min-width via responsive.css */
 .sig-table-wrap > table {
-  min-width: 640px;
+  width: 100%;
+  min-width: 0;
 }
 
 .sig-list-toolbar {

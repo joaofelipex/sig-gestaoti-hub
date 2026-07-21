@@ -516,23 +516,122 @@ export class MultiLineChartComponent implements OnChanges {
   selector: 'app-kpi-card',
   standalone: true,
   imports: [CommonModule],
+  styles: [
+    `
+      :host {
+        display: block;
+        min-width: 0;
+        max-width: 100%;
+        height: 100%;
+      }
+
+      .sig-kpi-card {
+        position: relative;
+        box-sizing: border-box;
+        height: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        container-type: inline-size;
+        border: 1px solid var(--sig-table-border);
+        border-radius: var(--br-lg);
+        background: var(--sig-page-bg);
+        padding: 0.85rem 2.75rem 0.85rem 0.9rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      }
+
+      .sig-kpi-card__label {
+        margin: 0;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--sig-text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .sig-kpi-card__value {
+        margin: 0.4rem 0 0;
+        font-size: clamp(1rem, 2.2cqi, 1.45rem);
+        font-weight: 700;
+        line-height: 1.2;
+        font-variant-numeric: tabular-nums;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 100%;
+      }
+
+      .sig-kpi-card__hint {
+        margin: 0.3rem 0 0;
+        font-size: 0.72rem;
+        color: var(--sig-text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .sig-kpi-card__icon {
+        position: absolute;
+        top: 0.75rem;
+        right: 0.65rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: var(--br-md);
+        border: 1px solid transparent;
+        font-size: 0.95rem;
+        line-height: 1;
+        pointer-events: none;
+      }
+
+      .sig-kpi-card__icon i {
+        font-size: inherit;
+        line-height: 1;
+      }
+
+      @container (max-width: 160px) {
+        .sig-kpi-card {
+          padding-right: 2.35rem;
+          padding-left: 0.7rem;
+        }
+
+        .sig-kpi-card__icon {
+          top: 0.6rem;
+          right: 0.5rem;
+          width: 1.6rem;
+          height: 1.6rem;
+          font-size: 0.75rem;
+          border-radius: var(--br-sm);
+        }
+
+        .sig-kpi-card__value {
+          font-size: 1rem;
+        }
+
+        .sig-kpi-card__label {
+          font-size: 0.6rem;
+        }
+      }
+    `,
+  ],
   template: `
     <div class="sig-kpi-card">
-      <div class="sig-kpi-card__body">
-        <div class="sig-kpi-card__text">
-          <p class="sig-kpi-card__label">{{ label }}</p>
-          <p class="sig-kpi-card__value" [style.color]="color">{{ value }}</p>
-          <p *ngIf="hint" class="sig-kpi-card__hint">{{ hint }}</p>
-        </div>
-        <div
-          class="sig-kpi-card__icon"
-          [style.color]="color"
-          [style.background]="tintBg"
-          [style.borderColor]="tintBorder"
-        >
-          <i [class]="icon" aria-hidden="true"></i>
-        </div>
+      <div
+        class="sig-kpi-card__icon"
+        [style.color]="color"
+        [style.background]="tintBg"
+        [style.borderColor]="tintBorder"
+      >
+        <i [class]="icon" aria-hidden="true"></i>
       </div>
+      <p class="sig-kpi-card__label">{{ label }}</p>
+      <p class="sig-kpi-card__value" [style.color]="color">{{ value }}</p>
+      <p *ngIf="hint" class="sig-kpi-card__hint">{{ hint }}</p>
     </div>
   `,
 })

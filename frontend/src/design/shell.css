@@ -354,6 +354,10 @@
   .sig-empresa__button {
     max-width: 10rem;
   }
+
+  .sig-content {
+    padding-inline: 0.875rem;
+  }
 }
 
 /* Empresa + alertas no header */

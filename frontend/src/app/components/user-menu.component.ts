@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnDestroy, OnInit } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subscription, firstValueFrom } from 'rxjs';
@@ -14,7 +14,7 @@ import { AuthService } from '../services/auth.service';
       <button
         type="button"
         class="sig-user-menu__trigger"
-        (click)="toggle()"
+        (click)="toggle($event)"
         [attr.aria-expanded]="open"
         aria-haspopup="true"
         aria-label="Menu do utilizador"
@@ -27,7 +27,7 @@ import { AuthService } from '../services/auth.service';
         <i class="fas fa-chevron-down sig-user-menu__chevron" aria-hidden="true"></i>
       </button>
 
-      <div *ngIf="open" class="sig-user-menu__dropdown" role="menu">
+      <div *ngIf="open" class="sig-user-menu__dropdown" role="menu" (click)="$event.stopPropagation()">
         <div class="sig-user-menu__info">
           <strong>{{ displayName }}</strong>
           <small>{{ email }}</small>
@@ -37,7 +37,7 @@ import { AuthService } from '../services/auth.service';
           <i class="fas fa-cog" aria-hidden="true"></i>
           Configurações
         </a>
-        <button type="button" class="sig-user-menu__item sig-user-menu__item--danger" role="menuitem" (click)="signOut()">
+        <button type="button" class="sig-user-menu__item sig-user-menu__item--danger" role="menuitem" (click)="signOut($event)">
           <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
           Sair
         </button>
@@ -53,7 +53,6 @@ export class UserMenuComponent implements OnInit, OnDestroy {
   constructor(
     private api: ApiService,
     private auth: AuthService,
-    private el: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
@@ -84,7 +83,8 @@ export class UserMenuComponent implements OnInit, OnDestroy {
     return nome.slice(0, 2).toUpperCase();
   }
 
-  toggle(): void {
+  toggle(ev: MouseEvent): void {
+    ev.stopPropagation();
     this.open = !this.open;
   }
 
@@ -92,17 +92,15 @@ export class UserMenuComponent implements OnInit, OnDestroy {
     this.open = false;
   }
 
-  async signOut(): Promise<void> {
+  async signOut(ev?: MouseEvent): Promise<void> {
+    ev?.stopPropagation();
     this.close();
     await this.auth.signOut();
   }
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (!this.open) return;
-    if (!this.el.nativeElement.contains(event.target as Node)) {
-      this.close();
-    }
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.close();
   }
 
   @HostListener('document:keydown.escape')

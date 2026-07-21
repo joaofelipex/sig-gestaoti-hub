@@ -1,9 +1,16 @@
-/* KPI cards (Font Awesome) */
+/* KPI cards — ícone absoluto no canto; texto não empurra o ícone para fora */
 .sig-kpi-card {
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  container-type: inline-size;
   border: 1px solid var(--sig-table-border);
   border-radius: var(--br-lg);
   background: var(--sig-page-bg);
-  padding: 1rem 1.1rem;
+  padding: 0.85rem 2.75rem 0.85rem 0.9rem;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s, border-color 0.2s;
 }
@@ -13,13 +20,6 @@
   border-color: rgba(var(--wl-background-color), 0.15);
 }
 
-.sig-kpi-card__body {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
 .sig-kpi-card__label {
   margin: 0;
   font-size: 0.68rem;
@@ -27,40 +27,108 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--sig-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sig-kpi-card__value {
-  margin: 0.5rem 0 0;
-  font-size: 1.5rem;
+  margin: 0.4rem 0 0;
+  font-size: clamp(1rem, 2.2cqi, 1.45rem);
   font-weight: 700;
   line-height: 1.2;
   font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .sig-kpi-card__hint {
-  margin: 0.35rem 0 0;
-  font-size: 0.75rem;
+  margin: 0.3rem 0 0;
+  font-size: 0.72rem;
   color: var(--sig-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sig-kpi-card__icon {
-  flex-shrink: 0;
+  position: absolute;
+  top: 0.75rem;
+  right: 0.65rem;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2rem;
+  height: 2rem;
+  max-width: 2rem;
+  max-height: 2rem;
   border-radius: var(--br-md);
   border: 1px solid transparent;
-  font-size: 1.125rem;
+  font-size: 0.95rem;
   line-height: 1;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .sig-kpi-card__icon .fa,
 .sig-kpi-card__icon .fas,
-.sig-kpi-card__icon .far {
+.sig-kpi-card__icon .far,
+.sig-kpi-card__icon i {
   font-size: inherit;
   line-height: 1;
+}
+
+/* Legacy flex body (páginas antigas / fallback) */
+.sig-kpi-card__body {
+  display: block;
+  min-width: 0;
+  width: 100%;
+}
+
+.sig-kpi-card__text {
+  min-width: 0;
+  overflow: hidden;
+}
+
+@container (max-width: 160px) {
+  .sig-kpi-card {
+    padding: 0.7rem 2.25rem 0.7rem 0.7rem;
+  }
+
+  .sig-kpi-card__icon {
+    top: 0.55rem;
+    right: 0.45rem;
+    width: 1.55rem;
+    height: 1.55rem;
+    max-width: 1.55rem;
+    max-height: 1.55rem;
+    font-size: 0.72rem;
+    border-radius: var(--br-sm);
+  }
+
+  .sig-kpi-card__value {
+    font-size: 1rem;
+  }
+
+  .sig-kpi-card__label {
+    font-size: 0.6rem;
+  }
+}
+
+.sig-kpi-grid,
+.sig-kpi-grid--5,
+.sig-kpi-grid--6 {
+  align-items: stretch;
+}
+
+.sig-kpi-grid > *,
+.sig-kpi-grid--5 > *,
+.sig-kpi-grid--6 > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .sig-icon-btn {
@@ -193,6 +261,7 @@
 }
 
 .sig-link-action {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -698,11 +767,17 @@ td.text-end > .sig-link-action + .sig-link-action {
 
 @media (min-width: 768px) {
   .sig-kpi-grid--5 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 992px) {
+  .sig-kpi-grid--5 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1200px) {
+@media (min-width: 1280px) {
   .sig-kpi-grid--5 {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -1003,7 +1078,9 @@ td.text-end > .sig-link-action + .sig-link-action {
 .sig-toolbar-filter {
   position: relative;
   display: inline-block;
-  min-width: 10.5rem;
+  min-width: min(10.5rem, 100%);
+  flex: 1 1 9rem;
+  max-width: 100%;
   margin: 0;
 }
 
@@ -1229,14 +1306,14 @@ td.text-end > .sig-link-action + .sig-link-action {
   color: var(--sig-text-muted);
 }
 
-/* Grid de KPIs */
+/* Grid de KPIs — breakpoints alinhados à sidebar (estreita até ~992) */
 .sig-kpi-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 992px) {
   .sig-kpi-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -1248,11 +1325,18 @@ td.text-end > .sig-link-action + .sig-link-action {
 
 @media (min-width: 640px) {
   .sig-kpi-grid--6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .sig-kpi-grid--6 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1024px) {
+/* 6 em linha só com largura real suficiente (sidebar + padding) */
+@media (min-width: 1440px) {
   .sig-kpi-grid--6 {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
