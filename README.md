@@ -22,6 +22,7 @@ Navegador (Angular)  →  API Express + JWT  →  PostgreSQL
 |-----------|-----------|----------|
 | **[docs/uso-interno.md](docs/uso-interno.md)** | Equipa IMTS | Acesso, papéis, módulos, CSV e calendário |
 | **[docs/dados-e-banco.md](docs/dados-e-banco.md)** | Quem sobe o ambiente | Postgres, API, migrações, CSV em massa, variáveis |
+| **[docs/migracao.md](docs/migracao.md)** | Infra / TI | Deploy na empresa: proxy, secrets, build, dados, checklist |
 | [docs/architecture.md](docs/architecture.md) | Desenvolvimento | Arquitetura, RBAC, rotas da API, multi-tenant |
 
 ## Módulos (menu)

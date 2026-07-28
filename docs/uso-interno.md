@@ -100,4 +100,5 @@ Se não houver datas válidas, a app avisa e **não** descarrega ficheiro vazio.
 ---
 
 Operação técnica (BD, API, migrações): [dados-e-banco.md](./dados-e-banco.md)  
+Migração para a infra da empresa: [migracao.md](./migracao.md)  
 Arquitetura: [architecture.md](./architecture.md)

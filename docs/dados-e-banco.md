@@ -124,3 +124,4 @@ Detalhe: [database/import/README.md](../database/import/README.md).
 
 - Equipa: [uso-interno.md](./uso-interno.md)
 - Arquitetura / API: [architecture.md](./architecture.md)
+- Migração para a infra da empresa: [migracao.md](./migracao.md)

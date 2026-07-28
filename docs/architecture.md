@@ -113,4 +113,4 @@ npm run dev
 
 API `:3000`, app `:8080`, demo `dev@local.imts` / `demo123456`.
 
-Ver [dados-e-banco.md](./dados-e-banco.md) e [uso-interno.md](./uso-interno.md).
+Ver [dados-e-banco.md](./dados-e-banco.md), [uso-interno.md](./uso-interno.md) e [migracao.md](./migracao.md) (deploy na empresa).
